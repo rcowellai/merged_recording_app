@@ -1,15 +1,29 @@
 /**
- * 🔥 Firebase Firestore Service for UIAPP (C02)
- * ==============================================
+ * 🔥 Firebase Firestore Service for UIAPP (C04 - Enhanced)
+ * ========================================================
  * 
  * DEVELOPER HANDOFF NOTES:
- * - Rewritten from MVPAPP stories.js using UIAPP patterns
+ * - Enhanced from C02 basic implementation with full recording workflow
+ * - Rewritten from MVPAPP stories.js + unifiedRecording.js patterns
  * - Maintains same Firestore functionality with UIAPP error handling
  * - Integrates with UIAPP's structured error system in utils/errors.js
  * - Follows UIAPP service conventions (same interface as localRecordingService.js)
  * - Uses same collection patterns and data structures as MVPAPP
  * 
- * MVPAPP SOURCE: recording-app/src/services/stories.js
+ * C04 ENHANCEMENTS:
+ * - Recording session lifecycle management (create, status transitions)
+ * - Upload reference tracking (storage → firestore mapping)
+ * - Recording progress tracking (following MVPAPP patterns)
+ * - Enhanced metadata support (fileSize, mimeType, storagePaths)
+ * 
+ * COLLECTIONS SUPPORTED:
+ * - stories: User story documents with media references
+ * - recordingSessions: Recording session lifecycle and metadata
+ * - uploadReferences: Storage path tracking and cleanup
+ * 
+ * MVPAPP SOURCES: 
+ * - recording-app/src/services/stories.js → stories operations
+ * - recording-app/src/services/unifiedRecording.js → session lifecycle
  * UIAPP TARGET: src/services/firebase/firestore.js
  * CONVENTIONS: UIAPP error handling, config patterns, service interfaces
  */
@@ -26,6 +40,10 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
+  increment,
+  arrayUnion,
+  arrayRemove,
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -189,6 +207,46 @@ class FirebaseFirestoreService {
   }
 
   /**
+   * Get all recording sessions for a user
+   * @param {string} userId - User ID to fetch sessions for
+   * @returns {Promise<Array>} Array of recording sessions
+   */
+  async getUserRecordingSessions(userId) {
+    try {
+      console.log('📝 Fetching recording sessions for user:', userId);
+      
+      const q = query(
+        collection(db, 'recordingSessions'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const sessions = [];
+      
+      snapshot.forEach((doc) => {
+        sessions.push({ 
+          id: doc.id, 
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate(),
+          expiresAt: doc.data().expiresAt?.toDate(),
+          recordingStartedAt: doc.data().recordingStartedAt?.toDate(),
+          recordingCompletedAt: doc.data().recordingCompletedAt?.toDate()
+        });
+      });
+      
+      console.log('📝 Recording sessions fetched:', sessions.length, 'sessions found');
+      this.lastError = null;
+      return sessions;
+    } catch (error) {
+      console.error('Error fetching user recording sessions:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
    * Create a new story document
    * Follows UIAPP patterns for data creation
    * 
@@ -306,6 +364,37 @@ class FirebaseFirestoreService {
   }
 
   /**
+   * Create a new recording session document
+   * @param {string} sessionId - Session ID
+   * @param {Object} sessionData - Initial session data
+   * @returns {Promise<void>}
+   */
+  async createRecordingSession(sessionId, sessionData) {
+    try {
+      console.log('📝 Creating recording session:', sessionId);
+      
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      await setDoc(docRef, {
+        ...sessionData,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        recordingData: {},
+        storagePaths: [],
+        uploadProgress: 0
+      });
+      
+      console.log('📝 Recording session created successfully');
+      this.lastError = null;
+    } catch (error) {
+      console.error('Error creating recording session:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
    * Update recording session status and data
    * @param {string} sessionId - Session ID to update
    * @param {Object} updateData - Data to update
@@ -325,6 +414,190 @@ class FirebaseFirestoreService {
       this.lastError = null;
     } catch (error) {
       console.error('Error updating recording session:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * Update recording session status with metadata
+   * Following MVPAPP pattern for status transitions
+   * @param {string} sessionId - Session ID
+   * @param {string} status - New status (pending, recording, uploading, processing, completed, failed)
+   * @param {Object} metadata - Additional metadata to store
+   * @returns {Promise<void>}
+   */
+  async updateRecordingStatus(sessionId, status, metadata = {}) {
+    try {
+      console.log('📝 Updating recording status:', sessionId, '→', status);
+      
+      const updateData = {
+        status,
+        updatedAt: serverTimestamp()
+      };
+
+      // Add metadata based on status
+      if (status === 'recording' && metadata.recordingStartedAt) {
+        updateData.recordingStartedAt = metadata.recordingStartedAt;
+      }
+      
+      if (status === 'uploading' && metadata.recordingData) {
+        updateData.recordingData = metadata.recordingData;
+      }
+      
+      if (status === 'completed' && metadata.recordingCompletedAt) {
+        updateData.recordingCompletedAt = metadata.recordingCompletedAt;
+        updateData.uploadProgress = 100;
+      }
+      
+      if (metadata.error) {
+        updateData.error = metadata.error;
+      }
+      
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      await updateDoc(docRef, updateData);
+      
+      console.log('📝 Recording status updated successfully to:', status);
+      this.lastError = null;
+    } catch (error) {
+      console.error('Error updating recording status:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * Update recording upload progress
+   * Following MVPAPP pattern for progress tracking
+   * @param {string} sessionId - Session ID
+   * @param {number} progress - Progress percentage (0-100)
+   * @param {Object} additionalData - Additional progress data
+   * @returns {Promise<void>}
+   */
+  async updateRecordingProgress(sessionId, progress, additionalData = {}) {
+    try {
+      console.log('📊 Updating recording progress:', sessionId, '→', progress + '%');
+      
+      const updateData = {
+        uploadProgress: Math.round(progress),
+        updatedAt: serverTimestamp()
+      };
+      
+      // Add additional progress data if provided
+      if (additionalData.bytesTransferred) {
+        updateData['recordingData.bytesTransferred'] = additionalData.bytesTransferred;
+      }
+      
+      if (additionalData.totalBytes) {
+        updateData['recordingData.totalBytes'] = additionalData.totalBytes;
+      }
+      
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      await updateDoc(docRef, updateData);
+      
+      this.lastError = null;
+    } catch (error) {
+      console.error('Error updating recording progress:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * Add storage path reference to recording session
+   * Links uploaded files to the recording session for cleanup and management
+   * @param {string} sessionId - Session ID
+   * @param {string} storagePath - Firebase Storage path
+   * @param {Object} metadata - File metadata (type, size, etc.)
+   * @returns {Promise<void>}
+   */
+  async addUploadReference(sessionId, storagePath, metadata = {}) {
+    try {
+      console.log('📎 Adding upload reference:', sessionId, '→', storagePath);
+      
+      const uploadRef = {
+        path: storagePath,
+        uploadedAt: serverTimestamp(),
+        ...metadata
+      };
+      
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      await updateDoc(docRef, {
+        storagePaths: arrayUnion(uploadRef),
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log('📎 Upload reference added successfully');
+      this.lastError = null;
+    } catch (error) {
+      console.error('Error adding upload reference:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * Remove storage path reference from recording session
+   * Used for cleanup of failed or cancelled uploads
+   * @param {string} sessionId - Session ID
+   * @param {string} storagePath - Firebase Storage path to remove
+   * @returns {Promise<void>}
+   */
+  async removeUploadReference(sessionId, storagePath) {
+    try {
+      console.log('📎 Removing upload reference:', sessionId, '→', storagePath);
+      
+      // First get the current document to find the exact reference to remove
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const currentPaths = data.storagePaths || [];
+        
+        // Find and remove the matching path reference
+        const pathToRemove = currentPaths.find(ref => ref.path === storagePath);
+        if (pathToRemove) {
+          await updateDoc(docRef, {
+            storagePaths: arrayRemove(pathToRemove),
+            updatedAt: serverTimestamp()
+          });
+          console.log('📎 Upload reference removed successfully');
+        } else {
+          console.warn('📎 Upload reference not found:', storagePath);
+        }
+      }
+      
+      this.lastError = null;
+    } catch (error) {
+      console.error('Error removing upload reference:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * Get all upload references for a recording session
+   * @param {string} sessionId - Session ID
+   * @returns {Promise<Array>} Array of upload references
+   */
+  async getUploadReferences(sessionId) {
+    try {
+      console.log('📎 Getting upload references for session:', sessionId);
+      
+      const session = await this.getRecordingSession(sessionId);
+      const references = session.storagePaths || [];
+      
+      console.log('📎 Found', references.length, 'upload references');
+      this.lastError = null;
+      return references;
+    } catch (error) {
+      console.error('Error getting upload references:', error);
       const mappedError = this.mapFirestoreError(error);
       this.lastError = mappedError;
       throw mappedError;
@@ -493,7 +766,13 @@ export const {
   updateStory,
   deleteStory,
   getRecordingSession,
+  createRecordingSession,
   updateRecordingSession,
+  updateRecordingStatus,
+  updateRecordingProgress,
+  addUploadReference,
+  removeUploadReference,
+  getUploadReferences,
   getLastError,
   clearError,
   cleanup
