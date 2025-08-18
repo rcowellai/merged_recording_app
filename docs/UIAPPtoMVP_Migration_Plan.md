@@ -507,13 +507,13 @@ interface FirebaseStorageService {
 8. Test Firebase deployment from UIAPP directory
 9. Verify Firebase project configuration works from UIAPP
 
-**Acceptance Tests**:
-- [ ] Firebase configuration files copied successfully
-- [ ] Firebase CLI can deploy rules from UIAPP directory
-- [ ] Firestore rules deploy without errors
-- [ ] Storage rules deploy without errors
-- [ ] Firebase indexes deploy correctly
-- [ ] No conflicts with existing Firebase project setup
+**Acceptance Tests** ✅ **COMPLETED 2025-01-18**:
+- [x] Firebase configuration files copied successfully
+- [x] Firebase CLI can deploy rules from UIAPP directory
+- [x] Firestore rules deploy without errors
+- [x] Storage rules deploy without errors
+- [x] Firebase indexes deploy correctly
+- [x] No conflicts with existing Firebase project setup
 
 **Artifacts**:
 - `firebase.json` - Firebase project configuration
@@ -531,6 +531,60 @@ interface FirebaseStorageService {
 - `mvpapp/scripts/*` → `uiapp/scripts/*` (adapted for UIAPP build system)
 
 **Rollback**: Delete copied files, remove Firebase CLI dependencies
+
+**🔥 C01 COMPLETION VALIDATION** ✅:
+
+**Dependencies Installation Required for Next Developer**:
+```bash
+cd UIAPP
+npm install  # Installs firebase@10.4.0, firebase-admin@11.11.0, firebase-tools@12.6.0
+```
+
+**Validation Commands That Passed**:
+```bash
+# Test Firebase CLI access
+firebase projects:list  # ✅ Shows love-retold-webapp (current)
+
+# Test individual component deployment  
+firebase deploy --only firestore:rules     # ✅ Deploy complete
+firebase deploy --only storage             # ✅ Deploy complete  
+firebase deploy --only firestore:indexes   # ✅ Deploy complete
+
+# Test deployment script
+node scripts/deploy-firebase.js rules      # ✅ Both rules deployed successfully
+```
+
+**Ready-to-Use Commands for C02**:
+```bash
+# Deploy all Firebase infrastructure
+npm run deploy:firebase
+
+# Deploy only rules
+npm run deploy:rules  
+
+# Deploy only indexes  
+npm run deploy:indexes
+
+# Start Firebase emulators
+npm run emulate
+```
+
+**Known Issues (Non-blocking)**:
+- Firebase rules show warnings about unused functions (normal, non-breaking)
+- Storage+Firestore rules must be deployed separately (handled in deployment script)
+
+**Environment Status**:
+- ✅ Firebase CLI authenticated to love-retold-webapp project
+- ✅ All files copied and adapted for UIAPP build structure
+- ✅ package.json updated with Firebase dependencies
+- ✅ Deployment scripts created and tested
+- ✅ Git branch: `consolidation/C01-firebase-infra` (commit: d72faf8)
+
+**Next Developer Setup** (< 5 minutes):
+1. `git checkout consolidation/C01-firebase-infra` (or merge to main)
+2. `cd UIAPP && npm install`
+3. Verify: `firebase projects:list` shows love-retold-webapp
+4. Ready to start C02 - no validation needed
 
 ---
 
