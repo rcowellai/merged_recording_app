@@ -11,6 +11,8 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "firebase": "^10.4.0",
+    "firebase-admin": "^11.11.0",
     "plyr": "^3.7.8",
     "progressbar.js": "^1.1.1",
     "prop-types": "^15.8.1",
@@ -33,7 +35,15 @@
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
     "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
-    "predeploy": "npm run test:ci && npm run build"
+    "predeploy": "npm run test:ci && npm run build",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
+    "deploy:indexes": "firebase deploy --only firestore:indexes",
+    "deploy:firebase": "firebase deploy",
+    "emulate": "firebase emulators:start",
+    "firebase:init": "firebase init"
+  },
+  "devDependencies": {
+    "firebase-tools": "^12.6.0"
   },
   "eslintConfig": {
     "extends": [

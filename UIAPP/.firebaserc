@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "love-retold-webapp",
+    "production": "love-retold-webapp"
+  },
+  "targets": {
+    "love-retold-webapp": {
+      "hosting": {
+        "recording-app": [
+          "love-retold-webapp"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
