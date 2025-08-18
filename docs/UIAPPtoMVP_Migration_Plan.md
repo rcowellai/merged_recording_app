@@ -780,6 +780,8 @@ npm run emulate
 - Authentication service working
 - Understanding of session validation flow
 
+**📖 CRITICAL PREREQUISITE**: **READ [`docs/migration/C04-firestore-integration.md`](../migration/C04-firestore-integration.md) first** - Contains enhanced Firestore session operations that C05 must integrate with
+
 **Tasks**:
 1. Create `src/services/firebaseSession.js` based on MVPAPP session management
 2. Implement session ID parsing from URL parameters (Love Retold format)
@@ -1324,10 +1326,11 @@ documentation_reference_plan:
 
 ### 📚 **Migration Artifacts** - Essential Reading for Developers
 
-**Completed Slices** (C00-C03):
+**Completed Slices** (C00-C04):
 - **[C00 Handoff Summary](migration/C00-handoff-summary.md)** - Pre-flight validation results and environment setup
 - **[C02 Firebase Services](migration/C02-firebase-services.md)** - **CRITICAL** - Complete Firebase service layer documentation with integration instructions
 - **[C03 Functions Migration](migration/C03-functions-migration.md)** - **CRITICAL** - Firebase Functions migration with endpoints, testing, and safety protocols
+- **[C04 Firestore Integration](migration/C04-firestore-integration.md)** - **CRITICAL for C05** - Enhanced Firestore service with recording session lifecycle, upload references, and complete API documentation
 
 **C00 Detailed Artifacts**:
 - **[Environment Mapping](migration/env-mapping.md)** - VITE_ → REACT_APP_ variable conversion reference
