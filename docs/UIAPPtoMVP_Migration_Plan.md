@@ -10,6 +10,15 @@
 
 ## 2. How to Use This Document
 
+### 📚 Pre-Flight Artifacts (C00 Completed)
+Before starting any slice, review these essential documents created during C00:
+- [`docs/migration/env-mapping.md`](../migration/env-mapping.md) - VITE_ → REACT_APP_ variable conversion reference
+- [`docs/migration/firebase-config-analysis.md`](../migration/firebase-config-analysis.md) - Firebase configuration requirements and adaptations
+- [`docs/migration/dependency-compatibility-report.md`](../migration/dependency-compatibility-report.md) - Package.json updates needed
+- [`docs/migration/risk-assessment-matrix.md`](../migration/risk-assessment-matrix.md) - **CRITICAL**: Deployment safety protocols
+- [`docs/migration/rollback-procedures.md`](../migration/rollback-procedures.md) - Recovery procedures for each slice
+- [`docs/migration/dev-environment-checklist.md`](../migration/dev-environment-checklist.md) - Validated tool requirements
+
 ### True Consolidation Rules
 - **Copy & Rewrite**: Use MVPAPP as reference material, copy/rewrite into UIAPP structure
 - **UIAPP-Centric**: All development, testing, and deployment happens in UIAPP
@@ -170,6 +179,8 @@ apps/
 - **Standalone Deployment**: UIAPP deploys its own Firebase Functions and rules
 
 ## 8. Environment & Secrets
+
+**📖 Reference**: See [`docs/migration/env-mapping.md`](../migration/env-mapping.md) for complete VITE_ → REACT_APP_ conversion table
 
 ### .env.example Template (UIAPP)
 ```bash
@@ -358,7 +369,7 @@ interface FirebaseStorageService {
 
 ## 10. Thin Slices
 
-### Slice C00: Pre-Flight Validation & Environment Setup
+### Slice C00: Pre-Flight Validation & Environment Setup ✅ **COMPLETED**
 
 **Objective**: Validate environment readiness and resolve potential blockers before Firebase infrastructure migration
 
@@ -366,6 +377,14 @@ interface FirebaseStorageService {
 - Access to both MVPAPP and UIAPP codebases
 - Understanding of consolidation goals and approach
 - Development environment set up with Node.js 18+
+
+**📚 Completed Artifacts** (2025-01-18):
+- ✅ [`docs/migration/env-mapping.md`](../migration/env-mapping.md) - Complete VITE_ → REACT_APP_ variable reference
+- ✅ [`docs/migration/firebase-config-analysis.md`](../migration/firebase-config-analysis.md) - Firebase configuration requirements
+- ✅ [`docs/migration/dependency-compatibility-report.md`](../migration/dependency-compatibility-report.md) - Dependency conflict analysis
+- ✅ [`docs/migration/dev-environment-checklist.md`](../migration/dev-environment-checklist.md) - Tool validation results
+- ✅ [`docs/migration/risk-assessment-matrix.md`](../migration/risk-assessment-matrix.md) - Risk analysis with mitigations
+- ✅ [`docs/migration/rollback-procedures.md`](../migration/rollback-procedures.md) - Complete recovery procedures
 
 **Tasks**:
 1. **Firebase Project Access Verification**
@@ -471,6 +490,11 @@ interface FirebaseStorageService {
 - No blocking dependency conflicts identified
 - UIAPP build system validated and ready
 
+**📖 Required References from C00**:
+- Use [`docs/migration/firebase-config-analysis.md`](../migration/firebase-config-analysis.md) - Section "Required Adaptations for UIAPP"
+- Use [`docs/migration/env-mapping.md`](../migration/env-mapping.md) - For environment variable conversion
+- Follow [`docs/migration/risk-assessment-matrix.md`](../migration/risk-assessment-matrix.md) - Section "R1: Shared Firebase Project Conflicts"
+
 **Tasks**:
 1. Copy `firebase.json` from MVPAPP to UIAPP root (apply C00 hosting adaptations)
 2. Copy `firestore.rules` from MVPAPP to UIAPP root  
@@ -517,6 +541,10 @@ interface FirebaseStorageService {
 - C01 completed
 - Firebase infrastructure files in place
 - UIAPP environment setup understanding
+
+**📖 Required References from C00**:
+- Use [`docs/migration/env-mapping.md`](../migration/env-mapping.md) - Complete variable conversion table
+- Use [`docs/migration/dependency-compatibility-report.md`](../migration/dependency-compatibility-report.md) - Required package.json updates
 
 **Tasks**:
 1. Create `src/config/firebase.js` based on MVPAPP's firebase configuration
@@ -764,6 +792,9 @@ interface FirebaseStorageService {
 - All Firebase services implemented
 - Understanding of UIAPP error patterns
 
+**📖 Required References from C00**:
+- Follow [`docs/migration/rollback-procedures.md`](../migration/rollback-procedures.md) - For fallback implementation patterns
+
 **Tasks**:
 1. Create comprehensive Firebase error mapping to UIAPP error types
 2. Implement automatic fallback to localStorage on Firebase failures
@@ -840,6 +871,10 @@ interface FirebaseStorageService {
 - C09 completed
 - All integration testing passed
 - Production deployment process understood
+
+**📖 Required References from C00**:
+- **CRITICAL**: Follow [`docs/migration/risk-assessment-matrix.md`](../migration/risk-assessment-matrix.md) - Section "R1: Shared Firebase Project Conflicts"
+- Review [`docs/migration/firebase-config-analysis.md`](../migration/firebase-config-analysis.md) - Section "Deployment Safety"
 
 **Tasks**:
 1. Deploy UIAPP to production environment
