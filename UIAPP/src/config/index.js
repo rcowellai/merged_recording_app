@@ -85,7 +85,41 @@ export const AUDIO_ANALYSIS = {
 export const ENV_CONFIG = {
   STORAGE_TYPE: process.env.REACT_APP_STORAGE_TYPE || 'local',
   API_BASE_URL: process.env.REACT_APP_API_URL || '',
-  DEBUG_MODE: process.env.NODE_ENV === 'development'
+  DEBUG_MODE: process.env.NODE_ENV === 'development',
+  
+  // Firebase feature flags (C02)
+  USE_FIREBASE: process.env.REACT_APP_USE_FIREBASE === 'true',
+  FIREBASE_AUTH_ENABLED: process.env.REACT_APP_FIREBASE_AUTH_ENABLED === 'true',
+  FIREBASE_STORAGE_ENABLED: process.env.REACT_APP_FIREBASE_STORAGE_ENABLED === 'true',
+  SESSION_VALIDATION_ENABLED: process.env.REACT_APP_SESSION_VALIDATION_ENABLED === 'true',
+  
+  // Environment detection
+  ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT || 'development'
+};
+
+// Firebase configuration (C02)
+export const FIREBASE_CONFIG = {
+  // Connection settings
+  FUNCTION_TIMEOUT_MS: 4000, // 4 seconds (same as MVPAPP)
+  AUTH_RETRY_ATTEMPTS: 3,
+  UPLOAD_RETRY_ATTEMPTS: 3,
+  
+  // Upload settings
+  RESUMABLE_UPLOAD_THRESHOLD: 1024 * 1024, // 1MB
+  CHUNK_SIZE: 45 * 1000, // 45 seconds per chunk (from MVPAPP)
+  
+  // Feature toggles
+  ENABLE_OFFLINE_SUPPORT: true,
+  ENABLE_ANALYTICS: process.env.REACT_APP_ENVIRONMENT === 'production',
+  
+  // Emulator settings (development only)
+  USE_EMULATOR: process.env.REACT_APP_USE_EMULATOR === 'true' && process.env.NODE_ENV === 'development',
+  EMULATOR_PORTS: {
+    auth: 9099,
+    firestore: 8080,
+    functions: 5001,
+    storage: 9199
+  }
 };
 
 // Service configuration
@@ -96,5 +130,20 @@ export const SERVICE_CONFIG = {
     BLOB_STORAGE_KEY: 'local_blobs',
     UPLOAD_PROGRESS_INTERVAL_MS: 200,
     FETCH_DELAY_MS: 300 // Simulated network delay
+  },
+  
+  // Firebase service settings (C02)
+  FIREBASE: {
+    RECORDINGS_COLLECTION: 'stories',
+    SESSIONS_COLLECTION: 'recordingSessions',
+    STORAGE_BASE_PATH: 'recordings',
+    
+    // Retry and timeout settings
+    DEFAULT_TIMEOUT: FIREBASE_CONFIG.FUNCTION_TIMEOUT_MS,
+    RETRY_DELAYS: [1000, 2000, 4000], // Exponential backoff
+    
+    // Upload configuration
+    UPLOAD_CHUNK_SIZE: FIREBASE_CONFIG.CHUNK_SIZE,
+    RESUMABLE_THRESHOLD: FIREBASE_CONFIG.RESUMABLE_UPLOAD_THRESHOLD
   }
 };
