@@ -1,0 +1,99 @@
+/*
+ * index.css
+ * ---------
+ * Global resets or base styles. Often contains font imports,
+ * body margin/padding resets, or any top-level styling
+ * that doesn't belong in a specific component.
+ */
+
+
+/* Font import moved to HTML head for better performance */
+
+/* ---------- Global HTML/BODY ---------- */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Open Sans', sans-serif;
+  background-color: #F5F4F0;
+  color: #333333;
+  min-height: 100vh;
+}
+
+/* 
+  Prompt Card Styles 
+  Let the .main-layout-container control max-width & centering. 
+  The card is simply 100% wide within that container. 
+*/
+.card-container {
+  width: 100%;
+  margin: var(--prompt-top-margin) 0 0 0; /* Use CSS variable for consistency */
+  box-sizing: border-box;
+
+  background-color: #FFFFFF;
+  height: 320px; /* Fixed height, no min-height */
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+.card-content {
+  padding: 24px 16px;
+}
+
+/* Headings for the prompt */
+.heading {
+  font-size: 1.3rem;
+  font-weight: 525;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0;
+}
+.subheading {
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+/* “Or choose a different prompt” link styling */
+.prompt-link {
+  margin-top: 2px;
+  font-size: 1rem;
+  color: #666666;
+  text-align: center;
+}
+.prompt-link a {
+  text-decoration: underline;
+  color: #333333;
+}
+
+/* Overlay Buttons (if used for Start Over / Submit) */
+.btn-left-lower,
+.btn-right-lower {
+  min-width: 100px;
+  max-width: 200px;
+  min-height: 40px;
+  border: var(--btn-border, none);
+  border-radius: var(--btn-border-radius, 8px);
+  font-size: var(--btn-font-size, 0.95rem);
+  cursor: var(--btn-cursor, pointer);
+  display: var(--btn-display, flex);
+  align-items: var(--btn-align-items, center);
+  justify-content: var(--btn-justify-content, center);
+  opacity: 1;
+}
+.btn-left-lower {
+  background-color: var(--btn-secondary-bg, #E4E2D8);
+  color: var(--btn-secondary-color, #2C2F48);
+  padding: 8px 20px;
+}
+.btn-right-lower {
+  background-color: var(--btn-primary-bg, #2C2F48);
+  color: var(--btn-primary-color, #F5F4F0);
+  padding: 8px 16px;
+}
