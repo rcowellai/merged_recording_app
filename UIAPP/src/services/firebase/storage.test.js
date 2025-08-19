@@ -14,27 +14,9 @@
 import { jest } from '@jest/globals';
 
 // Mock Firebase modules before importing service
-jest.mock('firebase/storage', () => ({
-  ref: jest.fn(),
-  uploadBytes: jest.fn(),
-  uploadBytesResumable: jest.fn(),
-  getDownloadURL: jest.fn(),
-  deleteObject: jest.fn(),
-  getMetadata: jest.fn()
-}));
-
-jest.mock('../../config/firebase', () => ({
-  storage: {
-    ref: jest.fn(),
-    bucket: 'test-bucket'
-  }
-}));
-
-jest.mock('./firestore.js', () => ({
-  addUploadReference: jest.fn(),
-  removeUploadReference: jest.fn(),
-  updateRecordingStatus: jest.fn()
-}));
+jest.mock('firebase/storage');
+jest.mock('../../config/firebase');
+jest.mock('./firestore.js');
 
 import {
   ref,
@@ -50,6 +32,25 @@ import {
   removeUploadReference,
   updateRecordingStatus
 } from './firestore.js';
+
+// Set up Jest mocks with implementations
+beforeEach(() => {
+  // Configure Firebase Storage mocks
+  ref.mockReturnValue({ fullPath: 'test-path' });
+  uploadBytes.mockResolvedValue({ ref: { fullPath: 'test-path' } });
+  uploadBytesResumable.mockReturnValue({
+    on: jest.fn(),
+    snapshot: { bytesTransferred: 0, totalBytes: 100 }
+  });
+  getDownloadURL.mockResolvedValue('https://test-url.com');
+  deleteObject.mockResolvedValue();
+  getMetadata.mockResolvedValue({ size: 1024 });
+
+  // Configure Firestore mocks
+  addUploadReference.mockResolvedValue();
+  removeUploadReference.mockResolvedValue();
+  updateRecordingStatus.mockResolvedValue();
+});
 
 import firebaseStorageService, {
   uploadMemoryRecording,

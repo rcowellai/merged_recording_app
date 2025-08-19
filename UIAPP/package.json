@@ -43,7 +43,9 @@
     "firebase:init": "firebase init"
   },
   "devDependencies": {
-    "firebase-tools": "^12.6.0"
+    "firebase-tools": "^12.6.0",
+    "web-streams-polyfill": "^4.2.0",
+    "whatwg-fetch": "^3.6.20"
   },
   "eslintConfig": {
     "extends": [
