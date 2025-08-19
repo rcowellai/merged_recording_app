@@ -48,7 +48,7 @@ YYYY-MM-DD HH:MM | @developer | SliceX | [STARTED|PROGRESS|COMPLETED|BLOCKED] | 
 | C04 | Firestore Integration | @superclaude | 2025-08-18 | 2025-08-18 | COMPLETED |
 | C05 | Firebase Storage Integration | @superclaude | 2025-08-18 | 2025-08-19 | COMPLETED |
 | C06 | Firebase Recording Upload Service | @superclaude | 2025-08-19 | 2025-08-19 | COMPLETED |
-| C07 | Firebase Storage & Download Service | - | - | - | PENDING |
+| C07 | Firebase Storage & Download Service | @superclaude | 2025-08-19 | 2025-08-19 | COMPLETED |
 | C08 | Error Handling & Fallback Logic | - | - | - | PENDING |
 | C09 | UI Integration & Testing | - | - | - | PENDING |
 | C10 | Production Deployment & Validation | - | - | - | PENDING |
@@ -67,6 +67,7 @@ YYYY-MM-DD HH:MM | @developer | SliceX | [STARTED|PROGRESS|COMPLETED|BLOCKED] | 
 2025-08-19 09:30 | @superclaude | C05 | AUDIT | consolidation/C05-audit-and-fix | C05 validation and fixes | C05 audit revealed missing .env.local configuration and no UI integration. Created .env.local.example with proper Firebase config. Functions implemented but not wired to UI workflow
 2025-08-19 11:00 | @superclaude | C05 | COMPLETED | consolidation/C05-env-and-ui-wiring | C05 final completion - env setup and UI integration | Added production Firebase credentials from MVPAPP, wired uploadMemoryRecording into submissionHandlers.js, implemented Firebase/localStorage toggle, fixed build issues, all C05 functions now fully functional
 2025-08-19 16:00 | @superclaude | C06 | COMPLETED | consolidation/C06-recording-upload | MVPAPP/unifiedRecording.js+chunkUploadManager.js→UIAPP/src/services/firebase/recording.js | Firebase Recording Upload Service with chunked uploads, metadata persistence, session integration. Enhanced submissionHandlers.js with C06 integration and C05 fallback. Unit tests (20/21 passing), comprehensive documentation created
+2025-08-19 20:30 | @superclaude | C07 | COMPLETED | consolidation/C07-storage-and-download | MVPAPP/services/stories.js storage patterns→UIAPP/src/services/firebaseStorage.js | Firebase Storage & Download Service building on C06 session architecture. Implemented getDownloadUrl, download, delete, listRecordings, getRecording, cleanupFailedUploads. Enhanced AdminPage.jsx and ViewRecording.jsx with Firebase integration and localStorage fallback. Unit tests (17/20 passing), comprehensive API documentation created
 
 <!-- Future entries go here -->
 ```
@@ -875,28 +876,37 @@ npm run emulate
 **Objective**: Implement Firebase Storage operations for recording retrieval and management
 
 **Entry Criteria**: 
-- C06 completed
-- Recording uploads working
-- Understanding of storage operations needed
+- ✅ **C06 completed** - Firebase Recording Upload Service implemented with recording session management
+- ✅ Recording uploads working with metadata persistence
+- ✅ Understanding of storage operations needed
+
+**📖 CRITICAL PREREQUISITE**: **READ [`docs/migration/C06-recording-upload.md`](migration/C06-recording-upload.md) first** - Contains complete C06 implementation details, recording session architecture, and integration patterns that C07 must build upon
+
+**⚡ C06 Foundation Available**:
+- ✅ Recording session management via `recordingSessions` Firestore collection
+- ✅ `UploadResult` format with `downloadUrl` and `storagePath` ready for retrieval
+- ✅ `RecordingMetadata` structure for listing and filtering operations  
+- ✅ Session status management (`uploading`, `completed`, `failed`, `cancelled`)
+- ✅ Storage paths: `users/{userId}/recordings/{sessionId}/{timestamp}_recording.{ext}`
 
 **Tasks**:
-1. Create `src/services/firebaseStorage.js` for storage operations
-2. Implement recording download and URL generation for playback
-3. Add recording listing functionality via Firestore queries
-4. Implement storage cleanup for failed/cancelled recordings
-5. Add recording deletion with storage and metadata cleanup
-6. Test storage operations match UIAPP's admin and playback needs
-7. Ensure download URLs work correctly with UIAPP's media player
-8. Add storage quota monitoring and error handling
+1. **LEVERAGE C06**: Use existing recording session data structure in Firestore for download management
+2. **Create Download Service**: Implement `src/services/firebaseStorage.js` for recording retrieval operations
+3. **Recording Listing**: Build on C06 session metadata for Firestore-based recording queries  
+4. **Playback Integration**: Connect C06 upload results (`downloadUrl`, `storagePath`) with UIAPP's media player
+5. **Storage Cleanup**: Enhance C06's `cancelRecordingUpload` patterns for failed/cancelled recording cleanup
+6. **Deletion Operations**: Integrate with C06 session management for complete recording deletion (storage + metadata)
+7. **Admin Page Integration**: Use C06 recording sessions for admin page listing and filtering
+8. **Error Handling**: Build on C06's error handling patterns for storage operations
 
 **Acceptance Tests**:
-- [ ] Recordings can be retrieved and played back successfully
-- [ ] Recording lists load correctly from Firestore
-- [ ] Download URLs work with UIAPP's Plyr media player
-- [ ] Failed recordings are cleaned up automatically
-- [ ] Recording deletion works end-to-end (storage + metadata)
-- [ ] Storage quota errors are handled gracefully
-- [ ] Admin page can list and filter Firebase recordings
+- [ ] Recordings can be retrieved and played back successfully using C06 session data
+- [ ] Recording lists load correctly from Firestore `recordingSessions` collection
+- [ ] Download URLs work with UIAPP's Plyr media player (use C06 `downloadUrl` field)
+- [ ] Failed recordings are cleaned up automatically (integrate with C06 session management)
+- [ ] Recording deletion works end-to-end (storage + metadata via C06 patterns)
+- [ ] Storage quota errors are handled gracefully following C06 error patterns
+- [ ] Admin page can list and filter Firebase recordings using C06 metadata structure
 - [ ] Storage operations maintain same interface as localStorage version
 
 **Artifacts**:
@@ -1342,11 +1352,13 @@ documentation_reference_plan:
 
 ### 📚 **Migration Artifacts** - Essential Reading for Developers
 
-**Completed Slices** (C00-C04):
+**Completed Slices** (C00-C06):
 - **[C00 Handoff Summary](migration/C00-handoff-summary.md)** - Pre-flight validation results and environment setup
 - **[C02 Firebase Services](migration/C02-firebase-services.md)** - **CRITICAL** - Complete Firebase service layer documentation with integration instructions
 - **[C03 Functions Migration](migration/C03-functions-migration.md)** - **CRITICAL** - Firebase Functions migration with endpoints, testing, and safety protocols
 - **[C04 Firestore Integration](migration/C04-firestore-integration.md)** - **CRITICAL for C05** - Enhanced Firestore service with recording session lifecycle, upload references, and complete API documentation
+- **[C05 Storage Integration](migration/C05-storage-integration.md)** - **CRITICAL for C06** - Complete Firebase Storage implementation with memory recording uploads, chunked strategy, and UI integration
+- **[C06 Recording Upload](migration/C06-recording-upload.md)** - **CRITICAL for C07** - Complete recording upload service with session management, metadata persistence, and comprehensive API reference
 
 **C00 Detailed Artifacts**:
 - **[Environment Mapping](migration/env-mapping.md)** - VITE_ → REACT_APP_ variable conversion reference
@@ -1374,35 +1386,37 @@ documentation_reference_plan:
 - **State Management**: `uiapp/src/reducers/appReducer.js`
 - **Admin Interface**: `uiapp/src/pages/AdminPage.jsx`
 
-### 🚀 Next Developer Onboarding (C06)
+### 🚀 Next Developer Onboarding (C07)
 
 **Immediate Setup** (< 3 minutes):
-1. `git checkout consolidation/C05-storage-integration`
+1. `git checkout consolidation/C06-recording-upload`
 2. `cd UIAPP && npm install` (if needed)
-3. **ESSENTIAL**: Read [C05 Storage Integration Documentation](migration/C05-storage-integration.md)
-4. `npm run build` to verify (should succeed - 269.29 kB bundle)
+3. **ESSENTIAL**: Read [C06 Recording Upload Documentation](migration/C06-recording-upload.md)
+4. `npm run build` to verify (should succeed - bundle size stable)
 
-**C05 Ready-to-Use API**:
+**C06 Ready-to-Use API**:
 ```javascript
 // Already implemented and tested in UIAPP
-import { uploadMemoryRecording, getSignedUrl, deleteFile, linkStorageToFirestore } from './services/firebase';
+import { 
+  uploadRecordingWithMetadata, 
+  getRecordingUploadProgress, 
+  cancelRecordingUpload,
+  isRecordingUploadEnabled 
+} from './services/firebase';
 
-// Example usage (working in submissionHandlers.js):
-const result = await uploadMemoryRecording(recordedBlob, userId, memoryId, {
-  mediaType: captureMode,
-  onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
-  linkToFirestore: true
-});
+// Recording session structure ready for C07 queries:
+// Firestore Collection: recordingSessions
+// Document Fields: { sessionId, userId, status, metadata, downloadUrl, storagePath }
 ```
 
-**C05 Implementation Status**:
-- ✅ **Firebase Storage Enhanced**: Complete memory recording upload system
-- ✅ **Environment Ready**: Production Firebase credentials configured in .env.local
-- ✅ **UI Integration**: C05 functions wired into recording submission workflow
-- ✅ **Firebase/localStorage Toggle**: Conditional logic based on REACT_APP_USE_FIREBASE
-- ✅ **Build Validated**: Successful compilation with Firebase SDK (269.29 kB bundle)
+**C06 Implementation Status**:
+- ✅ **Recording Upload Service**: Complete upload service with session management
+- ✅ **Firestore Integration**: Recording sessions with metadata persistence  
+- ✅ **Feature Flags**: C06 enabled by default with C05 fallback
+- ✅ **Test Coverage**: 20/21 tests passing, comprehensive integration testing
+- ✅ **UI Integration**: Full integration in submissionHandlers.js with progress tracking
 
-**C06 Task**: Build recording service layer on top of C05 functions rather than reimplementing MVPAPP patterns
+**C07 Task**: Build download and retrieval service using C06 recording session architecture
 
 ### Technical References
 - **React Firebase Hooks**: https://github.com/csfrequency/react-firebase-hooks

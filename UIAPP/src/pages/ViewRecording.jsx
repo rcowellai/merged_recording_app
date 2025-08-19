@@ -16,7 +16,11 @@ import { LAYOUT } from '../config';
 // import { doc, getDoc } from 'firebase/firestore';
 // import { db } from '../services/firebase';
 
-import { fetchRecording } from '../services/localRecordingService';
+// Import Firebase storage service layer (C07)
+import { fetchRecording } from '../services/firebaseStorage';
+// Fallback to local storage service
+import { fetchRecording as fetchRecordingLocal } from '../services/localRecordingService';
+import { ENV_CONFIG } from '../config';
 
 function ViewRecording() {
   const { docId } = useParams();
@@ -34,10 +38,26 @@ function ViewRecording() {
 
     async function fetchDocData() {
       try {
-        const data = await fetchRecording(docId);
+        let data;
+        
+        if (ENV_CONFIG.USE_FIREBASE && ENV_CONFIG.FIREBASE_STORAGE_ENABLED) {
+          console.log('📄 ViewRecording: Using Firebase storage (C07)');
+          try {
+            // Use Firebase storage service (C07)
+            data = await fetchRecording(docId);
+          } catch (firebaseError) {
+            console.warn('⚠️ ViewRecording: Firebase failed, falling back to localStorage:', firebaseError);
+            data = await fetchRecordingLocal(docId);
+          }
+        } else {
+          console.log('📄 ViewRecording: Using localStorage service');
+          data = await fetchRecordingLocal(docId);
+        }
+        
         if (!data) {
           throw new Error('No matching document found.');
         }
+        
         if (isMounted) {
           setDownloadURL(data.downloadURL);
           setFileType(data.fileType);

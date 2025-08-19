@@ -761,6 +761,7 @@ export default firebaseFirestoreService;
 export const {
   subscribeToUserStories,
   getUserStories,
+  getUserRecordingSessions, // C07: Recording session queries
   getStoryById,
   createStory,
   updateStory,

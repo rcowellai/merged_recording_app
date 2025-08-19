@@ -15,8 +15,11 @@ import React, { useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { COLORS, LAYOUT } from '../config';
 
-// Import local storage service layer
-import { fetchAllRecordings } from '../services/localRecordingService';
+// Import Firebase storage service layer (C07)
+import { fetchAllRecordings } from '../services/firebaseStorage';
+// Fallback to local storage service
+import { fetchAllRecordings as fetchAllRecordingsLocal } from '../services/localRecordingService';
+import { ENV_CONFIG } from '../config';
 
 function AdminPage() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -28,10 +31,26 @@ function AdminPage() {
   useEffect(() => {
     async function loadRecordings() {
       try {
-        const results = await fetchAllRecordings();
+        let results;
+        
+        if (ENV_CONFIG.USE_FIREBASE && ENV_CONFIG.FIREBASE_STORAGE_ENABLED) {
+          console.log('📋 AdminPage: Using Firebase storage (C07)');
+          try {
+            // Use Firebase storage service (C07)
+            results = await fetchAllRecordings();
+          } catch (firebaseError) {
+            console.warn('⚠️ AdminPage: Firebase failed, falling back to localStorage:', firebaseError);
+            results = await fetchAllRecordingsLocal();
+          }
+        } else {
+          console.log('📋 AdminPage: Using localStorage service');
+          results = await fetchAllRecordingsLocal();
+        }
+        
         setAllRecordings(results);
       } catch (err) {
         console.error('Error fetching recordings:', err);
+        setAllRecordings([]); // Set empty array on error
       }
     }
     loadRecordings();

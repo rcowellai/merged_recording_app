@@ -18,9 +18,13 @@
       "Bash(chmod:*)",
       "Bash(firebase deploy:*)",
       "Bash(npm run build:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\RobbieC\\Desktop\\Apps"
+    ]
   }
 }

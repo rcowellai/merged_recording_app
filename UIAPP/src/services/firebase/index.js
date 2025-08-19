@@ -98,6 +98,20 @@ export {
   validateRecordingUpload
 } from './recording';
 
+export {
+  // Storage & Download service methods (C07)
+  generateUploadPath,
+  getDownloadUrl,
+  download,
+  deleteRecording,
+  listRecordings,
+  getRecording,
+  cleanupFailedUploads,
+  getQuotaInfo,
+  fetchAllRecordings,
+  fetchRecording
+} from '../firebaseStorage';
+
 // Export Firebase SDK instances for direct access
 export {
   auth,
@@ -144,4 +158,4 @@ export const getFirebaseServicesStatus = () => {
 };
 
 console.log('🔥 Firebase Services Module: LOADED');
-console.log('📊 Available services: auth, firestore, storage, functions');
+console.log('📊 Available services: auth, firestore, storage, functions, recording (C06), download (C07)');
