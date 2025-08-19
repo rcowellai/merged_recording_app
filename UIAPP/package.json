@@ -40,9 +40,20 @@
     "deploy:indexes": "firebase deploy --only firestore:indexes",
     "deploy:firebase": "firebase deploy",
     "emulate": "firebase emulators:start",
-    "firebase:init": "firebase init"
+    "emulate:with-ui": "firebase emulators:start --enable-ui",
+    "emulate:functions": "firebase emulators:start --only functions",
+    "emulate:storage": "firebase emulators:start --only storage,auth",
+    "firebase:init": "firebase init",
+    "test:emulator": "cross-env REACT_APP_USE_EMULATOR=true npm run test:ci",
+    "test:integration": "cross-env REACT_APP_USE_FIREBASE=true REACT_APP_USE_EMULATOR=true npm run test:ci",
+    "test:e2e:local": "playwright test --config=playwright.config.js",
+    "test:e2e:headed": "playwright test --config=playwright.config.js --headed",
+    "test:e2e:debug": "playwright test --config=playwright.config.js --debug",
+    "start:emulator-mode": "cross-env REACT_APP_USE_FIREBASE=true REACT_APP_USE_EMULATOR=true npm start"
   },
   "devDependencies": {
+    "@playwright/test": "^1.41.0",
+    "cross-env": "^7.0.3",
     "firebase-tools": "^12.6.0",
     "web-streams-polyfill": "^4.2.0",
     "whatwg-fetch": "^3.6.20"
