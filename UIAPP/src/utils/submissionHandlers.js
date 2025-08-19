@@ -17,6 +17,7 @@ import {
 
 // Import configuration to check Firebase enablement
 import { ENV_CONFIG } from '../config';
+import { firebaseErrorHandler } from './firebaseErrorHandler';
 
 /**
  * Creates a submission handler function
@@ -77,96 +78,126 @@ export function createSubmissionHandler({
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_IN_PROGRESS, payload: true });
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: 0 });
 
-      // Conditional upload: use Firebase or local storage based on configuration
-      let result;
-      
-      if (ENV_CONFIG.USE_FIREBASE && ENV_CONFIG.FIREBASE_STORAGE_ENABLED) {
-        console.log('🔥 Using Firebase Storage for upload');
-        
-        // Use C06 recording upload service if available, otherwise fallback to C05
-        if (isRecordingUploadEnabled()) {
-          console.log('🎙️ Using C06 Recording Upload Service');
+      // C08: Upload with Firebase and automatic localStorage fallback
+      const result = await firebaseErrorHandler.withFirebaseFallback(
+        // Firebase operation
+        async () => {
+          firebaseErrorHandler.log('info', 'Starting Firebase upload', {
+            fileName,
+            captureMode,
+            fileSize: recordedBlob.size
+          }, {
+            service: 'recording-upload',
+            operation: 'firebase-upload'
+          });
           
-          // Generate session info for recording service
-          const sessionId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          const userId = 'anonymous'; // Could be enhanced to use actual user ID
-          
-          const sessionInfo = {
-            sessionId,
-            userId,
-            fileType: captureMode,
-            fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
-            duration: 0 // Could be enhanced to track actual duration
-          };
-          
-          // Use C06 uploadRecordingWithMetadata function
-          const uploadResult = await uploadRecordingWithMetadata(
-            recordedBlob,
-            sessionInfo,
-            {
-              onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
-              linkToFirestore: true
+          // Use C06 recording upload service if available, otherwise fallback to C05
+          if (isRecordingUploadEnabled()) {
+            firebaseErrorHandler.log('debug', 'Using C06 Recording Upload Service', null, {
+              service: 'recording-upload',
+              operation: 'c06-upload'
+            });
+            
+            // Generate session info for recording service
+            const sessionId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const userId = 'anonymous'; // Could be enhanced to use actual user ID
+            
+            const sessionInfo = {
+              sessionId,
+              userId,
+              fileType: captureMode,
+              fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
+              duration: 0 // Could be enhanced to track actual duration
+            };
+            
+            // Use C06 uploadRecordingWithMetadata function with retry
+            const uploadResult = await uploadRecordingWithMetadata(
+              recordedBlob,
+              sessionInfo,
+              {
+                onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
+                linkToFirestore: true
+              }
+            );
+            
+            if (uploadResult.success) {
+              return {
+                docId: uploadResult.recordingId,
+                downloadURL: uploadResult.downloadUrl,
+                storagePath: uploadResult.storagePath
+              };
+            } else {
+              throw new Error(uploadResult.error || 'Recording upload failed');
             }
-          );
-          
-          if (uploadResult.success) {
-            result = {
-              docId: uploadResult.recordingId,
-              downloadURL: uploadResult.downloadUrl,
+            
+          } else {
+            firebaseErrorHandler.log('debug', 'Using C05 Memory Recording fallback', null, {
+              service: 'recording-upload',
+              operation: 'c05-upload'
+            });
+            
+            // Generate userId and memoryId for Firebase memory recording
+            const userId = 'anonymous'; // Could be enhanced to use actual user ID
+            const memoryId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Use C05 uploadMemoryRecording function
+            const uploadResult = await uploadMemoryRecording(
+              recordedBlob,
+              userId,
+              memoryId,
+              {
+                mediaType: captureMode,
+                fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
+                onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
+                linkToFirestore: true
+              }
+            );
+            
+            // Map Firebase result to expected format
+            return {
+              docId: memoryId,
+              downloadURL: uploadResult.downloadURL,
               storagePath: uploadResult.storagePath
             };
-          } else {
-            throw new Error(uploadResult.error || 'Recording upload failed');
           }
+        },
+        // LocalStorage fallback operation
+        async () => {
+          firebaseErrorHandler.log('info', 'Using localStorage fallback for upload', {
+            fileName,
+            captureMode
+          }, {
+            service: 'recording-upload',
+            operation: 'localStorage-fallback'
+          });
           
-        } else {
-          console.log('🔥 Using C05 Memory Recording (fallback)');
-          
-          // Generate userId and memoryId for Firebase memory recording
-          const userId = 'anonymous'; // Could be enhanced to use actual user ID
-          const memoryId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          
-          // Use C05 uploadMemoryRecording function
-          result = await uploadMemoryRecording(
+          // Use local storage upload (preserves original logic)
+          return await uploadRecordingLocal(
             recordedBlob,
-            userId,
-            memoryId,
-            {
-              mediaType: captureMode,
-              fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
-              onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
-              linkToFirestore: true
-            }
+            fileName,
+            captureMode,
+            (fraction) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: fraction }),
+            actualMimeType
           );
-          
-          // Map Firebase result to expected format
-          result = {
-            docId: memoryId,
-            downloadURL: result.downloadURL,
-            storagePath: result.storagePath
-          };
-        }
-        
-      } else {
-        console.log('💾 Using Local Storage for upload');
-        
-        // Use local storage upload (preserves original logic)
-        result = await uploadRecordingLocal(
-          recordedBlob,
-          fileName,
-          captureMode,
-          (fraction) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: fraction }),
-          actualMimeType
-        );
-      }
+        },
+        { maxRetries: 2 }, // Recording uploads get fewer retries
+        'recording-upload'
+      );
 
       // If successful, we have docId and downloadURL
       dispatch({ type: APP_ACTIONS.SET_DOC_ID, payload: result.docId });
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_IN_PROGRESS, payload: false });
       dispatch({ type: APP_ACTIONS.SET_SHOW_CONFETTI, payload: true });
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
-      alert('Something went wrong during upload.');
+      const mappedError = firebaseErrorHandler.mapError(error, 'recording-upload');
+      
+      firebaseErrorHandler.log('error', 'Upload failed after all retry attempts', mappedError, {
+        service: 'recording-upload',
+        operation: 'final-error'
+      });
+      
+      // Show user-friendly error message
+      alert(mappedError.message || 'Something went wrong during upload. Please try again.');
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_IN_PROGRESS, payload: false });
     }
   };

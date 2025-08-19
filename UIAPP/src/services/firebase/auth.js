@@ -20,6 +20,7 @@ import {
   classifyStorageError,
   UPLOAD_ERRORS 
 } from '../../utils/errors';
+import { firebaseErrorHandler } from '../../utils/firebaseErrorHandler';
 
 /**
  * Firebase Authentication Service
@@ -37,44 +38,51 @@ class FirebaseAuthService {
   }
 
   /**
-   * Initialize the authentication service
+   * Initialize the authentication service with C08 retry logic
    * @returns {Promise<void>}
    */
   async initialize() {
-    try {
-      console.log('🔒 Initializing Firebase Auth Service...');
-      
-      // Use the base anonymous auth function from firebase config
-      const user = await baseInitAnonymousAuth();
-      this.currentUser = user;
-      this.isInitialized = true;
-      this.lastError = null;
-      
-      console.log('✅ Firebase Auth Service initialized successfully');
-      return user;
-    } catch (error) {
-      console.error('❌ Firebase Auth Service initialization failed:', error);
-      this.lastError = this.mapAuthError(error);
-      throw this.lastError;
-    }
+    return await firebaseErrorHandler.withRetry(
+      async () => {
+        firebaseErrorHandler.log('info', 'Initializing Firebase Auth Service', null, {
+          service: 'firebase-auth',
+          operation: 'initialize'
+        });
+        
+        // Use the base anonymous auth function from firebase config
+        const user = await baseInitAnonymousAuth();
+        this.currentUser = user;
+        this.isInitialized = true;
+        this.lastError = null;
+        
+        firebaseErrorHandler.log('info', 'Firebase Auth Service initialized successfully', null, {
+          service: 'firebase-auth',
+          operation: 'initialize'
+        });
+        
+        return user;
+      },
+      { maxRetries: 3 },
+      'firebase-auth-initialize'
+    );
   }
 
   /**
-   * Sign in anonymously with retry logic
-   * @param {number} maxRetries - Maximum retry attempts
+   * Sign in anonymously with C08 retry logic
+   * @param {number} maxRetries - Maximum retry attempts (deprecated - handled by C08)
    * @returns {Promise<User>} Firebase user
    */
   async signInAnonymously(maxRetries = 3) {
-    try {
-      const user = await baseInitAnonymousAuth(maxRetries);
-      this.currentUser = user;
-      this.lastError = null;
-      return user;
-    } catch (error) {
-      console.error('Authentication failed:', error);
-      this.lastError = this.mapAuthError(error);
-      throw this.lastError;
-    }
+    return await firebaseErrorHandler.withRetry(
+      async () => {
+        const user = await baseInitAnonymousAuth(1); // Let C08 handle retries
+        this.currentUser = user;
+        this.lastError = null;
+        return user;
+      },
+      { maxRetries },
+      'firebase-auth-signin'
+    );
   }
 
   /**
@@ -95,12 +103,19 @@ class FirebaseAuthService {
   }
 
   /**
-   * Setup authentication state monitoring
+   * Setup authentication state monitoring with C08 logging
    * Follows UIAPP patterns for state management
    */
   setupAuthStateMonitoring() {
     auth.onAuthStateChanged((user) => {
-      console.log('🔄 Auth state changed:', user ? 'authenticated' : 'not authenticated');
+      firebaseErrorHandler.log('debug', 'Auth state changed', {
+        authenticated: !!user,
+        isAnonymous: user?.isAnonymous
+      }, {
+        service: 'firebase-auth',
+        operation: 'auth-state-change'
+      });
+      
       this.currentUser = user;
       
       // Notify all registered callbacks
@@ -108,7 +123,11 @@ class FirebaseAuthService {
         try {
           callback(user);
         } catch (error) {
-          console.error('Auth state callback error:', error);
+          const mappedError = firebaseErrorHandler.mapError(error, 'firebase-auth-callback');
+          firebaseErrorHandler.log('error', 'Auth state callback error', mappedError, {
+            service: 'firebase-auth',
+            operation: 'auth-callback'
+          });
         }
       });
     });
@@ -151,83 +170,32 @@ class FirebaseAuthService {
   }
 
   /**
-   * Sign out current user
+   * Sign out current user with C08 error handling
    * @returns {Promise<void>}
    */
   async signOut() {
-    try {
-      await auth.signOut();
-      this.currentUser = null;
-      this.lastError = null;
-      console.log('🔓 User signed out successfully');
-    } catch (error) {
-      console.error('Sign out failed:', error);
-      this.lastError = this.mapAuthError(error);
-      throw this.lastError;
-    }
+    return await firebaseErrorHandler.withRetry(
+      async () => {
+        await auth.signOut();
+        this.currentUser = null;
+        this.lastError = null;
+        firebaseErrorHandler.log('info', 'User signed out successfully', null, {
+          service: 'firebase-auth',
+          operation: 'signout'
+        });
+      },
+      { maxRetries: 2 }, // Fewer retries for signout
+      'firebase-auth-signout'
+    );
   }
 
   /**
-   * Map Firebase auth errors to UIAPP error patterns
-   * Consistent with UIAPP's error handling in utils/errors.js
-   * 
+   * Map Firebase auth errors using C08 centralized error handler
    * @param {Error} error - Firebase auth error
    * @returns {Error} Mapped UIAPP error
    */
   mapAuthError(error) {
-    if (!error) return null;
-
-    // Handle Firebase auth errors
-    if (error.code && error.code.startsWith('auth/')) {
-      switch (error.code) {
-        case 'auth/network-request-failed':
-          return createError(
-            UPLOAD_ERRORS.NETWORK_ERROR,
-            'Network connection failed. Please check your internet connection and try again.',
-            error
-          );
-        case 'auth/too-many-requests':
-          return createError(
-            UPLOAD_ERRORS.QUOTA_EXCEEDED,
-            'Too many authentication attempts. Please try again later.',
-            error
-          );
-        case 'auth/operation-not-allowed':
-          return createError(
-            UPLOAD_ERRORS.PERMISSION_DENIED,
-            'Anonymous authentication is not enabled for this project.',
-            error
-          );
-        case 'auth/invalid-api-key':
-          return createError(
-            UPLOAD_ERRORS.INVALID_CONFIG,
-            'Invalid Firebase API configuration. Please contact support.',
-            error
-          );
-        default:
-          return createError(
-            UPLOAD_ERRORS.UNKNOWN,
-            `Authentication failed: ${error.message}`,
-            error
-          );
-      }
-    }
-
-    // Handle network/timeout errors
-    if (error.message && error.message.includes('timeout')) {
-      return createError(
-        UPLOAD_ERRORS.TIMEOUT,
-        'Authentication timeout. Please check your connection and try again.',
-        error
-      );
-    }
-
-    // Handle generic errors
-    return createError(
-      UPLOAD_ERRORS.UNKNOWN,
-      error.message || 'An unknown authentication error occurred.',
-      error
-    );
+    return firebaseErrorHandler.mapError(error, 'firebase-auth');
   }
 
   /**

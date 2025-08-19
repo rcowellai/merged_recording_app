@@ -16,6 +16,7 @@ import { appReducer, initialAppState, APP_ACTIONS } from './reducers/appReducer'
 
 // Extracted components
 import RecordingFlow from './components/RecordingFlow';
+import FirebaseErrorBoundary from './components/FirebaseErrorBoundary';
 
 // Utility functions
 import { createSubmissionHandler } from './utils/submissionHandlers';
@@ -58,9 +59,10 @@ function App() {
   }, [dispatch]);
 
   return (
-    <RecordingFlow 
-      onDoneAndSubmitStage={handleAutoTransition}
-    >
+    <FirebaseErrorBoundary component="Recording App">
+      <RecordingFlow 
+        onDoneAndSubmitStage={handleAutoTransition}
+      >
       {(recordingFlowState) => {
         const {
           captureMode,
@@ -321,6 +323,7 @@ function App() {
         );
       }}
     </RecordingFlow>
+    </FirebaseErrorBoundary>
   );
 }
 

@@ -40,6 +40,7 @@ import {
   deleteStory
 } from './firebase/firestore.js';
 import { createError, UPLOAD_ERRORS } from '../utils/errors.js';
+import { firebaseErrorHandler } from '../utils/firebaseErrorHandler.js';
 
 /**
  * Firebase Storage & Download Service
@@ -66,55 +67,64 @@ class FirebaseStorageService {
   }
 
   /**
-   * Get download URL for playback (Plyr-compatible)
+   * Get download URL for playback (Plyr-compatible) with C08 retry logic
    * Uses C06 recording session data for URL generation
    * 
    * @param {string} path - Storage path or recording session ID
    * @returns {Promise<string>} Download URL for media player
    */
   async getDownloadUrl(path) {
-    try {
-      console.log('🎵 C07: Getting download URL for:', path);
+    return await firebaseErrorHandler.withRetry(
+      async () => {
+        firebaseErrorHandler.log('debug', 'Getting download URL for path', { path }, {
+          service: 'firebase-storage',
+          operation: 'get-download-url'
+        });
 
-      // Check if path is a session ID (no slashes) vs storage path
-      if (!path.includes('/')) {
-        // It's a session ID - get download URL from session data
-        const session = await getRecordingSession(path);
-        if (session?.downloadUrl) {
-          console.log('🎵 C07: Using cached download URL from session');
-          this.lastError = null;
-          return session.downloadUrl;
-        } else if (session?.storagePath) {
-          // Generate fresh download URL from storage path
-          const downloadUrl = await getDownloadURL(session.storagePath);
-          
-          // Update session with fresh download URL for caching
-          try {
-            await updateRecordingSession(path, { downloadUrl });
-          } catch (updateError) {
-            console.warn('⚠️ C07: Failed to cache download URL (non-critical):', updateError);
+        // Check if path is a session ID (no slashes) vs storage path
+        if (!path.includes('/')) {
+          // It's a session ID - get download URL from session data
+          const session = await getRecordingSession(path);
+          if (session?.downloadUrl) {
+            firebaseErrorHandler.log('debug', 'Using cached download URL from session', null, {
+              service: 'firebase-storage',
+              operation: 'get-download-url-cached'
+            });
+            this.lastError = null;
+            return session.downloadUrl;
+          } else if (session?.storagePath) {
+            // Generate fresh download URL from storage path
+            const downloadUrl = await getDownloadURL(session.storagePath);
+            
+            // Update session with fresh download URL for caching
+            try {
+              await updateRecordingSession(path, { downloadUrl });
+            } catch (updateError) {
+              firebaseErrorHandler.log('warn', 'Failed to cache download URL (non-critical)', 
+                firebaseErrorHandler.mapError(updateError), {
+                service: 'firebase-storage',
+                operation: 'cache-download-url'
+              });
+            }
+            
+            this.lastError = null;
+            return downloadUrl;
+          } else {
+            throw createError(
+              UPLOAD_ERRORS.INVALID_FILE,
+              `Recording session ${path} has no storage path or download URL`
+            );
           }
-          
+        } else {
+          // It's a storage path - get download URL directly
+          const downloadUrl = await getDownloadURL(path);
           this.lastError = null;
           return downloadUrl;
-        } else {
-          throw createError(
-            UPLOAD_ERRORS.NOT_FOUND,
-            `Recording session ${path} has no storage path or download URL`
-          );
         }
-      } else {
-        // It's a storage path - get download URL directly
-        const downloadUrl = await getDownloadURL(path);
-        this.lastError = null;
-        return downloadUrl;
-      }
-    } catch (error) {
-      console.error('❌ C07: Failed to get download URL:', error);
-      const mappedError = this.mapStorageError(error);
-      this.lastError = mappedError;
-      throw mappedError;
-    }
+      },
+      { maxRetries: 3 },
+      'firebase-storage-get-download-url'
+    );
   }
 
   /**
