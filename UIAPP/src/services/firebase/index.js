@@ -54,6 +54,7 @@ export {
   updateStory,
   deleteStory,
   getRecordingSession,
+  createRecordingSession,
   updateRecordingSession,
   formatDuration,
   formatDate
@@ -86,6 +87,16 @@ export {
   isCompletedStatus,
   isProgressStatus
 } from './functions';
+
+export {
+  // Recording service methods (C06)
+  uploadRecordingWithMetadata,
+  resumeRecordingUpload,
+  cancelRecordingUpload,
+  getRecordingUploadProgress,
+  isRecordingUploadEnabled,
+  validateRecordingUpload
+} from './recording';
 
 // Export Firebase SDK instances for direct access
 export {

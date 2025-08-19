@@ -2,7 +2,7 @@
  * submissionHandlers.js
  * ---------------------
  * Utility functions for handling recording submission flow.
- * Enhanced with Firebase storage support (C05).
+ * Enhanced with Firebase storage support (C05) and recording service (C06).
  * Moved from components/SubmissionHandler.jsx for better architecture.
  */
 
@@ -10,7 +10,9 @@
 import { uploadRecording as uploadRecordingLocal } from '../services/localRecordingService';
 import { 
   uploadMemoryRecording, 
-  uploadRecording as uploadRecordingFirebase 
+  uploadRecording as uploadRecordingFirebase,
+  uploadRecordingWithMetadata,
+  isRecordingUploadEnabled
 } from '../services/firebase';
 
 // Import configuration to check Firebase enablement
@@ -81,29 +83,69 @@ export function createSubmissionHandler({
       if (ENV_CONFIG.USE_FIREBASE && ENV_CONFIG.FIREBASE_STORAGE_ENABLED) {
         console.log('🔥 Using Firebase Storage for upload');
         
-        // Generate userId and memoryId for Firebase memory recording
-        const userId = 'anonymous'; // Could be enhanced to use actual user ID
-        const memoryId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // Use C05 uploadMemoryRecording function
-        result = await uploadMemoryRecording(
-          recordedBlob,
-          userId,
-          memoryId,
-          {
-            mediaType: captureMode,
+        // Use C06 recording upload service if available, otherwise fallback to C05
+        if (isRecordingUploadEnabled()) {
+          console.log('🎙️ Using C06 Recording Upload Service');
+          
+          // Generate session info for recording service
+          const sessionId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const userId = 'anonymous'; // Could be enhanced to use actual user ID
+          
+          const sessionInfo = {
+            sessionId,
+            userId,
+            fileType: captureMode,
             fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
-            onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
-            linkToFirestore: true
+            duration: 0 // Could be enhanced to track actual duration
+          };
+          
+          // Use C06 uploadRecordingWithMetadata function
+          const uploadResult = await uploadRecordingWithMetadata(
+            recordedBlob,
+            sessionInfo,
+            {
+              onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
+              linkToFirestore: true
+            }
+          );
+          
+          if (uploadResult.success) {
+            result = {
+              docId: uploadResult.recordingId,
+              downloadURL: uploadResult.downloadUrl,
+              storagePath: uploadResult.storagePath
+            };
+          } else {
+            throw new Error(uploadResult.error || 'Recording upload failed');
           }
-        );
-        
-        // Map Firebase result to expected format
-        result = {
-          docId: memoryId,
-          downloadURL: result.downloadURL,
-          storagePath: result.storagePath
-        };
+          
+        } else {
+          console.log('🔥 Using C05 Memory Recording (fallback)');
+          
+          // Generate userId and memoryId for Firebase memory recording
+          const userId = 'anonymous'; // Could be enhanced to use actual user ID
+          const memoryId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Use C05 uploadMemoryRecording function
+          result = await uploadMemoryRecording(
+            recordedBlob,
+            userId,
+            memoryId,
+            {
+              mediaType: captureMode,
+              fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
+              onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
+              linkToFirestore: true
+            }
+          );
+          
+          // Map Firebase result to expected format
+          result = {
+            docId: memoryId,
+            downloadURL: result.downloadURL,
+            storagePath: result.storagePath
+          };
+        }
         
       } else {
         console.log('💾 Using Local Storage for upload');

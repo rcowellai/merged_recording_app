@@ -93,6 +93,9 @@ export const ENV_CONFIG = {
   FIREBASE_STORAGE_ENABLED: process.env.REACT_APP_FIREBASE_STORAGE_ENABLED === 'true',
   SESSION_VALIDATION_ENABLED: process.env.REACT_APP_SESSION_VALIDATION_ENABLED === 'true',
   
+  // C06: Recording upload feature flag  
+  RECORDING_UPLOAD_ENABLED: process.env.REACT_APP_RECORDING_UPLOAD_ENABLED !== 'false', // Default: true
+  
   // Environment detection
   ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT || 'development'
 };
