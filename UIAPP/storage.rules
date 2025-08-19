@@ -58,6 +58,35 @@ service firebase.storage {
       allow read: if isAuthenticated() && isOwner(userId);
     }
 
+    // C05: Memory recordings storage - enhanced path structure
+    match /users/{userId}/memories/{memoryId}/recordings/{fileName} {
+      // Allow anonymous uploads for memory recordings
+      allow write: if request.auth != null && 
+                     request.auth.token.firebase.sign_in_provider == 'anonymous' &&
+        request.resource.size < 500 * 1024 * 1024 && // 500MB limit for memory recordings
+        fileName.matches('.*_recording\\.(webm|mp4|m4a|wav)') &&
+        request.resource.contentType.matches('(video|audio)/.*') &&
+        // Validate memory session exists
+        firestore.exists(/databases/(default)/documents/recordingSessions/$(memoryId));
+      
+      // Owner can read their memory recordings
+      allow read: if isAuthenticated() && isOwner(userId);
+      
+      // Allow delete for cleanup operations
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // C05: Memory thumbnails and metadata
+    match /users/{userId}/memories/{memoryId}/thumbnails/{fileName} {
+      allow write: if request.auth != null && 
+                     request.auth.token.firebase.sign_in_provider == 'anonymous' &&
+        request.resource.size < 5 * 1024 * 1024 && // 5MB thumbnail limit
+        request.resource.contentType.matches('image/.*');
+      
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
     // Legacy recordings - authenticated users only (backward compatibility)
     match /recordings/{sessionId}/{fileName} {
       // Allow read if user owns the session

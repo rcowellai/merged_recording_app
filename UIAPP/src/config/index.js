@@ -132,11 +132,15 @@ export const SERVICE_CONFIG = {
     FETCH_DELAY_MS: 300 // Simulated network delay
   },
   
-  // Firebase service settings (C02)
+  // Firebase service settings (C02, enhanced C05)
   FIREBASE: {
     RECORDINGS_COLLECTION: 'stories',
     SESSIONS_COLLECTION: 'recordingSessions',
     STORAGE_BASE_PATH: 'recordings',
+    
+    // C05: Memory recording paths
+    MEMORY_RECORDINGS_PATH: 'users/{userId}/memories/{memoryId}/recordings',
+    MEMORY_THUMBNAILS_PATH: 'users/{userId}/memories/{memoryId}/thumbnails',
     
     // Retry and timeout settings
     DEFAULT_TIMEOUT: FIREBASE_CONFIG.FUNCTION_TIMEOUT_MS,
@@ -144,6 +148,19 @@ export const SERVICE_CONFIG = {
     
     // Upload configuration
     UPLOAD_CHUNK_SIZE: FIREBASE_CONFIG.CHUNK_SIZE,
-    RESUMABLE_THRESHOLD: FIREBASE_CONFIG.RESUMABLE_UPLOAD_THRESHOLD
+    RESUMABLE_THRESHOLD: FIREBASE_CONFIG.RESUMABLE_UPLOAD_THRESHOLD,
+    
+    // C05: Storage configuration
+    SIGNED_URL_EXPIRATION: 60 * 60 * 1000, // 1 hour default
+    MAX_MEMORY_RECORDING_SIZE: 500 * 1024 * 1024, // 500MB
+    MAX_THUMBNAIL_SIZE: 5 * 1024 * 1024, // 5MB
+    
+    // C05: File naming conventions
+    FILE_NAMING: {
+      RECORDING_SUFFIX: '_recording',
+      THUMBNAIL_SUFFIX: '_thumbnail',
+      ALLOWED_EXTENSIONS: ['webm', 'mp4', 'm4a', 'wav'],
+      ALLOWED_IMAGE_EXTENSIONS: ['jpg', 'jpeg', 'png', 'webp']
+    }
   }
 };
