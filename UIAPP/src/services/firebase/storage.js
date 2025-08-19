@@ -18,7 +18,7 @@ import {
   ref, 
   uploadBytes, 
   uploadBytesResumable, 
-  getDownloadURL,
+  getDownloadURL as firebaseGetDownloadURL,
   deleteObject,
   getMetadata 
 } from 'firebase/storage';
@@ -195,7 +195,7 @@ class FirebaseStorageService {
             async () => {
               try {
                 console.log('✅ Firebase upload completed successfully');
-                const downloadURL = await getDownloadURL(storageRef);
+                const downloadURL = await firebaseGetDownloadURL(storageRef);
                 resolve({
                   docId: uploadId,
                   downloadURL: downloadURL,
@@ -255,7 +255,7 @@ class FirebaseStorageService {
         await uploadBytes(storageRef, blob, metadata);
         onProgress(0.8);
         
-        const downloadURL = await getDownloadURL(storageRef);
+        const downloadURL = await firebaseGetDownloadURL(storageRef);
         onProgress(1.0);
         
         clearInterval(progressInterval);
@@ -306,7 +306,7 @@ class FirebaseStorageService {
       // Handle gs:// format paths
       const path = storagePath.replace(/^gs:\/\/[^\/]+\//, '');
       const mediaRef = ref(storage, path);
-      const downloadURL = await getDownloadURL(mediaRef);
+      const downloadURL = await firebaseGetDownloadURL(mediaRef);
       
       this.lastError = null;
       return downloadURL;
@@ -576,7 +576,7 @@ class FirebaseStorageService {
       // Firebase Storage getDownloadURL provides signed URLs by default
       // For additional control, we could implement custom token generation
       // but Firebase handles the signing automatically with appropriate expiration
-      const downloadURL = await getDownloadURL(fileRef);
+      const downloadURL = await firebaseGetDownloadURL(fileRef);
       
       console.log('🔗 C05: Signed URL generated', { 
         filePath: cleanPath, 

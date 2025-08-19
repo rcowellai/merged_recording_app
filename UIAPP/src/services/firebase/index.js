@@ -63,8 +63,11 @@ export {
   // Storage service methods
   getBestSupportedMimeType,
   uploadRecording,
+  uploadMemoryRecording,  // C05: Memory recording upload
   getDownloadURL,
+  getSignedUrl,           // C05: Signed URL generation
   deleteFile,
+  linkStorageToFirestore, // C05: Firestore integration
   getFileMetadata,
   cancelUpload,
   getUploadStatus,

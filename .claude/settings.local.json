@@ -17,7 +17,8 @@
       "Bash(cp:*)",
       "Bash(chmod:*)",
       "Bash(firebase deploy:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []
