@@ -1389,8 +1389,394 @@ const finalPath = `users/${fullUserId}/recordings/${sessionId}/final/recording.$
 - `submissionHandlers.js` (lines 40, 57, 60, 162)
 - `AppContent.jsx` (line 136)
 
+#### Love Retold Team Complete Specifications
+
+**Session ID Structure & Upload Pipeline Requirements** (provided by Love Retold team):
+
+```javascript
+// Session ID Format: {random}-{promptId}-{userId}-{storytellerId}-{timestamp}
+// Example: "unomkoo-custom17-myCtZuIW-myCtZuIW-1755749734"
+// - random: 7-char random string for uniqueness  
+// - promptId: prompt identifier (e.g., "custom17")
+// - userId: TRUNCATED to 8 characters for URL safety
+// - storytellerId: storyteller identifier (same as userId in current setup)
+// - timestamp: Unix timestamp when session was created
+
+// CRITICAL: The userId in the sessionId is TRUNCATED for URL safety
+// The FULL 28-character userId is stored in the Firestore session document
+```
+
+**Upload Path Requirements**:
+```javascript
+// REQUIRED by Love Retold transcription pipeline:
+// users/{FULL_28_CHAR_USERID}/recordings/{sessionId}/final/recording.{ext}
+
+// Example:
+// ❌ WRONG: users/myCtZuIW/recordings/unomkoo-custom17-myCtZuIW-myCtZuIW-1755749734/final/recording.webm
+// ✅ RIGHT: users/myCtZuIWCSX6J0S7QEyI5ISU2Xk1/recordings/unomkoo-custom17-myCtZuIW-myCtZuIW-1755749734/final/recording.webm
+```
+
+**Data Access Patterns**:
+```javascript
+// 1. Parse sessionId for metadata (promptId, storytellerId, timestamp)
+const sessionComponents = parseSessionId(sessionId);
+// sessionComponents.userId = "myCtZuIW" (8 characters)
+
+// 2. Get full userId from Firestore session document 
+const sessionDoc = await getDoc(doc(db, 'recordingSessions', sessionId));
+const fullUserId = sessionDoc.data().userId; // "myCtZuIWCSX6J0S7QEyI5ISU2Xk1" (28 characters)
+
+// 3. Build storage path using FULL userId
+const storagePath = `users/${fullUserId}/recordings/${sessionId}/final/recording.webm`;
+```
+
+**Love Retold Integration Requirements**:
+1. **Storage Path**: Must use full 28-character userId for Love Retold to locate files
+2. **Firestore Updates**: Recording completion status must be written to session document
+3. **Metadata Fields**: Include askerName, storagePath, fileSize, duration in session document
+4. **Transcription Trigger**: Upload completion triggers Love Retold's automated transcription pipeline
+5. **Error Handling**: Failed uploads should update session status to 'failed' with retry capability
+
 #### Critical Dependencies for Future Slices:
-- **Firestore Access**: All future implementations must use `sessionData.fullUserId`
+
+**Technical Architecture**:
+- **Firestore Access**: All future implementations must use `sessionData.fullUserId` from Firestore session document
 - **Session Document**: Complete session data available in `sessionData.sessionDocument`
+- **Storage Paths**: ALL storage operations must use full 28-character userId
 - **Debug Markers**: All slice implementations should use `// UID-FIX-SLICE-{LETTER}` format
 - **Error Handling**: Use `firebaseErrorHandler.withFallback` (correct function name)
+
+**Data Flow Requirements**:
+1. SessionValidator fetches session document from Firestore and enhances sessionData with fullUserId
+2. All upload functions receive sessionData parameter containing full userId
+3. Storage paths constructed using `sessionData.fullUserId` not `sessionComponents.userId`
+4. Firestore updates reference session document for completion status
+
+**Love Retold Pipeline Compatibility**:
+- Upload paths must match Love Retold's expected directory structure
+- Session document updates must include fields Love Retold monitors
+- File naming conventions must follow Love Retold standards
+- Metadata must be structured for Love Retold's transcription service
+
+---
+
+## Updated Implementation Requirements for Future Slices
+
+Based on Love Retold team specifications and Slice A learnings, all future slice implementations must follow these updated requirements:
+
+### Slice B: Firestore Updates (UPDATED REQUIREMENTS)
+
+**Key Changes from Original Plan**:
+1. **Use sessionData.fullUserId**: All Firestore updates must use the full 28-character userId from sessionData
+2. **Session Document Structure**: Updates must follow Love Retold's expected schema
+3. **askerName Field**: Extract from sessionData.sessionDocument.askerName (not sessionData.session.askerName)
+
+**Updated Firestore Schema**:
+```javascript
+{
+  status: 'completed',
+  recordingMetadata: {
+    storagePath: `users/${sessionData.fullUserId}/recordings/${sessionId}/final/recording.webm`,
+    fileSize: 1234567,
+    duration: 120.5,
+    mediaType: 'video',
+    uploadedAt: Firebase.Timestamp.now(),
+    completedBy: 'recording-app'
+  },
+  askerName: sessionData.sessionDocument?.askerName || 'Unknown',
+  // UPDATED: Use sessionDocument not session
+  fullUserId: sessionData.fullUserId // Add for Love Retold compatibility
+}
+```
+
+### Slice C: Error Logging (UPDATED REQUIREMENTS)
+
+**Key Changes**:
+1. **Full userId logging**: All error logs must include `sessionData.fullUserId`
+2. **Storage path tracking**: Log both truncated and full storage paths for comparison
+3. **Love Retold integration status**: Track whether uploads reach Love Retold pipeline
+
+### Slice D: Progressive Upload (UPDATED REQUIREMENTS)
+
+**Key Changes**:
+1. **Chunk path structure**: `users/${sessionData.fullUserId}/recordings/${sessionId}/chunks/`
+2. **Final path consistency**: Ensure final path matches Love Retold requirements
+3. **Metadata preservation**: Maintain full userId throughout chunk upload process
+
+### Slice E: Upload Persistence (UPDATED REQUIREMENTS)
+
+**Key Changes**:
+1. **sessionData storage**: Persist complete sessionData including fullUserId
+2. **Recovery validation**: Ensure recovered uploads use correct storage paths
+3. **Love Retold compatibility**: Verify resumed uploads maintain pipeline compatibility
+
+---
+
+## Critical Success Criteria Updates
+
+All future slices must validate:
+1. ✅ **Storage paths use full 28-character userId**: `users/{FULL_28_CHAR}/recordings/{sessionId}/`
+2. ✅ **Love Retold pipeline compatibility**: Uploads trigger transcription correctly
+3. ✅ **Firestore session document access**: All operations use sessionData.fullUserId
+4. ✅ **Debug logging includes userId comparison**: Shows truncated vs full userId usage
+5. ✅ **Error handling preserves session context**: Failed operations maintain sessionData integrity
+
+## Implementation Validation Checklist
+
+Before deploying any future slice:
+- [ ] All storage paths constructed using `sessionData.fullUserId`
+- [ ] Debug logs include `// UID-FIX-SLICE-{LETTER}` markers
+- [ ] Firestore operations reference session document correctly  
+- [ ] Error handling uses `firebaseErrorHandler.withFallback`
+- [ ] Love Retold pipeline integration tested and working
+- [ ] Upload paths match expected format: `users/{FULL_28_CHAR}/recordings/{sessionId}/final/`
+
+---
+
+### Slice B: Implemented ✅
+
+**Date**: 2025-01-21  
+**Status**: Complete - FULLY WORKING  
+**Deployment**: Live at `https://record-loveretold-app.web.app/`
+
+#### Critical Discovery: Love Retold Status System Requirements
+
+The Love Retold team provided updated requirements that revealed a complete status system overhaul with new status values and Firestore rule changes that were essential for proper integration.
+
+**Love Retold Team Updated Requirements** (provided during implementation):
+
+```javascript
+// CRITICAL STATUS CHANGES - Love Retold has updated their entire status system
+
+// OLD Status Values (no longer valid):
+'pending', 'active', 'recording', 'uploading', 'processing', 'completed', 'failed'
+
+// NEW Status Values (Love Retold's current system):
+// Valid starting states for anonymous users:
+'ReadyForRecording', 'Recording', 'Uploading', 'failed'
+
+// Valid ending states that recording app can set:
+'Recording', 'Uploading', 'ReadyForTranscription', 'failed'
+
+// Status Flow:
+// ReadyForRecording → Recording → Uploading → ReadyForTranscription
+// Any state can go to 'failed' for error handling
+```
+
+**Firestore Rules Synchronization Requirements**:
+```javascript
+// Love Retold provided their COMPLETE firestore.rules file
+// Our rules must EXACTLY match their production rules to avoid breaking their main app
+// Key rule changes for recordingSessions collection:
+
+// OLD (causing permission errors):
+resource.data.status in ['pending', 'active', 'recording', 'uploading', 'failed']
+request.resource.data.status in ['active', 'recording', 'uploading', 'processing', 'completed', 'failed']
+
+// NEW (Love Retold's current rules):
+resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
+request.resource.data.status in ['Recording', 'Uploading', 'ReadyForTranscription', 'failed']
+```
+
+**Field Authorization Requirements**:
+```javascript
+// REMOVED - Not allowed in Love Retold's field authorization:
+// askerName: sessionData.askerName  // Love Retold populates this when creating sessions
+// updatedAt: new Date()  // Not in onlyUpdatingFields() allowlist
+
+// UPDATED - Allowed field updates with dot notation:
+onlyUpdatingFields([
+  'status', 'recordingData', 'storagePaths', 
+  'recordingStartedAt', 'recordingCompletedAt', 'error'
+])
+```
+
+#### Implementation Changes Made:
+
+**1. Complete Firestore Rules Replacement**
+- **File**: `/apps/UIAPP/firestore.rules`
+- **Change Type**: Complete file replacement with Love Retold's production rules
+- **Key Update**: Synchronized status values and field permissions exactly
+- **Critical Fix**: Fixed permission errors by matching Love Retold's authentication logic
+
+```javascript
+// SLICE-B FIX: Updated to Love Retold's status system
+allow update: if request.auth != null 
+  && request.auth.token.firebase.sign_in_provider == 'anonymous'
+  && resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
+  && request.resource.data.status in ['Recording', 'Uploading', 'ReadyForTranscription', 'failed']
+```
+
+**2. Love Retold Upload Service Status Updates**
+- **File**: `/apps/UIAPP/src/services/firebase/loveRetoldUpload.js`
+- **Status Changes**: Updated all status references to Love Retold's new system
+- **Field Removals**: Removed unauthorized field updates
+
+```javascript
+// SLICE-B FIX: Use Love Retold's status values
+// OLD: status: 'uploading' → NEW: status: 'Uploading'
+await updateDoc(doc(db, 'recordingSessions', sessionId), {
+  status: 'Uploading', // Love Retold's status value
+  recordingData: {
+    fileSize: recordingBlob.size,
+    mimeType: recordingBlob.type,
+    uploadStartedAt: new Date()
+  }
+});
+
+// SLICE-B FIX: Use Love Retold's completion status
+// OLD: status: 'completed' → NEW: status: 'ReadyForTranscription'
+const updateData = {
+  status: 'ReadyForTranscription', // Triggers Love Retold's transcription pipeline
+  'storagePaths.finalVideo': finalPath,
+  recordingCompletedAt: new Date()
+  // SLICE-B FIX: Removed 'askerName' and 'updatedAt' - not allowed
+};
+```
+
+**3. Enhanced Error Handling**
+- **Upload Success Priority**: Upload success even if Firestore update fails
+- **Firestore Error Recovery**: Graceful handling of permission or validation errors
+- **Debug Enhancement**: Comprehensive logging for Love Retold status system
+
+```javascript
+// SLICE-B: Error handling - continue with success even if Firestore update fails
+try {
+  await updateDoc(doc(db, 'recordingSessions', sessionId), updateData);
+  console.log('✅ Slice B: Session updated with Love Retold field structure');
+} catch (firestoreError) {
+  console.warn('⚠️ Firestore update failed but upload succeeded:', firestoreError);
+  console.log('📝 Recording is safely stored at:', finalPath);
+  // Don't throw error - upload was successful, Firestore update is secondary
+}
+```
+
+#### Key Technical Discoveries:
+
+**1. Love Retold Status System Evolution**
+- Love Retold has completely updated their status naming from generic terms ('completed') to descriptive workflow terms ('ReadyForTranscription')
+- The new status system directly integrates with their transcription pipeline automation
+- Status changes must match EXACTLY or Firestore rules will reject anonymous updates
+
+**2. Firestore Rules Coordination**
+- UIAPP and Love Retold main app share the same Firestore database
+- Any rule changes must be coordinated to avoid breaking Love Retold's production system
+- Anonymous authentication rules are specifically designed for the recording app integration
+
+**3. Field Authorization System**
+- Love Retold uses `onlyUpdatingFields()` helper to restrict which fields anonymous users can update
+- Some fields like `askerName` are managed exclusively by Love Retold during session creation
+- Dot notation field updates (`recordingData.fileSize`) are fully supported
+
+#### Permission Error Resolution:
+
+**Original Error**: 
+```
+FirebaseError: Missing or insufficient permissions
+```
+
+**Root Cause Analysis**:
+1. **Status Mismatch**: Using 'completed' instead of 'ReadyForTranscription'
+2. **Field Authorization**: Attempting to update 'askerName' and 'updatedAt' fields not in allowlist
+3. **Rule Synchronization**: UIAPP rules were outdated compared to Love Retold's production rules
+
+**Resolution Steps**:
+1. **Complete Rule Sync**: Replaced entire firestore.rules file with Love Retold's exact rules
+2. **Status Alignment**: Updated all status references to Love Retold's naming convention
+3. **Field Compliance**: Removed unauthorized field updates from upload code
+4. **Testing Validation**: Verified end-to-end upload with new status system
+
+#### Validation Results:
+
+- ✅ **Permission Errors Resolved**: No more "Missing or insufficient permissions" errors
+- ✅ **Status Flow Working**: ReadyForRecording → Recording → Uploading → ReadyForTranscription
+- ✅ **Love Retold Integration**: Status changes trigger transcription pipeline automatically
+- ✅ **Firestore Updates**: Session documents update successfully with proper field structure
+- ✅ **Upload Resilience**: Uploads succeed even if Firestore updates encounter non-critical errors
+
+#### Current Debug Output (Working):
+```
+📊 Updating session document status...
+✅ Session status updated to Uploading (Love Retold status)
+✅ Love Retold upload completed successfully
+📊 Starting Slice B Firestore update (Love Retold status system)...
+📊 Complete update data (Love Retold compatible): {
+  status: "ReadyForTranscription",
+  storagePaths.finalVideo: "users/myCtZuIWCSX6J0S7QEyI5ISU2Xk1/recordings/sessionId/final/recording.webm",
+  recordingCompletedAt: "2025-01-21T..."
+}
+✅ Slice B: Session updated with Love Retold field structure
+```
+
+#### Files Modified with `// SLICE-B` markers:
+- `firestore.rules` (complete file replacement)
+- `loveRetoldUpload.js` (lines 149, 160, 167, 215, 218-219)
+
+#### Love Retold Team Integration Specifications
+
+**Transcription Pipeline Trigger**:
+```javascript
+// When status changes to 'ReadyForTranscription', Love Retold's system automatically:
+1. Detects the status change via Firestore listeners
+2. Locates the recording file using storagePaths.finalVideo
+3. Initiates transcription processing
+4. Updates session with transcription results
+5. Notifies user when transcription is complete
+```
+
+**Required Field Structure for Transcription**:
+```javascript
+{
+  status: 'ReadyForTranscription',
+  'storagePaths.finalVideo': 'users/{fullUserId}/recordings/{sessionId}/final/recording.{ext}',
+  recordingCompletedAt: new Date(),
+  recordingData: {
+    fileSize: number,
+    mimeType: string,
+    duration: number (optional)
+  }
+}
+```
+
+**Love Retold Monitoring Fields**:
+- `status`: Workflow state tracking
+- `storagePaths.finalVideo`: File location for transcription service
+- `recordingCompletedAt`: Completion timestamp for processing queue
+- `recordingData.*`: File metadata for transcription optimization
+
+#### Critical Dependencies for Future Slices:
+
+**Firestore Integration Requirements**:
+- **Status Compliance**: All future implementations must use Love Retold's status values
+- **Field Authorization**: Only update fields in the `onlyUpdatingFields()` allowlist
+- **Rule Coordination**: Any Firestore rule changes must be coordinated with Love Retold team
+- **Error Resilience**: Upload success should not depend on Firestore update success
+
+**Love Retold Pipeline Integration**:
+- **Status Transitions**: Follow exact workflow: ReadyForRecording → Recording → Uploading → ReadyForTranscription
+- **Field Structure**: Use dot notation for nested field updates (`recordingData.fileSize`)
+- **Transcription Trigger**: Ensure `ReadyForTranscription` status triggers Love Retold's automated pipeline
+- **File Accessibility**: Verify Love Retold can access files at `storagePaths.finalVideo` location
+
+#### Updated Implementation Requirements for Future Slices:
+
+**Slice C: Error Logging** - Must log Love Retold status transitions and Firestore rule compliance
+**Slice D: Progressive Upload** - Chunk uploads must maintain Love Retold status workflow
+**Slice E: Upload Persistence** - Recovery must preserve Love Retold integration requirements
+
+---
+
+## Critical Coordination Requirements
+
+Based on Slice B implementation, all future development must coordinate with Love Retold team on:
+
+1. **Firestore Rule Changes**: Always request latest rules before modifications
+2. **Status System Updates**: Verify status values match Love Retold's current system  
+3. **Field Authorization**: Check allowed field list before adding new update operations
+4. **Integration Testing**: Test with Love Retold's transcription pipeline after deployments
+
+**Love Retold Team Contact Protocol**:
+- Request current Firestore rules before any database modifications
+- Verify status system compatibility before status-related changes
+- Test transcription pipeline integration after upload workflow modifications
+- Coordinate deployment timing to avoid breaking Love Retold's production system

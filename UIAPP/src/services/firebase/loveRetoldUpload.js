@@ -1,8 +1,14 @@
 /**
- * Love Retold Upload Integration
- * =============================
+ * Love Retold Upload Integration (Slice B Complete)
+ * ================================================
  * Migrated from MVPAPP - Working Love Retold recording upload integration
  * Uses proper sessionId, userId, and storage paths that Love Retold expects
+ * 
+ * SLICE-B IMPLEMENTATION:
+ * - Proper Firestore updates with Love Retold's expected field structure
+ * - Correct askerName source path (sessionData.askerName)
+ * - Comprehensive recordingData metadata with dot notation
+ * - Error handling: upload success even if Firestore update fails
  */
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
@@ -140,24 +146,25 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         storytellerId: sessionComponents.storytellerId,
         recordingType: mediaType,
         timestamp: Date.now().toString(),
-        recordingVersion: '2.1-love-retold-uiapp'
+        recordingVersion: '2.1-love-retold-status-fixed' // SLICE-B FIX: Updated for Love Retold status system
+        // SLICE-B FIX: Removed askerName - Love Retold handles this field
       }
     };
     
     console.log('📋 Upload metadata prepared:', metadata);
 
-    // Update session status to uploading (preserves MVPAPP logic)
+    // Update session status to Uploading (Love Retold status system)
     console.log('📊 Updating session document status...');
     try {
       await updateDoc(doc(db, 'recordingSessions', sessionId), {
-        status: 'uploading',
+        status: 'Uploading', // SLICE-B FIX: Use Love Retold's status value
         recordingData: {
           fileSize: recordingBlob.size,
           mimeType: recordingBlob.type,
           uploadStartedAt: new Date()
         }
       });
-      console.log('✅ Session status updated to uploading');
+      console.log('✅ Session status updated to Uploading (Love Retold status)');
     } catch (updateError) {
       console.error('❌ Failed to update session status:', updateError);
       console.warn('⚠️ Failed to update session status:', updateError);
@@ -199,20 +206,48 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           );
         });
 
-        // Update session with final storage path (preserves MVPAPP final update)
-        await updateDoc(doc(db, 'recordingSessions', sessionId), {
-          status: 'processing',
-          storagePaths: {
-            finalVideo: finalPath
-          },
-          recordingData: {
-            uploadProgress: 100,
-            uploadCompletedAt: new Date()
-          },
-          recordingCompletedAt: new Date()
-        });
-
-        console.log('📊 Session updated with final storage path');
+        // SLICE-B: Update session with Love Retold's expected field structure
+        try {
+          console.log('📊 Starting Slice B Firestore update (Love Retold status system)...');
+          
+          // Prepare update data using Love Retold's field structure with dot notation
+          const updateData = {
+            status: 'ReadyForTranscription', // SLICE-B FIX: Use Love Retold's status value
+            'storagePaths.finalVideo': finalPath,
+            recordingCompletedAt: new Date()
+            // SLICE-B FIX: Removed 'updatedAt' - not allowed in Firestore rules
+            // SLICE-B FIX: Removed 'askerName' - Love Retold populates this when creating sessions
+          };
+          
+          // Add optional recording metadata if available
+          if (recordingBlob.size) {
+            updateData['recordingData.fileSize'] = recordingBlob.size;
+            console.log('📊 Adding fileSize:', recordingBlob.size);
+          }
+          
+          if (actualMimeType) {
+            updateData['recordingData.mimeType'] = actualMimeType;
+            console.log('📊 Adding mimeType:', actualMimeType);
+          }
+          
+          // Add duration if provided in options (future enhancement)
+          if (options.duration) {
+            updateData['recordingData.duration'] = options.duration;
+            console.log('📊 Adding duration:', options.duration);
+          }
+          
+          console.log('📊 Complete update data (Love Retold compatible):', updateData);
+          
+          await updateDoc(doc(db, 'recordingSessions', sessionId), updateData);
+          
+          console.log('✅ Slice B: Session updated with Love Retold field structure');
+          
+        } catch (firestoreError) {
+          // SLICE-B: Error handling - continue with success even if Firestore update fails
+          console.warn('⚠️ Firestore update failed but upload succeeded:', firestoreError);
+          console.log('📝 Recording is safely stored at:', finalPath);
+          // Don't throw error - upload was successful, Firestore update is secondary
+        }
         
         return {
           success: true,

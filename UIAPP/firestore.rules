@@ -82,8 +82,7 @@ service cloud.firestore {
     match /prompts/{promptId} {
       allow read, write: if request.auth != null && 
         request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
     
     // LEGACY: User prompts subcollection - maintain backward compatibility
@@ -108,8 +107,8 @@ service cloud.firestore {
       // RECORDING APP: Anonymous authentication updates (limited fields and status transitions)
       allow update: if request.auth != null 
         && request.auth.token.firebase.sign_in_provider == 'anonymous'
-        && resource.data.status in ['pending', 'active', 'recording', 'uploading', 'failed']
-        && request.resource.data.status in ['active', 'recording', 'uploading', 'processing', 'failed']
+        && resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
+        && request.resource.data.status in ['Recording', 'Uploading', 'ReadyForTranscription', 'failed']
         && request.resource.data.userId == resource.data.userId  // Cannot change ownership
         && request.resource.data.promptId == resource.data.promptId  // Cannot change prompt
         && request.resource.data.storytellerId == resource.data.storytellerId // Cannot change storyteller
