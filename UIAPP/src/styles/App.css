@@ -546,12 +546,40 @@ button::-moz-focus-inner {
   line-height: 1.4;
 }
 
+/* Loading and validation states */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #2C2F48;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .loading-message {
   color: #666666;
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
-  font-style: italic;
+  font-style: normal;
   margin: 8px 0;
+  font-weight: 500;
 }
 
 /* Inline media player specific styles */

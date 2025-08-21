@@ -14,6 +14,7 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { COLORS, LAYOUT } from '../config';
+import debugLogger from '../utils/debugLogger';
 
 // Import Firebase storage service layer (C07)
 import { fetchAllRecordings } from '../services/firebaseStorage';
@@ -26,6 +27,8 @@ function AdminPage() {
   const [mediaType, setMediaType] = useState('audio');
   const [allRecordings, setAllRecordings] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
+
+  debugLogger.componentMounted('AdminPage');
 
   // On mount, fetch all docs from "recordings"
   useEffect(() => {
@@ -151,6 +154,61 @@ function AdminPage() {
         <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>
           Admin - Filter Recordings
         </h2>
+
+        {/* Debug Tools Section */}
+        <div style={{ 
+          backgroundColor: '#f0f0f0', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          marginBottom: '20px',
+          border: '2px solid #e0e0e0'
+        }}>
+          <h3>🐛 Debug Tools</h3>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            <button 
+              onClick={() => window.enableDebug?.()} 
+              style={{ padding: '8px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Enable Debug
+            </button>
+            <button 
+              onClick={() => window.disableDebug?.()} 
+              style={{ padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Disable Debug
+            </button>
+            <button 
+              onClick={() => console.table(window.getDebugErrors?.() || [])} 
+              style={{ padding: '8px 12px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Show Errors
+            </button>
+            <button 
+              onClick={() => window.clearDebugErrors?.()} 
+              style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Clear Errors
+            </button>
+          </div>
+          
+          <div>
+            <h4>🧪 Test Links</h4>
+            <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
+              <li><a href="/?sessionId=test-session-123" style={{ color: '#007bff' }}>Test Session (Query)</a></li>
+              <li><a href="/test-session-123" style={{ color: '#007bff' }}>Test Session (Path)</a></li>
+              <li><a href="/j4e19zc-firstspa-myCtZuIW-myCtZuIW-1755603545" style={{ color: '#007bff' }}>Real Session Format</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4>💡 Debug Commands (Console)</h4>
+            <code style={{ display: 'block', backgroundColor: '#fff', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
+              window.enableDebug() // Enable detailed logging<br/>
+              window.getDebugErrors() // View stored errors<br/>
+              window.debugLogger.log('info', 'TEST', 'Debug message') // Test logging
+            </code>
+          </div>
+        </div>
 
         {/* Filter Form */}
         <form onSubmit={handleSubmit} style={{ marginTop: LAYOUT.MARGIN_TOP_SMALL }}>

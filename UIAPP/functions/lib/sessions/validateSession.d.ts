@@ -14,6 +14,8 @@ interface ValidateSessionResponse {
     message: string;
     sessionData?: {
         questionText: string;
+        storytellerName: string;
+        askerName: string;
         createdAt: admin.firestore.Timestamp;
         expiresAt: admin.firestore.Timestamp;
     };

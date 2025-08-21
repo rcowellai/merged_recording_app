@@ -122,18 +122,42 @@ exports.validateSession = functions.https.onCall({
                 message: `Session status is ${sessionData.status}`,
             };
         }
-        // Session is valid (active or pending)
+        // Validate that prompt text exists - critical data integrity check
+        const promptText = sessionData.promptText || sessionData.questionText;
+        if (!promptText || promptText.trim() === '') {
+            logger_1.loggerInstance.warn('Session has no prompt text - treating as removed', {
+                sessionId,
+                hasPromptText: !!sessionData.promptText,
+                hasQuestionText: !!sessionData.questionText,
+            });
+            return {
+                isValid: false,
+                status: 'removed',
+                message: 'This prompt has been removed or is no longer available.',
+            };
+        }
+        // Session is valid (active or pending) with required data
         logger_1.loggerInstance.info('Session validation successful', {
             sessionId,
             status: sessionData.status,
             userId: sessionData.userId,
+            storytellerId: sessionData.storytellerId,
+            storytellerName: sessionData.storytellerName,
+            askerName: sessionData.askerName, // NEW: Log the askerName field
+            hasPromptText: true,
+            hasStorytellerName: !!sessionData.storytellerName,
+            hasAskerName: !!sessionData.askerName, // NEW: Track askerName availability
+            storytellerNameValue: sessionData.storytellerName || 'NOT_SET',
+            askerNameValue: sessionData.askerName || 'NOT_SET', // NEW: Log askerName value
         });
         return {
             isValid: true,
             status: sessionData.status === 'pending' ? 'pending' : 'active',
             message: 'Session is valid and ready for recording',
             sessionData: {
-                questionText: sessionData.promptText || sessionData.questionText,
+                questionText: promptText,
+                storytellerName: sessionData.storytellerName,
+                askerName: sessionData.askerName, // NEW: Pass through askerName field
                 createdAt: sessionData.createdAt,
                 expiresAt: sessionData.expiresAt,
             },

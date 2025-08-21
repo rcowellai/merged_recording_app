@@ -89,7 +89,7 @@ function ViewRecording() {
     return (
       <div className="page-container">
         <div className="main-layout-container">
-          <PromptCard />
+          <PromptCard sessionData={null} />
           <p style={{ textAlign: 'center', marginTop: '40px' }}>
             Loading...
           </p>
@@ -102,7 +102,7 @@ function ViewRecording() {
     return (
       <div className="page-container">
         <div className="main-layout-container">
-          <PromptCard />
+          <PromptCard sessionData={null} />
           <p style={{ color: 'red', textAlign: 'center', marginTop: '40px' }}>
             Error: {error}
           </p>
@@ -115,7 +115,7 @@ function ViewRecording() {
     return (
       <div className="page-container">
         <div className="main-layout-container">
-          <PromptCard />
+          <PromptCard sessionData={null} />
           <p style={{ textAlign: 'center', marginTop: '40px' }}>
             No recording found.
           </p>
@@ -129,7 +129,7 @@ function ViewRecording() {
   return (
     <div className="page-container">
       <div className="main-layout-container">
-        <PromptCard />
+        <PromptCard sessionData={null} />
 
         <div style={{ marginTop: LAYOUT.MARGIN_TOP_MEDIUM }}>
           {isVideo ? (

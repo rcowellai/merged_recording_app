@@ -14,6 +14,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import NiceModal from '@ebay/nice-modal-react';
+import AppErrorBoundary from './components/AppErrorBoundary';
+import debugLogger from './utils/debugLogger';
 
 import App from './App';
 import './styles/index.css';
@@ -30,15 +32,19 @@ import { LayoutProvider } from './components/layout';
 import TokenAdmin from './pages/TokenAdmin';
 import DemoPage from './pages/DemoPage'; 
 
+debugLogger.log('info', 'index.js', 'Starting React app render');
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <TokenProvider>
-      <LayoutProvider>
-        <NiceModal.Provider>
-          <BrowserRouter>
+    <AppErrorBoundary>
+      <TokenProvider>
+        <LayoutProvider>
+          <NiceModal.Provider>
+            <BrowserRouter>
             <Routes>
-              {/* Existing root path => main record/submit flow */}
+              {/* Love Retold session routes - handle both path and query params */}
+              <Route path="/:sessionId" element={<App />} />
               <Route path="/" element={<App />} />
 
               {/* Existing route => playback page */}
@@ -53,9 +59,10 @@ root.render(
               {/* NEW: Demo page => /demo */}
               <Route path="/demo" element={<DemoPage />} />
             </Routes>
-          </BrowserRouter>
-        </NiceModal.Provider>
-      </LayoutProvider>
-    </TokenProvider>
+            </BrowserRouter>
+          </NiceModal.Provider>
+        </LayoutProvider>
+      </TokenProvider>
+    </AppErrorBoundary>
   </React.StrictMode>
 );

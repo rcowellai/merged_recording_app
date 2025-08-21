@@ -92,6 +92,8 @@ class FirebaseFunctionsService {
             message: data.message || 'Unknown status',
             isValid: data.isValid || false,
             sessionData: data.sessionData || null,
+            // UID-FIX-SLICE-A: Include session field for full userId access
+            session: data.session || null,
             // Include any additional data from the original response
             ...data
           };
@@ -435,17 +437,16 @@ const firebaseFunctionsService = new FirebaseFunctionsService();
 // Export service instance and individual functions for flexibility
 export default firebaseFunctionsService;
 
-export const {
-  validateSession,
-  getEnhancedSessionStatus,
-  getSessionStatusMessage,
-  canRecord,
-  getStatusCategory,
-  isErrorStatus,
-  isCompletedStatus,
-  isProgressStatus,
-  getLastError,
-  clearError
-} = firebaseFunctionsService;
+// Export methods with preserved context (fixes "this" binding issue)
+export const validateSession = (...args) => firebaseFunctionsService.validateSession(...args);
+export const getEnhancedSessionStatus = (...args) => firebaseFunctionsService.getEnhancedSessionStatus(...args);
+export const getSessionStatusMessage = (...args) => firebaseFunctionsService.getSessionStatusMessage(...args);
+export const canRecord = (...args) => firebaseFunctionsService.canRecord(...args);
+export const getStatusCategory = (...args) => firebaseFunctionsService.getStatusCategory(...args);
+export const isErrorStatus = (...args) => firebaseFunctionsService.isErrorStatus(...args);
+export const isCompletedStatus = (...args) => firebaseFunctionsService.isCompletedStatus(...args);
+export const isProgressStatus = (...args) => firebaseFunctionsService.isProgressStatus(...args);
+export const getLastError = (...args) => firebaseFunctionsService.getLastError(...args);
+export const clearError = (...args) => firebaseFunctionsService.clearError(...args);
 
 console.log('🔧 Firebase Functions Service: LOADED');

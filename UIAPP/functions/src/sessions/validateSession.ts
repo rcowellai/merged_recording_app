@@ -20,6 +20,8 @@ interface ValidateSessionResponse {
   message: string;
   sessionData?: {
     questionText: string;
+    storytellerName: string;
+    askerName: string;  // NEW: Support for Love Retold's askerName field (Jan 20, 2025)
     createdAt: admin.firestore.Timestamp;
     expiresAt: admin.firestore.Timestamp;
   };
@@ -118,11 +120,34 @@ export const validateSession = functions.https.onCall<ValidateSessionRequest, Pr
         };
       }
 
-      // Session is valid (active or pending)
+      // Validate that prompt text exists - critical data integrity check
+      const promptText = sessionData.promptText || sessionData.questionText;
+      if (!promptText || promptText.trim() === '') {
+        loggerInstance.warn('Session has no prompt text - treating as removed', {
+          sessionId,
+          hasPromptText: !!sessionData.promptText,
+          hasQuestionText: !!sessionData.questionText,
+        });
+        return {
+          isValid: false,
+          status: 'removed',
+          message: 'This prompt has been removed or is no longer available.',
+        };
+      }
+
+      // Session is valid (active or pending) with required data
       loggerInstance.info('Session validation successful', {
         sessionId,
         status: sessionData.status,
         userId: sessionData.userId,
+        storytellerId: sessionData.storytellerId,
+        storytellerName: sessionData.storytellerName,
+        askerName: sessionData.askerName,  // NEW: Log the askerName field
+        hasPromptText: true,
+        hasStorytellerName: !!sessionData.storytellerName,
+        hasAskerName: !!sessionData.askerName,  // NEW: Track askerName availability
+        storytellerNameValue: sessionData.storytellerName || 'NOT_SET',
+        askerNameValue: sessionData.askerName || 'NOT_SET',  // NEW: Log askerName value
       });
 
       return {
@@ -130,7 +155,9 @@ export const validateSession = functions.https.onCall<ValidateSessionRequest, Pr
         status: sessionData.status === 'pending' ? 'pending' : 'active',
         message: 'Session is valid and ready for recording',
         sessionData: {
-          questionText: sessionData.promptText || sessionData.questionText,
+          questionText: promptText,
+          storytellerName: sessionData.storytellerName,
+          askerName: sessionData.askerName,  // NEW: Pass through askerName field
           createdAt: sessionData.createdAt,
           expiresAt: sessionData.expiresAt,
         },
