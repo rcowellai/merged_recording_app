@@ -12,8 +12,9 @@
  */
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from './index.js';
+import { uploadErrorTracker } from '../../utils/uploadErrorTracker.js';
 // UID-FIX-SLICE-A: Removed generateStoragePaths import - using direct path construction with full userId
 
 // Debug Firebase imports
@@ -127,6 +128,22 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
       isUsingFullUserId: fullUserId === sessionData?.fullUserId
     });
     
+    // Customer support: Log storage path validation for diagnosis
+    uploadErrorTracker.logInfo('Storage path validation for customer support', {
+      sessionId,
+      fullUserId: sessionData?.fullUserId,
+      truncatedUserId: sessionComponents.userId,
+      expectedStoragePath: finalPath,
+      step: 'pathValidation',
+      additionalData: {
+        isUsingFullUserId: fullUserId === sessionData?.fullUserId,
+        userIdLengths: {
+          truncated: sessionComponents.userId?.length,
+          full: sessionData?.fullUserId?.length
+        }
+      }
+    });
+    
     console.log('📁 Storage path generation complete:', {
       finalPath,
       fileExtension,
@@ -158,16 +175,43 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
     try {
       await updateDoc(doc(db, 'recordingSessions', sessionId), {
         status: 'Uploading', // SLICE-B FIX: Use Love Retold's status value
-        recordingData: {
-          fileSize: recordingBlob.size,
-          mimeType: recordingBlob.type,
-          uploadStartedAt: new Date()
-        }
+        'recordingData.fileSize': recordingBlob.size,
+        'recordingData.mimeType': recordingBlob.type,
+        'recordingData.uploadStartedAt': new Date(),
+        updatedAt: serverTimestamp()
       });
       console.log('✅ Session status updated to Uploading (Love Retold status)');
+      
+      // Love Retold integration: Track status transition for pipeline debugging
+      uploadErrorTracker.logInfo('Love Retold status transition tracked', {
+        sessionId,
+        fullUserId,
+        truncatedUserId: sessionComponents.userId,
+        previousStatus: 'Recording',
+        status: 'Uploading',
+        step: 'statusUpdate',
+        firestoreUpdate: {
+          attempted: true,
+          success: true
+        }
+      });
     } catch (updateError) {
       console.error('❌ Failed to update session status:', updateError);
       console.warn('⚠️ Failed to update session status:', updateError);
+      
+      // Upload failure tracking: Log status update failure for support investigation
+      uploadErrorTracker.logWarning('Firestore status update failed but continuing upload', {
+        sessionId,
+        fullUserId,
+        truncatedUserId: sessionComponents.userId,
+        status: 'Uploading',
+        step: 'statusUpdate',
+        firestoreUpdate: {
+          attempted: true,
+          success: false,
+          errorMessage: updateError.message
+        }
+      });
       // Continue with upload even if status update fails
     }
 
@@ -192,7 +236,16 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
                 updateDoc(doc(db, 'recordingSessions', sessionId), {
                   'recordingData.uploadProgress': Math.round(progress),
                   'recordingData.lastUpdated': new Date()
-                }).catch(err => console.warn('Progress update failed:', err));
+                }).catch(err => {
+                  console.warn('Progress update failed:', err);
+                  // Upload failure tracking: Log progress update issues
+                  uploadErrorTracker.logWarning('Upload progress update failed', {
+                    sessionId,
+                    uploadProgress: Math.round(progress),
+                    step: 'uploadProgress',
+                    errorMessage: err.message
+                  });
+                });
               }
             },
             (error) => {
@@ -213,11 +266,18 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           // Prepare update data using Love Retold's field structure with dot notation
           const updateData = {
             status: 'ReadyForTranscription', // SLICE-B FIX: Use Love Retold's status value
-            'storagePaths.finalVideo': finalPath,
+            fileType: mediaType, // FIX: Add fileType field for admin filtering
             recordingCompletedAt: new Date()
             // SLICE-B FIX: Removed 'updatedAt' - not allowed in Firestore rules
             // SLICE-B FIX: Removed 'askerName' - Love Retold populates this when creating sessions
           };
+          
+          // FIX: Use correct storage path field based on media type
+          if (mediaType === 'video') {
+            updateData['storagePaths.finalVideo'] = finalPath;
+          } else {
+            updateData['storagePaths.finalAudio'] = finalPath;
+          }
           
           // Add optional recording metadata if available
           if (recordingBlob.size) {
@@ -236,16 +296,80 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
             console.log('📊 Adding duration:', options.duration);
           }
           
+          // Preserve fileType in recordingData for consistency
+          if (mediaType) {
+            updateData['recordingData.fileType'] = mediaType;
+            console.log('📊 Adding fileType to recordingData:', mediaType);
+          }
+          
+          // Validation: Ensure critical fields are preserved
+          if (!updateData.fileType) {
+            console.warn('⚠️ fileType missing in update, setting fallback:', mediaType);
+            updateData.fileType = mediaType;
+          }
+          
           console.log('📊 Complete update data (Love Retold compatible):', updateData);
+          console.log('🔍 DEBUG: fileType set to:', mediaType);
+          console.log('🔍 VALIDATION: Critical fields check:', {
+            hasFileType: !!updateData.fileType,
+            hasStatus: !!updateData.status,
+            hasRecordingData: Object.keys(updateData).some(key => key.startsWith('recordingData.'))
+          });
+          
+          // Customer support: Track Firestore update attempt for troubleshooting
+          uploadErrorTracker.logInfo('Attempting Firestore completion update', {
+            sessionId,
+            fullUserId,
+            truncatedUserId: sessionComponents.userId,
+            expectedStoragePath: finalPath,
+            status: 'ReadyForTranscription',
+            step: 'firestoreUpdate'
+          });
           
           await updateDoc(doc(db, 'recordingSessions', sessionId), updateData);
           
           console.log('✅ Slice B: Session updated with Love Retold field structure');
           
+          // Love Retold integration: Track successful pipeline trigger
+          uploadErrorTracker.logInfo('Love Retold transcription pipeline triggered', {
+            sessionId,
+            fullUserId,
+            truncatedUserId: sessionComponents.userId,
+            storagePath: finalPath,
+            previousStatus: 'Uploading',
+            status: 'ReadyForTranscription',
+            step: 'firestoreUpdate',
+            firestoreUpdate: {
+              attempted: true,
+              success: true
+            }
+          });
+          
         } catch (firestoreError) {
           // SLICE-B: Error handling - continue with success even if Firestore update fails
           console.warn('⚠️ Firestore update failed but upload succeeded:', firestoreError);
           console.log('📝 Recording is safely stored at:', finalPath);
+          
+          // Admin diagnostic: Log Firestore failure for customer support investigation
+          uploadErrorTracker.logWarning('Firestore update failed but upload succeeded', {
+            sessionId,
+            fullUserId,
+            truncatedUserId: sessionComponents.userId,
+            expectedStoragePath: finalPath,
+            attemptedStoragePath: finalPath,
+            status: 'ReadyForTranscription',
+            step: 'firestoreUpdate',
+            firestoreUpdate: {
+              attempted: true,
+              success: false,
+              errorMessage: firestoreError.message
+            },
+            additionalData: {
+              uploadSuccessful: true,
+              recordingSafelyStored: true,
+              transcriptionMayBeDelayed: true
+            }
+          });
           // Don't throw error - upload was successful, Firestore update is secondary
         }
         
@@ -253,13 +377,30 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           success: true,
           storagePath: finalPath,
           sessionId: sessionId,
-          userId: fullUserId // UID-FIX-SLICE-A: Return full userId
+          userId: fullUserId, // UID-FIX-SLICE-A: Return full userId
+          firestoreUpdateSuccess: true // Track Firestore success for logging
         };
 
       } catch (error) {
         lastError = error;
         if (attempt < maxRetries - 1) {
           console.log(`Upload attempt ${attempt + 1} failed, retrying...`);
+          
+          // Upload failure tracking: Log retry attempts for pattern analysis
+          uploadErrorTracker.logWarning('Upload attempt failed, retrying', {
+            sessionId,
+            fullUserId,
+            truncatedUserId: sessionComponents.userId,
+            attemptNumber: attempt + 1,
+            maxRetries,
+            step: 'uploadRetry',
+            error: error.message,
+            additionalData: {
+              willRetry: true,
+              nextAttemptDelay: 1000 * (attempt + 1)
+            }
+          });
+          
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
         }
       }
@@ -277,8 +418,36 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           retryCount: maxRetries
         }
       });
+      
+      // Admin diagnostic: Track complete upload failure for support escalation
+      uploadErrorTracker.logError(lastError, {
+        sessionId,
+        fullUserId,
+        truncatedUserId: sessionComponents.userId,
+        status: 'failed',
+        step: 'uploadFailed',
+        retryCount: maxRetries,
+        firestoreUpdate: {
+          attempted: true,
+          success: true,
+          errorMessage: 'Session marked as failed'
+        }
+      });
     } catch (updateError) {
       console.warn('Failed to update session error status:', updateError);
+      
+      // Upload failure tracking: Log inability to mark session as failed
+      uploadErrorTracker.logError(updateError, {
+        sessionId,
+        fullUserId,
+        truncatedUserId: sessionComponents.userId,
+        status: 'failed',
+        step: 'failedStatusUpdate',
+        additionalData: {
+          originalError: lastError.message,
+          statusUpdateError: updateError.message
+        }
+      });
     }
     
     throw new Error(`Upload failed after ${maxRetries} attempts: ${lastError.message}`);

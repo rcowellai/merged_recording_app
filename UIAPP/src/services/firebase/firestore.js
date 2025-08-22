@@ -247,6 +247,45 @@ class FirebaseFirestoreService {
   }
 
   /**
+   * Get ALL recording sessions for admin purposes
+   * Queries all recordingSessions without userId filtering
+   * @returns {Promise<Array>} Array of all recording sessions
+   */
+  async getAllRecordingSessions() {
+    try {
+      console.log('📝 Fetching ALL recording sessions for admin view');
+      
+      const q = query(
+        collection(db, 'recordingSessions'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const sessions = [];
+      
+      snapshot.forEach((doc) => {
+        sessions.push({ 
+          id: doc.id, 
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate(),
+          expiresAt: doc.data().expiresAt?.toDate(),
+          recordingStartedAt: doc.data().recordingStartedAt?.toDate(),
+          recordingCompletedAt: doc.data().recordingCompletedAt?.toDate()
+        });
+      });
+      
+      console.log('📝 ALL recording sessions fetched:', sessions.length, 'sessions found from all users');
+      this.lastError = null;
+      return sessions;
+    } catch (error) {
+      console.error('Error fetching all recording sessions:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
    * Create a new story document
    * Follows UIAPP patterns for data creation
    * 
@@ -376,12 +415,12 @@ class FirebaseFirestoreService {
       const docRef = doc(db, 'recordingSessions', sessionId);
       await setDoc(docRef, {
         ...sessionData,
-        status: 'pending',
+        // Preserve status from sessionData instead of hardcoding to 'pending'
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        recordingData: {},
-        storagePaths: [],
-        uploadProgress: 0
+        recordingData: sessionData.recordingData || {},
+        storagePaths: sessionData.storagePaths || [],
+        uploadProgress: sessionData.uploadProgress || 0
       });
       
       console.log('📝 Recording session created successfully');
@@ -428,6 +467,13 @@ class FirebaseFirestoreService {
    * @param {Object} metadata - Additional metadata to store
    * @returns {Promise<void>}
    */
+  /**
+   * Updates recording status with field preservation
+   * TACTICAL FIXES APPLIED:
+   * - Uses dot notation for recordingData updates to preserve existing fields
+   * - Validates fileType preservation in recordingData
+   * - Standardized status naming to 'Uploading' (capitalized)
+   */
   async updateRecordingStatus(sessionId, status, metadata = {}) {
     try {
       console.log('📝 Updating recording status:', sessionId, '→', status);
@@ -442,8 +488,17 @@ class FirebaseFirestoreService {
         updateData.recordingStartedAt = metadata.recordingStartedAt;
       }
       
-      if (status === 'uploading' && metadata.recordingData) {
-        updateData.recordingData = metadata.recordingData;
+      if (status === 'Uploading' && metadata.recordingData) {
+        // Use dot notation to preserve existing recordingData fields
+        Object.keys(metadata.recordingData).forEach(key => {
+          updateData[`recordingData.${key}`] = metadata.recordingData[key];
+        });
+        
+        // Validation: Ensure fileType is preserved in recordingData if available
+        if (metadata.fileType && !metadata.recordingData.fileType) {
+          updateData['recordingData.fileType'] = metadata.fileType;
+          console.log('🔍 VALIDATION: Added missing fileType to recordingData:', metadata.fileType);
+        }
       }
       
       if (status === 'completed' && metadata.recordingCompletedAt) {
@@ -758,26 +813,26 @@ const firebaseFirestoreService = new FirebaseFirestoreService();
 // Export service instance and individual functions for flexibility
 export default firebaseFirestoreService;
 
-export const {
-  subscribeToUserStories,
-  getUserStories,
-  getUserRecordingSessions, // C07: Recording session queries
-  getStoryById,
-  createStory,
-  updateStory,
-  deleteStory,
-  getRecordingSession,
-  createRecordingSession,
-  updateRecordingSession,
-  updateRecordingStatus,
-  updateRecordingProgress,
-  addUploadReference,
-  removeUploadReference,
-  getUploadReferences,
-  getLastError,
-  clearError,
-  cleanup
-} = firebaseFirestoreService;
+// Export bound methods to preserve 'this' context
+export const subscribeToUserStories = firebaseFirestoreService.subscribeToUserStories.bind(firebaseFirestoreService);
+export const getUserStories = firebaseFirestoreService.getUserStories.bind(firebaseFirestoreService);
+export const getUserRecordingSessions = firebaseFirestoreService.getUserRecordingSessions.bind(firebaseFirestoreService); // C07: Recording session queries
+export const getAllRecordingSessions = firebaseFirestoreService.getAllRecordingSessions.bind(firebaseFirestoreService); // Admin: All recording sessions
+export const getStoryById = firebaseFirestoreService.getStoryById.bind(firebaseFirestoreService);
+export const createStory = firebaseFirestoreService.createStory.bind(firebaseFirestoreService);
+export const updateStory = firebaseFirestoreService.updateStory.bind(firebaseFirestoreService);
+export const deleteStory = firebaseFirestoreService.deleteStory.bind(firebaseFirestoreService);
+export const getRecordingSession = firebaseFirestoreService.getRecordingSession.bind(firebaseFirestoreService);
+export const createRecordingSession = firebaseFirestoreService.createRecordingSession.bind(firebaseFirestoreService);
+export const updateRecordingSession = firebaseFirestoreService.updateRecordingSession.bind(firebaseFirestoreService);
+export const updateRecordingStatus = firebaseFirestoreService.updateRecordingStatus.bind(firebaseFirestoreService);
+export const updateRecordingProgress = firebaseFirestoreService.updateRecordingProgress.bind(firebaseFirestoreService);
+export const addUploadReference = firebaseFirestoreService.addUploadReference.bind(firebaseFirestoreService);
+export const removeUploadReference = firebaseFirestoreService.removeUploadReference.bind(firebaseFirestoreService);
+export const getUploadReferences = firebaseFirestoreService.getUploadReferences.bind(firebaseFirestoreService);
+export const getLastError = firebaseFirestoreService.getLastError.bind(firebaseFirestoreService);
+export const clearError = firebaseFirestoreService.clearError.bind(firebaseFirestoreService);
+export const cleanup = firebaseFirestoreService.cleanup.bind(firebaseFirestoreService);
 
 // Export utility functions as static methods
 export const { formatDuration, formatDate } = FirebaseFirestoreService;

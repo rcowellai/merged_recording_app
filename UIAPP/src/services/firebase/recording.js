@@ -97,7 +97,7 @@ export async function uploadRecordingWithMetadata(blob, sessionInfo, options = {
     const sessionData = {
       sessionId,
       userId,
-      status: 'uploading',
+      status: 'Uploading',
       fileType,
       fileSize: blob.size,
       mimeType: blob.type,
@@ -246,7 +246,7 @@ export async function resumeRecordingUpload(uploadId) {
       };
     }
 
-    if (sessionData.status !== 'uploading' && sessionData.status !== 'failed') {
+    if (sessionData.status !== 'Uploading' && sessionData.status !== 'failed') {
       throw createError(
         UPLOAD_ERRORS.INVALID_STATE,
         `Cannot resume upload in status: ${sessionData.status}`
