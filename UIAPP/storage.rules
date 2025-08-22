@@ -30,7 +30,7 @@ service firebase.storage {
       allow write: if request.auth != null && 
                      request.auth.token.firebase.sign_in_provider == 'anonymous' &&
         request.resource.size < 10 * 1024 * 1024 && // 10MB chunk limit
-        fileName.matches('chunk-[0-9]+') &&
+        fileName.matches('chunk_[0-9]+\\.(webm|mp4|m4a)') &&
         request.resource.contentType.matches('(video|audio)/.*');
       
       // Owner can read their own recordings
