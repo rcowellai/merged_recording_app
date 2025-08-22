@@ -119,16 +119,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         } = recordingFlowState;
 
         // Initialize extracted components and utility functions
-        console.log('🔧 AppContent: Creating submission handler with session data:', {
-          sessionId,
-          sessionComponents,
-          sessionData, // UID-FIX-SLICE-A: Add sessionData to debug output
-          hasSessionId: !!sessionId,
-          hasSessionComponents: !!sessionComponents,
-          hasSessionData: !!sessionData, // UID-FIX-SLICE-A: Add sessionData check
-          sessionComponentsKeys: sessionComponents ? Object.keys(sessionComponents) : 'N/A',
-          sessionDataKeys: sessionData ? Object.keys(sessionData) : 'N/A' // UID-FIX-SLICE-A: Add sessionData keys
-        });
+        // Creating submission handler (logging disabled for upload analysis focus)
 
         const handleSubmit = createSubmissionHandler({
           recordedBlobUrl,
