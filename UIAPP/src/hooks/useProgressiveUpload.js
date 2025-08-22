@@ -46,60 +46,9 @@ export function useProgressiveUpload(sessionId, sessionComponents, sessionData) 
       // SLICE-D: Use full userId from sessionData (Slice A preservation)
       const fullUserId = sessionData?.fullUserId || sessionComponents.userId;
       
-      // 🔍 DIAGNOSTIC LOGGING: Complete authentication and session state
-      console.group(`🔍 DIAGNOSTIC: Chunk ${chunkIndex} Upload Analysis`);
-      console.log('📦 SLICE-D: Uploading chunk', {
-        chunkSize: blob.size,
-        chunkIndex,
-        fullUserId: fullUserId?.substring(0, 8) + '...' // Truncated for security
-      });
-      
-      // 🔍 Authentication State Diagnosis
-      console.log('🔐 Firebase Auth State:', {
-        authUser: auth.currentUser ? {
-          uid: auth.currentUser.uid,
-          isAnonymous: auth.currentUser.isAnonymous,
-          providerData: auth.currentUser.providerData,
-          tokenResult: 'Will fetch below...'
-        } : 'No authenticated user'
-      });
-      
-      // 🔍 Session Data Diagnosis  
-      console.log('📋 Session Data Analysis:', {
-        sessionId,
-        sessionComponents: {
-          userId: sessionComponents?.userId,
-          promptId: sessionComponents?.promptId,
-          hasComponents: !!sessionComponents
-        },
-        sessionData: {
-          fullUserId: sessionData?.fullUserId,
-          hasSessionData: !!sessionData,
-          sessionDocument: sessionData?.sessionDocument ? {
-            status: sessionData.sessionDocument.status,
-            expiresAt: sessionData.sessionDocument.expiresAt
-          } : 'No session document'
-        },
-        userIdComparison: {
-          componentsUserId: sessionComponents?.userId,
-          sessionDataUserId: sessionData?.fullUserId,
-          finalUserId: fullUserId,
-          match: sessionComponents?.userId === sessionData?.fullUserId
-        }
-      });
-      
-      // 🔍 Storage Path Analysis
-      const storagePath = `users/${fullUserId}/recordings/${sessionId}/chunks/chunk_${chunkIndex}.webm`;
-      console.log('📂 Storage Path Analysis:', {
-        fullPath: storagePath,
-        pathComponents: {
-          userId: fullUserId,
-          sessionId: sessionId,
-          fileName: `chunk_${chunkIndex}.webm`
-        },
-        pathLength: storagePath.length,
-        userIdInPath: fullUserId?.length
-      });
+      // 🔍 FOCUSED UPLOAD LOGGING: Only essential upload information
+      console.log(`📦 CHUNK UPLOAD ${chunkIndex}: Starting (${blob.size} bytes)`);
+      console.log(`📍 Storage Path: users/${fullUserId?.substring(0, 8)}.../${sessionId}/chunks/chunk_${chunkIndex}.webm`);
       
       // Customer support: Track chunk upload for troubleshooting
       uploadErrorTracker.logInfo('Progressive chunk upload started', {
@@ -111,63 +60,19 @@ export function useProgressiveUpload(sessionId, sessionComponents, sessionData) 
         chunkIndex
       });
       
-      // 🔍 Firebase Auth Token Analysis (before operations)
-      if (auth.currentUser) {
-        try {
-          const tokenResult = await auth.currentUser.getIdTokenResult();
-          console.log('🎫 Firebase Auth Token Details:', {
-            uid: auth.currentUser.uid,
-            isAnonymous: auth.currentUser.isAnonymous,
-            signInProvider: tokenResult.signInProvider,
-            token: {
-              authTime: tokenResult.authTime,
-              issuedAtTime: tokenResult.issuedAtTime,
-              expirationTime: tokenResult.expirationTime,
-              claims: {
-                firebase: tokenResult.claims.firebase,
-                aud: tokenResult.claims.aud,
-                iss: tokenResult.claims.iss
-              }
-            }
-          });
-        } catch (tokenError) {
-          console.error('❌ Failed to get auth token:', tokenError);
-        }
-      }
-      
-      // Create chunk storage reference
+      // Create chunk storage reference and upload
       const chunkRef = ref(storage, 
         `users/${fullUserId}/recordings/${sessionId}/chunks/chunk_${chunkIndex}.webm`
       );
-      
-      console.log('🔗 Firebase Storage Reference:', {
-        bucket: chunkRef.bucket,
-        fullPath: chunkRef.fullPath,
-        name: chunkRef.name,
-        toString: chunkRef.toString()
-      });
 
-      // Upload chunk with retry logic
-      console.log('⬆️ Starting uploadBytes operation...');
+      console.log(`⬆️ UPLOADING: chunk_${chunkIndex}.webm`);
       const snapshot = await firebaseErrorHandler.withRetry(
         async () => await uploadBytes(chunkRef, blob),
         3, // Max retries
         `chunk-upload-${chunkIndex}`
       );
       
-      console.log('✅ uploadBytes succeeded:', {
-        bytesTransferred: snapshot.bytesTransferred,
-        totalBytes: snapshot.totalBytes,
-        state: snapshot.state,
-        metadata: {
-          size: snapshot.metadata.size,
-          contentType: snapshot.metadata.contentType,
-          timeCreated: snapshot.metadata.timeCreated
-        }
-      });
-      
-      console.log('🎯 Skipping getDownloadURL (not needed for Love Retold integration)');
-      console.log('✅ Chunk upload completed - using storage path only');
+      console.log(`✅ CHUNK ${chunkIndex} UPLOADED: ${snapshot.metadata.size} bytes`);
       
       // Store chunk metadata (following Love Retold pattern - no download URL needed)
       const chunkMetadata = {
@@ -183,11 +88,7 @@ export function useProgressiveUpload(sessionId, sessionComponents, sessionData) 
       uploadedChunks.current[chunkIndex] = chunkMetadata;
       setChunksUploaded(prev => prev + 1);
       
-      console.log(`✅ SLICE-D: Chunk ${chunkIndex} uploaded successfully`, {
-        size: blob.size,
-        storagePath: chunkMetadata.storagePath,
-        uploadMethod: chunkMetadata.uploadMethod
-      });
+      console.log(`🎯 CHUNK ${chunkIndex} SUCCESS: Progressive upload completed`);
       
       // Customer support: Track successful chunk upload
       uploadErrorTracker.logInfo('Progressive chunk upload completed', {
@@ -198,62 +99,10 @@ export function useProgressiveUpload(sessionId, sessionComponents, sessionData) 
         storagePath: chunkMetadata.storagePath
       });
       
-      console.groupEnd(); // End diagnostic group
       return { success: true, metadata: chunkMetadata };
       
     } catch (error) {
-      console.error(`❌ SLICE-D: Chunk ${chunkIndex} upload failed:`, error);
-      
-      // 🔍 COMPREHENSIVE ERROR DIAGNOSIS
-      console.group(`🚨 ERROR ANALYSIS: Chunk ${chunkIndex} Upload Failure`);
-      
-      console.error('📋 Error Details:', {
-        errorType: error.constructor.name,
-        errorCode: error.code,
-        errorMessage: error.message,
-        httpStatus: error.status,
-        serverResponse: error.serverResponse,
-        customData: error.customData,
-        fullError: error
-      });
-      
-      // Re-check auth state at time of error
-      console.log('🔐 Auth State at Error Time:', {
-        hasCurrentUser: !!auth.currentUser,
-        currentUser: auth.currentUser ? {
-          uid: auth.currentUser.uid,
-          isAnonymous: auth.currentUser.isAnonymous,
-          refreshToken: auth.currentUser.refreshToken ? 'Present' : 'Missing'
-        } : 'No user'
-      });
-      
-      // Session validation at error time
-      console.log('📋 Session State at Error Time:', {
-        sessionId,
-        fullUserId: sessionData?.fullUserId || sessionComponents.userId,
-        sessionStatus: sessionData?.sessionDocument?.status,
-        sessionExpiry: sessionData?.sessionDocument?.expiresAt,
-        timeNow: new Date().toISOString()
-      });
-      
-      // Storage path debugging
-      console.log('📂 Storage Path at Error Time:', {
-        attemptedPath: `users/${sessionData?.fullUserId || sessionComponents.userId}/recordings/${sessionId}/chunks/chunk_${chunkIndex}.webm`,
-        pathComponents: {
-          userId: sessionData?.fullUserId || sessionComponents.userId,
-          sessionId: sessionId,
-          fileName: `chunk_${chunkIndex}.webm`
-        }
-      });
-      
-      // Firebase project and config debugging
-      console.log('⚙️ Firebase Config at Error Time:', {
-        storageBucket: storage.app.options.storageBucket,
-        projectId: storage.app.options.projectId,
-        authDomain: storage.app.options.authDomain
-      });
-      
-      console.groupEnd(); // End error analysis group
+      console.error(`❌ CHUNK ${chunkIndex} FAILED:`, error.code, error.message);
       
       // Customer support: Track chunk upload failure
       uploadErrorTracker.logError('Progressive chunk upload failed', error, {

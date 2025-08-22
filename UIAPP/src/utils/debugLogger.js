@@ -5,11 +5,11 @@
 
 class DebugLogger {
   constructor() {
-    // Always enable debug mode for troubleshooting
-    this.enabled = true;
+    // Temporarily disable general debug logging to focus on upload analysis
+    this.enabled = false;
     this.context = 'UIAPP';
     this.startTime = Date.now();
-    console.log('🐛 Debug logging permanently enabled - Build:', new Date().toISOString());
+    console.log('🔇 General debug logging temporarily disabled - Upload analysis mode active');
   }
 
   enable() {

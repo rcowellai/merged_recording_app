@@ -170,7 +170,7 @@ export function createSubmissionHandler({
             
             // SLICE-D: Check if progressive upload was used
             if (progressiveUpload && progressiveUpload.chunksUploaded > 0) {
-              console.log('📦 SLICE-D: Finalizing progressive upload for Love Retold');
+              console.log(`🚀 FINAL UPLOAD: Using progressive chunks (${progressiveUpload.chunksUploaded} chunks uploaded)`);
               
               // Customer support: Track progressive upload finalization
               uploadErrorTracker.logInfo('Progressive upload finalization started', {
@@ -201,7 +201,7 @@ export function createSubmissionHandler({
                   }
                 );
                 
-                console.log('📄 SLICE-D: Progressive upload Love Retold result:', uploadResult);
+                console.log(`✅ FINAL UPLOAD SUCCESS: Progressive chunks integrated with Love Retold`);
                 return uploadResult;
               } else {
                 throw new Error('Progressive upload finalization failed');
@@ -209,7 +209,7 @@ export function createSubmissionHandler({
               
             } else {
               // Traditional single upload (preserves existing functionality)
-              console.log('🚀 Starting traditional Love Retold upload...');
+              console.log(`🚀 FINAL UPLOAD: Using traditional single upload (${progressiveUpload?.chunksUploaded || 0} chunks available)`);
               
               // Customer support: Track upload start with full context
               uploadErrorTracker.logInfo('Love Retold upload starting', {
@@ -238,7 +238,7 @@ export function createSubmissionHandler({
                 }
               );
               
-              console.log('📄 Love Retold upload result:', uploadResult);
+              console.log(`✅ FINAL UPLOAD SUCCESS: Traditional upload completed`);
               
               if (uploadResult.success) {
                 // Customer support: Track successful upload completion
