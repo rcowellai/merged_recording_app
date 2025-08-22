@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { COLORS, LAYOUT } from '../config';
 import debugLogger from '../utils/debugLogger';
@@ -151,8 +152,24 @@ function AdminPage() {
           padding: '20px'
         }}
       >
+        {/* Navigation */}
+        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+          <Link 
+            to="/admin" 
+            style={{ 
+              color: '#007bff', 
+              textDecoration: 'none', 
+              fontSize: '16px',
+              marginBottom: '10px',
+              display: 'inline-block'
+            }}
+          >
+            ← Back to Admin Dashboard
+          </Link>
+        </div>
+        
         <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>
-          Admin - Filter Recordings
+          📹 Recording Management
         </h2>
 
         {/* Debug Tools Section */}

@@ -23,8 +23,11 @@ import './styles/index.css';
 // Import your ViewRecording page
 import ViewRecording from './pages/ViewRecording';
 
-// Import your new AdminPage
+// Import admin components
 import AdminPage from './pages/AdminPage';
+import AdminLandingPage from './components/AdminLandingPage';
+import AdminDebugPage from './components/AdminDebugPage';
+import DatabaseAdminPage from './components/DatabaseAdminPage';
 
 // Import TokenProvider and TokenAdmin
 import { TokenProvider } from './theme/TokenProvider';
@@ -50,10 +53,13 @@ root.render(
               {/* Existing route => playback page */}
               <Route path="/view/:docId" element={<ViewRecording />} />
 
-              {/* NEW: Admin route => /admin */}
-              <Route path="/admin" element={<AdminPage />} />
-
-              {/* NEW: Token admin route => /admin/tokens */}
+              {/* Admin Dashboard - Navigation Hub */}
+              <Route path="/admin" element={<AdminLandingPage />} />
+              
+              {/* Admin Sub-Pages */}
+              <Route path="/admin/recordings" element={<AdminPage />} />
+              <Route path="/admin/debug" element={<AdminDebugPage />} />
+              <Route path="/admin/database" element={<DatabaseAdminPage />} />
               <Route path="/admin/tokens" element={<TokenAdmin />} />
 
               {/* NEW: Demo page => /demo */}

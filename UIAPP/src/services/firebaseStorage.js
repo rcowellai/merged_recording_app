@@ -35,6 +35,7 @@ import {
 } from './firebase/storage.js';
 import {
   getUserRecordingSessions,
+  getAllRecordingSessions,
   getRecordingSession,
   updateRecordingSession,
   deleteStory
@@ -250,9 +251,8 @@ class FirebaseStorageService {
         // Use C04 getUserRecordingSessions for user-specific listings
         sessions = await getUserRecordingSessions(filters.userId);
       } else {
-        // For admin - get all sessions (would need additional Firestore function)
-        // For now, fall back to anonymous user sessions
-        sessions = await getUserRecordingSessions('anonymous');
+        // For admin - get all sessions from all users
+        sessions = await getAllRecordingSessions();
       }
 
       // Apply additional filters

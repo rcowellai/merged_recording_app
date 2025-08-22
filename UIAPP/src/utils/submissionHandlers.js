@@ -25,6 +25,7 @@ import { uploadLoveRetoldRecording } from '../services/firebase/loveRetoldUpload
 
 // Import debug utilities
 import { logUploadStep, addDebugLog } from './uploadDebugger.js';
+import { uploadErrorTracker } from './uploadErrorTracker.js';
 
 /**
  * Creates a submission handler function
@@ -47,6 +48,15 @@ export function createSubmissionHandler({
   const handleSubmit = async () => {
     logUploadStep('UPLOAD STARTED', 'start');
     console.log('🚀 SUBMIT HANDLER STARTED');
+    
+    // Customer support: Track upload initiation for troubleshooting
+    uploadErrorTracker.logInfo('Upload initiated', {
+      sessionId,
+      fullUserId: sessionData?.fullUserId,
+      truncatedUserId: sessionComponents?.userId,
+      step: 'recordingStart',
+      status: sessionData?.sessionDocument?.status
+    });
     
     const debugInfo = {
       hasRecordedBlobUrl: !!recordedBlobUrl,
@@ -79,6 +89,16 @@ export function createSubmissionHandler({
       console.log('✅ Blob conversion successful:', {
         blobSize: recordedBlob.size,
         blobType: recordedBlob.type
+      });
+      
+      // Customer support: Track blob creation for size and format diagnosis
+      uploadErrorTracker.logInfo('Recording blob created', {
+        sessionId,
+        fullUserId: sessionData?.fullUserId,
+        truncatedUserId: sessionComponents?.userId,
+        step: 'blobCreate',
+        fileSize: recordedBlob.size,
+        mimeType: recordedBlob.type
       });
 
       // Create a unique filename (exact same logic as App.js:125-154)
@@ -155,6 +175,18 @@ export function createSubmissionHandler({
             
             // UID-FIX-SLICE-A: Use Love Retold upload with proper session data including sessionData
             console.log('🚀 Starting Love Retold upload...');
+            
+            // Customer support: Track upload start with full context
+            uploadErrorTracker.logInfo('Love Retold upload starting', {
+              sessionId,
+              fullUserId: sessionData?.fullUserId,
+              truncatedUserId: sessionComponents?.userId,
+              step: 'uploadStart',
+              status: 'Uploading',
+              fileSize: recordedBlob.size,
+              mimeType: actualMimeType
+            });
+            
             const uploadResult = await uploadLoveRetoldRecording(
               recordedBlob,
               sessionId,
@@ -173,6 +205,17 @@ export function createSubmissionHandler({
             console.log('📄 Love Retold upload result:', uploadResult);
             
             if (uploadResult.success) {
+              // Customer support: Track successful upload completion
+              uploadErrorTracker.logInfo('Love Retold upload completed successfully', {
+                sessionId,
+                fullUserId: sessionData?.fullUserId,
+                truncatedUserId: sessionComponents?.userId,
+                step: 'uploadFinalize',
+                status: 'ReadyForTranscription',
+                storagePath: uploadResult.storagePath,
+                firestoreUpdateSuccess: uploadResult.firestoreUpdateSuccess
+              });
+              
               return {
                 docId: sessionId, // Use sessionId as docId for Love Retold
                 downloadURL: null, // Love Retold handles download URLs internally
@@ -254,6 +297,22 @@ export function createSubmissionHandler({
         errorCode: error?.code,
         errorStack: error?.stack,
         fullError: error
+      });
+      
+      // Admin diagnostic: Capture full error context for customer support resolution
+      uploadErrorTracker.logError(error, {
+        sessionId,
+        fullUserId: sessionData?.fullUserId,
+        truncatedUserId: sessionComponents?.userId,
+        step: 'submission',
+        status: sessionData?.sessionDocument?.status,
+        fileSize: null, // recordedBlob not available in catch scope
+        mimeType: actualMimeType,
+        captureMode,
+        additionalData: {
+          hasRecordedBlobUrl: !!recordedBlobUrl,
+          errorLocation: 'submissionHandler.catch'
+        }
       });
 
       const mappedError = firebaseErrorHandler.mapError(error, 'recording-upload');
