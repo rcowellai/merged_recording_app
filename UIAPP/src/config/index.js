@@ -7,14 +7,23 @@
 
 // Recording limits and timing
 export const RECORDING_LIMITS = {
-  // 30-second recording limit (was hardcoded in 8+ places)
-  MAX_DURATION_SECONDS: 30,
+  // SLICE-D: Extended recording limit from 30 seconds to 15 minutes (900 seconds)
+  MAX_DURATION_SECONDS: 900, // 15 minutes for progressive chunk upload
   
-  // Countdown sequence for recording start/resume
+  // SLICE-D: Progressive upload configuration
+  CHUNK_UPLOAD_INTERVAL: 30, // Upload chunks every 30 seconds during recording
+  CHUNK_SIZE: 10 * 1024 * 1024, // 10MB maximum chunk size
+  MAX_FILE_SIZE: 500 * 1024 * 1024, // 500MB maximum total recording size
+  WARNING_TIME: 14 * 60, // Warning at 14 minutes (840 seconds)
+  
+  // Countdown sequence for recording start/resume (preserved)
   COUNTDOWN_STEPS: [3, 2, 1, 'BEGIN'],
   
-  // Recording timer interval (milliseconds)
-  TIMER_INTERVAL_MS: 1000
+  // Recording timer interval (milliseconds) (preserved)
+  TIMER_INTERVAL_MS: 1000,
+  
+  // SLICE-D: Feature flag for progressive upload (can be disabled for rollback)
+  PROGRESSIVE_UPLOAD_ENABLED: process.env.REACT_APP_PROGRESSIVE_UPLOAD_ENABLED !== 'false' // Default: true
 };
 
 // Supported media formats (preserves existing format priority)

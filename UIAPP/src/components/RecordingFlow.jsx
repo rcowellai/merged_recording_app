@@ -45,13 +45,32 @@ function RecordingFlow({
   
   const { elapsedSeconds, isRecording, isPaused } = recordingFlowState;
 
-  // Auto-transition at max duration (preserves exact logic from App.js:97-101)
+  // SLICE-D: Warning notification at 14 minutes
+  useEffect(() => {
+    if (elapsedSeconds >= RECORDING_LIMITS.WARNING_TIME && isRecording && !isPaused) {
+      debugLogger.log('info', 'RecordingFlow', 'Showing 14-minute warning notification', {
+        elapsedSeconds,
+        warningTime: RECORDING_LIMITS.WARNING_TIME
+      });
+      
+      // Show warning notification only once
+      if (elapsedSeconds === RECORDING_LIMITS.WARNING_TIME) {
+        alert('Recording will automatically stop in 1 minute (15-minute limit).');
+      }
+    }
+  }, [elapsedSeconds, isRecording, isPaused]);
+
+  // SLICE-D: Auto-transition at 15-minute max duration (enhanced from original App.js:97-101)
   useEffect(() => {
     if (elapsedSeconds >= RECORDING_LIMITS.MAX_DURATION_SECONDS && isRecording && !isPaused) {
-      debugLogger.log('info', 'RecordingFlow', 'Auto-transitioning at max duration', {
+      debugLogger.log('info', 'RecordingFlow', 'Auto-transitioning at 15-minute limit', {
         elapsedSeconds,
         maxDuration: RECORDING_LIMITS.MAX_DURATION_SECONDS
       });
+      
+      // Show user notification about auto-stop
+      alert('Recording has reached the 15-minute limit and will now stop automatically.');
+      
       // Stop recording first, then trigger submit stage
       recordingFlowState.handleDone();
       onDoneAndSubmitStage();

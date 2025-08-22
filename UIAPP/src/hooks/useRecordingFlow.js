@@ -8,11 +8,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { RECORDING_LIMITS, SUPPORTED_FORMATS, ENV_CONFIG } from '../config';
 import useCountdown from './useCountdown';
-import { createError, UPLOAD_ERRORS } from '../utils/errors';
 
 // Firebase services integration (optional)
 import { initializeAuth } from '../services/firebase';
 import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
+
+// SLICE-D: Progressive upload integration
+import { useProgressiveUpload } from './useProgressiveUpload';
 
 export default function useRecordingFlow({ sessionId, sessionData, sessionComponents, onDoneAndSubmitStage }) {
   // ===========================
@@ -43,6 +45,11 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   
   // Feature flag check
   const isFirebaseEnabled = ENV_CONFIG.USE_FIREBASE;
+  
+  // SLICE-D: Progressive upload hook integration
+  const progressiveUpload = useProgressiveUpload(sessionId, sessionComponents, sessionData);
+  const chunkUploadTimer = useRef(null);
+  const mediaRecorderRef = useRef(null);
 
   // ===========================
   // Effects
@@ -166,9 +173,24 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     
     const recorder = new MediaRecorder(mediaStream, { mimeType });
     
-    recorder.ondataavailable = (event) => {
+    recorder.ondataavailable = async (event) => {
       if (event.data && event.data.size > 0) {
         recordedChunksRef.current.push(event.data);
+        
+        // SLICE-D: Progressive upload during recording
+        if (RECORDING_LIMITS.PROGRESSIVE_UPLOAD_ENABLED && 
+            mediaRecorderRef.current && 
+            mediaRecorderRef.current.state === 'recording') {
+          
+          console.log('📦 SLICE-D: Processing chunk for progressive upload', {
+            chunkSize: event.data.size,
+            recordingState: mediaRecorderRef.current.state
+          });
+          
+          // Create chunk blob and upload progressively
+          const chunkBlob = new Blob([event.data], { type: event.data.type });
+          await progressiveUpload.processRecordingChunk(chunkBlob);
+        }
       }
     };
 
@@ -184,10 +206,29 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     };
 
     setMediaRecorder(recorder);
+    mediaRecorderRef.current = recorder; // SLICE-D: Store ref for progressive upload
+    
     startCountdown(() => {
       recorder.start();
       setIsRecording(true);
       setIsPaused(false);
+      
+      // SLICE-D: Start progressive upload timer if enabled
+      if (RECORDING_LIMITS.PROGRESSIVE_UPLOAD_ENABLED) {
+        console.log('⏱️ SLICE-D: Starting chunk upload timer', {
+          interval: RECORDING_LIMITS.CHUNK_UPLOAD_INTERVAL
+        });
+        
+        // Reset progressive upload state for new recording
+        progressiveUpload.reset();
+        
+        chunkUploadTimer.current = setInterval(async () => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            console.log('📋 SLICE-D: Requesting data for chunk upload');
+            mediaRecorderRef.current.requestData();
+          }
+        }, RECORDING_LIMITS.CHUNK_UPLOAD_INTERVAL * 1000);
+      }
     });
   }, [mediaStream, captureMode, startCountdown, onDoneAndSubmitStage]);
 
@@ -208,16 +249,30 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   }, [mediaRecorder, isPaused, startCountdown]);
 
   const handleDone = useCallback(() => {
+    // SLICE-D: Stop chunk upload timer
+    if (chunkUploadTimer.current) {
+      console.log('🛑 SLICE-D: Stopping chunk upload timer');
+      clearInterval(chunkUploadTimer.current);
+      chunkUploadTimer.current = null;
+    }
+    
     if (mediaRecorder && (isRecording || isPaused)) {
       mediaRecorder.stop();
       setIsRecording(false);
       setIsPaused(false);
       setMediaRecorder(null);
+      mediaRecorderRef.current = null; // SLICE-D: Clear ref
     }
   }, [mediaRecorder, isRecording, isPaused]);
 
   // Complete reset function for "Start Over" functionality
   const resetRecordingState = useCallback(() => {
+    // SLICE-D: Stop chunk upload timer and cleanup progressive upload
+    if (chunkUploadTimer.current) {
+      clearInterval(chunkUploadTimer.current);
+      chunkUploadTimer.current = null;
+    }
+    
     // Stop and clean up media stream and tracks
     stopMediaStream();
     
@@ -226,6 +281,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       mediaRecorder.stop();
     }
     setMediaRecorder(null);
+    mediaRecorderRef.current = null; // SLICE-D: Clear ref
     
     // Reset recording state
     setIsRecording(false);
@@ -240,8 +296,11 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     // Reset capture mode
     setCaptureMode(null);
     
-    console.log('🔄 Recording state completely reset for start over');
-  }, [mediaRecorder, isRecording, isPaused, stopMediaStream]);
+    // SLICE-D: Reset progressive upload state
+    progressiveUpload.reset();
+    
+    console.log('🔄 SLICE-D: Recording state completely reset for start over');
+  }, [mediaRecorder, isRecording, isPaused, stopMediaStream, progressiveUpload]);
 
   // ===========================
   // Return State & Handlers
@@ -260,6 +319,12 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     countdownValue,
     authState,
     authError,
+    
+    // SLICE-D: Progressive upload state
+    progressiveUpload,
+    chunksUploaded: progressiveUpload.chunksUploaded,
+    uploadProgress: progressiveUpload.uploadProgress,
+    uploadError: progressiveUpload.uploadError,
     
     // Session data (passed through)
     sessionId,

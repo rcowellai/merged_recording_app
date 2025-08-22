@@ -64,6 +64,98 @@ const getBestSupportedMimeType = (mediaType = 'audio') => {
 };
 
 /**
+ * SLICE-D: Handle progressive upload completion for Love Retold integration
+ * Updates session status and metadata when progressive chunked upload is complete
+ * 
+ * @param {string} sessionId - Love Retold session ID
+ * @param {Object} sessionComponents - Parsed session components
+ * @param {Object} sessionData - Full session data (Slice A preservation)
+ * @param {Object} options - Upload options with chunk metadata
+ * @returns {Promise<Object>} Upload completion result
+ */
+const handleProgressiveUploadCompletion = async (sessionId, sessionComponents, sessionData, options) => {
+  try {
+    console.log('🎯 SLICE-D: Handling progressive upload completion for Love Retold');
+    
+    const { chunkMetadata, mediaType = 'audio', actualMimeType } = options;
+    
+    // UID-FIX-SLICE-A: Use full userId (Slice A preservation)
+    const fullUserId = sessionData?.fullUserId || sessionComponents.userId;
+    const fileExtension = actualMimeType?.includes('webm') ? 'webm' : 'mp4';
+    const finalPath = `users/${fullUserId}/recordings/${sessionId}/final/recording.${fileExtension}`;
+    
+    console.log('📊 SLICE-D: Progressive upload summary:', {
+      sessionId,
+      fullUserId: fullUserId?.substring(0, 8) + '...', // Truncated for security
+      totalChunks: chunkMetadata.totalChunks,
+      totalSize: chunkMetadata.combinedSize,
+      finalPath
+    });
+    
+    // Customer support: Track progressive upload completion
+    uploadErrorTracker.logInfo('Progressive upload completion for Love Retold', {
+      sessionId,
+      fullUserId,
+      truncatedUserId: sessionComponents?.userId,
+      step: 'progressive_completion',
+      totalChunks: chunkMetadata.totalChunks,
+      totalSize: chunkMetadata.combinedSize,
+      finalPath
+    });
+    
+    // Update session status to ReadyForTranscription (SLICE-B: Love Retold status system)
+    console.log('📊 SLICE-D: Updating session for progressive upload completion...');
+    await updateDoc(doc(db, 'recordingSessions', sessionId), {
+      status: 'ReadyForTranscription', // SLICE-B: Love Retold status system preserved
+      'storagePaths.finalVideo': finalPath,
+      'storagePaths.chunks': chunkMetadata.chunks.map(chunk => chunk.storagePath),
+      'recordingData.fileSize': chunkMetadata.combinedSize,
+      'recordingData.mimeType': actualMimeType,
+      'recordingData.uploadMethod': 'progressive-chunks', // SLICE-D identifier
+      'recordingData.totalChunks': chunkMetadata.totalChunks,
+      'recordingData.uploadCompletedAt': new Date(),
+      recordingCompletedAt: new Date(),
+      updatedAt: serverTimestamp()
+    });
+    
+    console.log('✅ SLICE-D: Progressive upload completion recorded for Love Retold');
+    
+    // Love Retold integration: Track status transition for pipeline debugging
+    uploadErrorTracker.logInfo('Love Retold progressive upload status transition', {
+      sessionId,
+      fullUserId,
+      truncatedUserId: sessionComponents.userId,
+      status: 'ReadyForTranscription',
+      step: 'progressive_status_update',
+      uploadMethod: 'progressive-chunks',
+      firestoreUpdate: {
+        attempted: true,
+        success: true
+      }
+    });
+    
+    return {
+      success: true,
+      storagePath: finalPath,
+      downloadURL: null, // Chunks assembled server-side
+      metadata: chunkMetadata,
+      uploadMethod: 'progressive-chunks' // SLICE-D identifier
+    };
+    
+  } catch (error) {
+    console.error('❌ SLICE-D: Error handling progressive upload completion:', error);
+    
+    uploadErrorTracker.logError('Progressive upload completion failed', error, {
+      sessionId,
+      fullUserId: sessionData?.fullUserId,
+      step: 'progressive_completion_error'
+    });
+    
+    throw error;
+  }
+};
+
+/**
  * Love Retold recording upload with proper storage paths and session updates
  * @param {Blob} recordingBlob - Recording blob to upload
  * @param {string} sessionId - Love Retold session ID (full format)
@@ -85,8 +177,17 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
     hasSessionData: !!sessionData, // UID-FIX-SLICE-A
     sessionData, // UID-FIX-SLICE-A
     hasOptions: !!options,
-    options
+    options,
+    // SLICE-D: Progressive upload detection
+    isProgressiveUpload: options.isProgressiveUpload,
+    hasChunkMetadata: !!options.chunkMetadata
   });
+
+  // SLICE-D: Handle progressive upload completion
+  if (options.isProgressiveUpload && options.chunkMetadata) {
+    console.log('📦 SLICE-D: Processing progressive upload completion for Love Retold');
+    return await handleProgressiveUploadCompletion(sessionId, sessionComponents, sessionData, options);
+  }
 
   try {
     const {
