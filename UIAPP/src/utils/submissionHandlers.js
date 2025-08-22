@@ -231,7 +231,6 @@ export function createSubmissionHandler({
                   mediaType: captureMode,
                   actualMimeType: actualMimeType,
                   onProgress: (progress) => {
-                    console.log(`📊 Upload progress: ${progress}%`);
                     dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
                   },
                   maxRetries: 3
