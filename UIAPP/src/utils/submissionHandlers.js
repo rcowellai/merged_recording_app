@@ -33,7 +33,7 @@ export function createSubmissionHandler({
   sessionId,          // NEW: Add sessionId 
   sessionComponents,  // NEW: Add sessionComponents
   sessionData,        // UID-FIX-SLICE-A: Add sessionData for full userId
-  progressiveUpload,  // SLICE-D: Progressive upload hook
+  // progressiveUpload removed - using simple upload flow
   appState,
   dispatch,
   APP_ACTIONS
@@ -168,97 +168,57 @@ export function createSubmissionHandler({
               operation: 'proper-integration'
             });
             
-            // SLICE-D: Check if progressive upload was used
-            if (progressiveUpload && progressiveUpload.chunksUploaded > 0) {
-              console.log(`🚀 FINAL UPLOAD: Using progressive chunks (${progressiveUpload.chunksUploaded} chunks uploaded)`);
-              
-              // Customer support: Track progressive upload finalization
-              uploadErrorTracker.logInfo('Progressive upload finalization started', {
+            // Simple upload flow - no progressive upload logic
+            // Simple single upload after recording completes
+            console.log(`🚀 FINAL UPLOAD: Using simple single upload`);
+            
+            // Customer support: Track upload start with full context
+            uploadErrorTracker.logInfo('Love Retold upload starting', {
+              sessionId,
+              fullUserId: sessionData?.fullUserId,
+              truncatedUserId: sessionComponents?.userId,
+              step: 'uploadStart',
+              status: 'Uploading',
+              fileSize: recordedBlob.size,
+              mimeType: actualMimeType
+            });
+            
+            const uploadResult = await uploadLoveRetoldRecording(
+              recordedBlob,
+              sessionId,
+              sessionComponents,
+              sessionData, // UID-FIX-SLICE-A: Pass sessionData for full userId
+              {
+                mediaType: captureMode,
+                actualMimeType: actualMimeType,
+                onProgress: (progress) => {
+                  dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
+                },
+                maxRetries: 3
+              }
+            );
+            
+            console.log(`✅ FINAL UPLOAD SUCCESS: Upload completed`);
+            
+            if (uploadResult.success) {
+              // Customer support: Track successful upload completion
+              uploadErrorTracker.logInfo('Love Retold upload completed successfully', {
                 sessionId,
                 fullUserId: sessionData?.fullUserId,
                 truncatedUserId: sessionComponents?.userId,
-                step: 'progressive_finalize',
-                chunksUploaded: progressiveUpload.chunksUploaded,
-                totalSize: progressiveUpload.getTotalSize()
+                step: 'uploadFinalize',
+                status: 'ReadyForTranscription',
+                storagePath: uploadResult.storagePath,
+                uploadMethod: uploadResult.uploadMethod || 'simple'
               });
               
-              // Finalize progressive upload and get metadata
-              const finalizeResult = await progressiveUpload.finalizeUpload();
-              
-              if (finalizeResult.success) {
-                // Complete Love Retold integration with chunk metadata
-                const uploadResult = await uploadLoveRetoldRecording(
-                  recordedBlob,
-                  sessionId,
-                  sessionComponents,
-                  sessionData, // UID-FIX-SLICE-A: Pass sessionData for full userId
-                  {
-                    mediaType: captureMode,
-                    actualMimeType: actualMimeType,
-                    isProgressiveUpload: true, // SLICE-D: Flag for progressive upload
-                    chunkMetadata: finalizeResult.metadata,
-                    maxRetries: 3
-                  }
-                );
-                
-                console.log(`✅ FINAL UPLOAD SUCCESS: Progressive chunks integrated with Love Retold`);
-                return uploadResult;
-              } else {
-                throw new Error('Progressive upload finalization failed');
-              }
-              
+              return {
+                docId: sessionId, // Use sessionId as docId for Love Retold
+                downloadURL: null, // Love Retold handles download URLs internally
+                storagePath: uploadResult.storagePath
+              };
             } else {
-              // Traditional single upload (preserves existing functionality)
-              console.log(`🚀 FINAL UPLOAD: Using traditional single upload (${progressiveUpload?.chunksUploaded || 0} chunks available)`);
-              
-              // Customer support: Track upload start with full context
-              uploadErrorTracker.logInfo('Love Retold upload starting', {
-                sessionId,
-                fullUserId: sessionData?.fullUserId,
-                truncatedUserId: sessionComponents?.userId,
-                step: 'uploadStart',
-                status: 'Uploading',
-                fileSize: recordedBlob.size,
-                mimeType: actualMimeType
-              });
-              
-              const uploadResult = await uploadLoveRetoldRecording(
-                recordedBlob,
-                sessionId,
-                sessionComponents,
-                sessionData, // UID-FIX-SLICE-A: Pass sessionData for full userId
-                {
-                  mediaType: captureMode,
-                  actualMimeType: actualMimeType,
-                  onProgress: (progress) => {
-                    dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
-                  },
-                  maxRetries: 3
-                }
-              );
-              
-              console.log(`✅ FINAL UPLOAD SUCCESS: Traditional upload completed`);
-              
-              if (uploadResult.success) {
-                // Customer support: Track successful upload completion
-                uploadErrorTracker.logInfo('Love Retold upload completed successfully', {
-                  sessionId,
-                  fullUserId: sessionData?.fullUserId,
-                  truncatedUserId: sessionComponents?.userId,
-                  step: 'uploadFinalize',
-                  status: 'ReadyForTranscription',
-                  storagePath: uploadResult.storagePath,
-                  uploadMethod: uploadResult.uploadMethod || 'traditional'
-                });
-                
-                return {
-                  docId: sessionId, // Use sessionId as docId for Love Retold
-                  downloadURL: null, // Love Retold handles download URLs internally
-                  storagePath: uploadResult.storagePath
-                };
-              } else {
-                throw new Error('Love Retold upload failed');
-              }
+              throw new Error('Love Retold upload failed');
             }
             
           } else {

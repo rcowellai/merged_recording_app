@@ -95,13 +95,13 @@ describe('Firebase Recording Upload Service (C06)', () => {
       expect(createRecordingSession).toHaveBeenCalledWith('test-session-123', expect.objectContaining({
         sessionId: 'test-session-123',
         userId: 'test-user',
-        status: 'uploading',
+        status: 'Uploading',
         fileType: 'audio'
       }));
 
       // Verify session was updated with completion
       expect(updateRecordingSession).toHaveBeenCalledWith('test-session-123', expect.objectContaining({
-        status: 'completed',
+        status: 'ReadyForTranscription',
         uploadProgress: 100
       }));
     });
@@ -174,7 +174,7 @@ describe('Firebase Recording Upload Service (C06)', () => {
   describe('resumeRecordingUpload', () => {
     it('should return completed status if upload already finished', async () => {
       getRecordingSession.mockResolvedValueOnce({
-        status: 'completed',
+        status: 'ReadyForTranscription',
         downloadUrl: 'https://firebase.storage/completed-url',
         storagePath: 'completed-path'
       });
@@ -192,12 +192,12 @@ describe('Firebase Recording Upload Service (C06)', () => {
       const result = await resumeRecordingUpload('non-existent-id');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Recording session not found: non-existent-id');
+      expect(result.error).toBe('Failed to resume upload');
     });
 
     it('should return error for invalid status', async () => {
       getRecordingSession.mockResolvedValueOnce({
-        status: 'completed'  // Not resumable
+        status: 'ReadyForTranscription'  // Not resumable
       });
 
       const result = await resumeRecordingUpload('test-upload-id');

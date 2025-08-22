@@ -12,9 +12,9 @@ import useCountdown from './useCountdown';
 // Firebase services integration (optional)
 import { initializeAuth } from '../services/firebase';
 import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
+import { updateRecordingSession } from '../services/firebase/firestore';
 
-// SLICE-D: Progressive upload integration
-import { useProgressiveUpload } from './useProgressiveUpload';
+// Progressive upload removed - using simple full upload after recording
 
 export default function useRecordingFlow({ sessionId, sessionData, sessionComponents, onDoneAndSubmitStage }) {
   // ===========================
@@ -46,10 +46,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Feature flag check
   const isFirebaseEnabled = ENV_CONFIG.USE_FIREBASE;
   
-  // SLICE-D: Progressive upload hook integration
-  const progressiveUpload = useProgressiveUpload(sessionId, sessionComponents, sessionData);
-  const chunkUploadTimer = useRef(null);
-  const mediaRecorderRef = useRef(null);
+  // Simplified recording - no progressive upload
 
   // ===========================
   // Effects
@@ -177,20 +174,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       if (event.data && event.data.size > 0) {
         recordedChunksRef.current.push(event.data);
         
-        // SLICE-D: Progressive upload during recording
-        if (RECORDING_LIMITS.PROGRESSIVE_UPLOAD_ENABLED && 
-            mediaRecorderRef.current && 
-            mediaRecorderRef.current.state === 'recording') {
-          
-          console.log('📦 SLICE-D: Processing chunk for progressive upload', {
-            chunkSize: event.data.size,
-            recordingState: mediaRecorderRef.current.state
-          });
-          
-          // Create chunk blob and upload progressively
-          const chunkBlob = new Blob([event.data], { type: event.data.type });
-          await progressiveUpload.processRecordingChunk(chunkBlob);
-        }
+        // Data collected for final upload after recording
       }
     };
 
@@ -206,31 +190,31 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     };
 
     setMediaRecorder(recorder);
-    mediaRecorderRef.current = recorder; // SLICE-D: Store ref for progressive upload
     
     startCountdown(() => {
       recorder.start();
       setIsRecording(true);
       setIsPaused(false);
       
-      // SLICE-D: Start progressive upload timer if enabled
-      if (RECORDING_LIMITS.PROGRESSIVE_UPLOAD_ENABLED) {
-        console.log('⏱️ SLICE-D: Starting chunk upload timer', {
-          interval: RECORDING_LIMITS.CHUNK_UPLOAD_INTERVAL
+      // PHASE 2 FIX: Update Firebase status to 'Recording' when recording starts
+      if (isFirebaseEnabled && sessionId) {
+        updateRecordingSession(sessionId, {
+          status: 'Recording',
+          recordingStartedAt: new Date()
+        }).catch(error => {
+          console.warn('Recording status update failed (non-critical):', error);
+          firebaseErrorHandler.log('warn', 'Recording status update failed', error, {
+            service: 'recording-flow',
+            operation: 'status-update-recording',
+            sessionId: sessionId
+          });
+          // Continue recording even if status update fails
         });
-        
-        // Reset progressive upload state for new recording
-        progressiveUpload.reset();
-        
-        chunkUploadTimer.current = setInterval(async () => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            console.log('📋 SLICE-D: Requesting data for chunk upload');
-            mediaRecorderRef.current.requestData();
-          }
-        }, RECORDING_LIMITS.CHUNK_UPLOAD_INTERVAL * 1000);
       }
+      
+      // Simple recording - no progressive upload timer needed
     });
-  }, [mediaStream, captureMode, startCountdown, onDoneAndSubmitStage]);
+  }, [mediaStream, captureMode, startCountdown, onDoneAndSubmitStage, isFirebaseEnabled, sessionId]);
 
   const handlePause = useCallback(() => {
     if (mediaRecorder && isRecording) {
@@ -249,29 +233,20 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   }, [mediaRecorder, isPaused, startCountdown]);
 
   const handleDone = useCallback(() => {
-    // SLICE-D: Stop chunk upload timer
-    if (chunkUploadTimer.current) {
-      console.log('🛑 SLICE-D: Stopping chunk upload timer');
-      clearInterval(chunkUploadTimer.current);
-      chunkUploadTimer.current = null;
-    }
+    // Stop recording and prepare for upload
     
     if (mediaRecorder && (isRecording || isPaused)) {
       mediaRecorder.stop();
       setIsRecording(false);
       setIsPaused(false);
       setMediaRecorder(null);
-      mediaRecorderRef.current = null; // SLICE-D: Clear ref
+      // Recording stopped - ready for upload
     }
   }, [mediaRecorder, isRecording, isPaused]);
 
   // Complete reset function for "Start Over" functionality
   const resetRecordingState = useCallback(() => {
-    // SLICE-D: Stop chunk upload timer and cleanup progressive upload
-    if (chunkUploadTimer.current) {
-      clearInterval(chunkUploadTimer.current);
-      chunkUploadTimer.current = null;
-    }
+    // Clean up recording state
     
     // Stop and clean up media stream and tracks
     stopMediaStream();
@@ -281,7 +256,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       mediaRecorder.stop();
     }
     setMediaRecorder(null);
-    mediaRecorderRef.current = null; // SLICE-D: Clear ref
+    // MediaRecorder cleared
     
     // Reset recording state
     setIsRecording(false);
@@ -296,11 +271,8 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     // Reset capture mode
     setCaptureMode(null);
     
-    // SLICE-D: Reset progressive upload state
-    progressiveUpload.reset();
-    
-    console.log('🔄 SLICE-D: Recording state completely reset for start over');
-  }, [mediaRecorder, isRecording, isPaused, stopMediaStream, progressiveUpload]);
+    console.log('🔄 Recording state completely reset for start over');
+  }, [mediaRecorder, isRecording, isPaused, stopMediaStream]);
 
   // ===========================
   // Return State & Handlers
@@ -320,11 +292,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     authState,
     authError,
     
-    // SLICE-D: Progressive upload state
-    progressiveUpload,
-    chunksUploaded: progressiveUpload.chunksUploaded,
-    uploadProgress: progressiveUpload.uploadProgress,
-    uploadError: progressiveUpload.uploadError,
+    // Progressive upload removed - using simple upload flow
     
     // Session data (passed through)
     sessionId,

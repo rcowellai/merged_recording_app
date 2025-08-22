@@ -12,7 +12,7 @@
  */
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { storage, db } from './index.js';
 import { uploadErrorTracker } from '../../utils/uploadErrorTracker.js';
 // UID-FIX-SLICE-A: Removed generateStoragePaths import - using direct path construction with full userId
@@ -63,97 +63,7 @@ const getBestSupportedMimeType = (mediaType = 'audio') => {
   return mediaType === 'video' ? 'video/webm' : 'audio/webm';
 };
 
-/**
- * SLICE-D: Handle progressive upload completion for Love Retold integration
- * Updates session status and metadata when progressive chunked upload is complete
- * 
- * @param {string} sessionId - Love Retold session ID
- * @param {Object} sessionComponents - Parsed session components
- * @param {Object} sessionData - Full session data (Slice A preservation)
- * @param {Object} options - Upload options with chunk metadata
- * @returns {Promise<Object>} Upload completion result
- */
-const handleProgressiveUploadCompletion = async (sessionId, sessionComponents, sessionData, options) => {
-  try {
-    console.log('🎯 SLICE-D: Handling progressive upload completion for Love Retold');
-    
-    const { chunkMetadata, mediaType = 'audio', actualMimeType } = options;
-    
-    // UID-FIX-SLICE-A: Use full userId (Slice A preservation)
-    const fullUserId = sessionData?.fullUserId || sessionComponents.userId;
-    const fileExtension = actualMimeType?.includes('webm') ? 'webm' : 'mp4';
-    const finalPath = `users/${fullUserId}/recordings/${sessionId}/final/recording.${fileExtension}`;
-    
-    console.log('📊 SLICE-D: Progressive upload summary:', {
-      sessionId,
-      fullUserId: fullUserId?.substring(0, 8) + '...', // Truncated for security
-      totalChunks: chunkMetadata.totalChunks,
-      totalSize: chunkMetadata.combinedSize,
-      finalPath
-    });
-    
-    // Customer support: Track progressive upload completion
-    uploadErrorTracker.logInfo('Progressive upload completion for Love Retold', {
-      sessionId,
-      fullUserId,
-      truncatedUserId: sessionComponents?.userId,
-      step: 'progressive_completion',
-      totalChunks: chunkMetadata.totalChunks,
-      totalSize: chunkMetadata.combinedSize,
-      finalPath
-    });
-    
-    // Update session status to ReadyForTranscription (SLICE-B: Love Retold status system)
-    console.log('📊 SLICE-D: Updating session for progressive upload completion...');
-    await updateDoc(doc(db, 'recordingSessions', sessionId), {
-      status: 'ReadyForTranscription', // SLICE-B: Love Retold status system preserved
-      'storagePaths.finalVideo': finalPath,
-      'storagePaths.chunks': chunkMetadata.chunks.map(chunk => chunk.storagePath),
-      'recordingData.fileSize': chunkMetadata.combinedSize,
-      'recordingData.mimeType': actualMimeType,
-      'recordingData.uploadMethod': 'progressive-chunks', // SLICE-D identifier
-      'recordingData.totalChunks': chunkMetadata.totalChunks,
-      'recordingData.uploadCompletedAt': new Date(),
-      recordingCompletedAt: new Date(),
-      updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ SLICE-D: Progressive upload completion recorded for Love Retold');
-    
-    // Love Retold integration: Track status transition for pipeline debugging
-    uploadErrorTracker.logInfo('Love Retold progressive upload status transition', {
-      sessionId,
-      fullUserId,
-      truncatedUserId: sessionComponents.userId,
-      status: 'ReadyForTranscription',
-      step: 'progressive_status_update',
-      uploadMethod: 'progressive-chunks',
-      firestoreUpdate: {
-        attempted: true,
-        success: true
-      }
-    });
-    
-    return {
-      success: true,
-      storagePath: finalPath,
-      downloadURL: null, // Chunks assembled server-side
-      metadata: chunkMetadata,
-      uploadMethod: 'progressive-chunks' // SLICE-D identifier
-    };
-    
-  } catch (error) {
-    console.error('❌ SLICE-D: Error handling progressive upload completion:', error);
-    
-    uploadErrorTracker.logError('Progressive upload completion failed', error, {
-      sessionId,
-      fullUserId: sessionData?.fullUserId,
-      step: 'progressive_completion_error'
-    });
-    
-    throw error;
-  }
-};
+// Progressive upload functionality removed - using simple single upload
 
 /**
  * Love Retold recording upload with proper storage paths and session updates
@@ -178,16 +88,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
     sessionData, // UID-FIX-SLICE-A
     hasOptions: !!options,
     options,
-    // SLICE-D: Progressive upload detection
-    isProgressiveUpload: options.isProgressiveUpload,
-    hasChunkMetadata: !!options.chunkMetadata
+    // Progressive upload removed - using simple single upload flow
   });
-
-  // SLICE-D: Handle progressive upload completion
-  if (options.isProgressiveUpload && options.chunkMetadata) {
-    console.log('📦 SLICE-D: Processing progressive upload completion for Love Retold');
-    return await handleProgressiveUploadCompletion(sessionId, sessionComponents, sessionData, options);
-  }
 
   try {
     const {
@@ -278,8 +180,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         status: 'Uploading', // SLICE-B FIX: Use Love Retold's status value
         'recordingData.fileSize': recordingBlob.size,
         'recordingData.mimeType': recordingBlob.type,
-        'recordingData.uploadStartedAt': new Date(),
-        updatedAt: serverTimestamp()
+        'recordingData.uploadStartedAt': new Date()
+        // FIRESTORE-FIX: Remove updatedAt and serverTimestamp - not allowed for anonymous users
       });
       console.log('✅ Session status updated to Uploading (Love Retold status)');
       
@@ -367,18 +269,15 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           // Prepare update data using Love Retold's field structure with dot notation
           const updateData = {
             status: 'ReadyForTranscription', // SLICE-B FIX: Use Love Retold's status value
-            fileType: mediaType, // FIX: Add fileType field for admin filtering
             recordingCompletedAt: new Date()
             // SLICE-B FIX: Removed 'updatedAt' - not allowed in Firestore rules
+            // PHASE 2 FIX: fileType completely removed per Love Retold team - use recordingData.mimeType instead
             // SLICE-B FIX: Removed 'askerName' - Love Retold populates this when creating sessions
           };
           
-          // FIX: Use correct storage path field based on media type
-          if (mediaType === 'video') {
-            updateData['storagePaths.finalVideo'] = finalPath;
-          } else {
-            updateData['storagePaths.finalAudio'] = finalPath;
-          }
+          // CRITICAL FIX: Always use finalVideo field for ALL recordings (per Love Retold team)
+          // Love Retold functions only look for storagePaths.finalVideo regardless of media type
+          updateData['storagePaths.finalVideo'] = finalPath;
           
           // Add optional recording metadata if available
           if (recordingBlob.size) {
@@ -397,24 +296,15 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
             console.log('📊 Adding duration:', options.duration);
           }
           
-          // Preserve fileType in recordingData for consistency
-          if (mediaType) {
-            updateData['recordingData.fileType'] = mediaType;
-            console.log('📊 Adding fileType to recordingData:', mediaType);
-          }
-          
-          // Validation: Ensure critical fields are preserved
-          if (!updateData.fileType) {
-            console.warn('⚠️ fileType missing in update, setting fallback:', mediaType);
-            updateData.fileType = mediaType;
-          }
+          // PHASE 2 FIX: fileType completely removed per Love Retold team
+          // Use recordingData.mimeType for media type identification instead
           
           console.log('📊 Complete update data (Love Retold compatible):', updateData);
-          console.log('🔍 DEBUG: fileType set to:', mediaType);
+          console.log('🔍 DEBUG: mediaType for reference:', mediaType);
           console.log('🔍 VALIDATION: Critical fields check:', {
-            hasFileType: !!updateData.fileType,
             hasStatus: !!updateData.status,
-            hasRecordingData: Object.keys(updateData).some(key => key.startsWith('recordingData.'))
+            hasRecordingData: Object.keys(updateData).some(key => key.startsWith('recordingData.')),
+            hasStoragePath: Object.keys(updateData).some(key => key.startsWith('storagePaths.'))
           });
           
           // Customer support: Track Firestore update attempt for troubleshooting
@@ -447,31 +337,62 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           });
           
         } catch (firestoreError) {
-          // SLICE-B: Error handling - continue with success even if Firestore update fails
+          // PHASE 2 FIX: Enhanced error handling with retry logic per Love Retold team
           console.warn('⚠️ Firestore update failed but upload succeeded:', firestoreError);
           console.log('📝 Recording is safely stored at:', finalPath);
           
-          // Admin diagnostic: Log Firestore failure for customer support investigation
-          uploadErrorTracker.logWarning('Firestore update failed but upload succeeded', {
-            sessionId,
-            fullUserId,
-            truncatedUserId: sessionComponents.userId,
-            expectedStoragePath: finalPath,
-            attemptedStoragePath: finalPath,
-            status: 'ReadyForTranscription',
-            step: 'firestoreUpdate',
-            firestoreUpdate: {
-              attempted: true,
-              success: false,
-              errorMessage: firestoreError.message
-            },
-            additionalData: {
-              uploadSuccessful: true,
-              recordingSafelyStored: true,
-              transcriptionMayBeDelayed: true
-            }
-          });
-          // Don't throw error - upload was successful, Firestore update is secondary
+          // RETRY ONCE: Attempt Firestore update retry as recommended by Love Retold team
+          try {
+            console.log('🔄 Attempting Firestore update retry...');
+            await updateDoc(doc(db, 'recordingSessions', sessionId), {
+              status: 'ReadyForTranscription',
+              'storagePaths.finalVideo': finalPath,
+              recordingCompletedAt: new Date(),
+              error: {
+                code: 'FIRESTORE_UPDATE_RETRY',
+                message: 'Initial update failed, retrying',
+                timestamp: new Date(),
+                retryable: true,
+                retryCount: 1
+              }
+            });
+            
+            console.log('✅ Firestore update retry succeeded');
+            uploadErrorTracker.logInfo('Firestore update retry succeeded', {
+              sessionId,
+              fullUserId,
+              step: 'firestoreUpdateRetry',
+              retrySuccessful: true
+            });
+            
+          } catch (retryError) {
+            // CONTINUE: Log warning but don't fail user experience
+            console.error('❌ Firestore update failed after retry:', retryError);
+            
+            // Admin diagnostic: Log complete failure for customer support investigation
+            uploadErrorTracker.logWarning('Firestore update failed after retry - Love Retold functions will still process file', {
+              sessionId,
+              fullUserId,
+              truncatedUserId: sessionComponents.userId,
+              expectedStoragePath: finalPath,
+              status: 'ReadyForTranscription',
+              step: 'firestoreUpdateRetryFailed',
+              firestoreUpdate: {
+                attempted: true,
+                retryAttempted: true,
+                success: false,
+                initialError: firestoreError.message,
+                retryError: retryError.message
+              },
+              additionalData: {
+                uploadSuccessful: true,
+                recordingSafelyStored: true,
+                transcriptionMayBeDelayed: true,
+                loveRetoldWillStillProcess: true
+              }
+            });
+            // Don't throw error - upload was successful, Love Retold functions will still process the uploaded file
+          }
         }
         
         return {

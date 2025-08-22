@@ -164,7 +164,7 @@ export async function uploadRecordingWithMetadata(blob, sessionInfo, options = {
     if (linkToFirestore) {
       try {
         await updateRecordingSession(sessionId, {
-          status: 'completed',
+          status: 'ReadyForTranscription',
           storagePath: uploadResult.storagePath,
           downloadUrl: uploadResult.downloadURL,
           metadata: recordingMetadata,
@@ -236,7 +236,7 @@ export async function resumeRecordingUpload(uploadId) {
       );
     }
 
-    if (sessionData.status === 'completed') {
+    if (sessionData.status === 'ReadyForTranscription') {
       console.log('✅ Recording upload already completed');
       return {
         success: true,

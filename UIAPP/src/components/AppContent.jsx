@@ -116,6 +116,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           setCaptureMode,
           actualMimeType,
           resetRecordingState,
+          // Progressive upload removed - using simple upload flow
         } = recordingFlowState;
 
         // Initialize extracted components and utility functions
@@ -128,6 +129,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           sessionId,          // NEW: Pass Love Retold sessionId
           sessionComponents,  // NEW: Pass Love Retold sessionComponents
           sessionData,        // UID-FIX-SLICE-A: Pass sessionData for full userId  
+          // Progressive upload removed - simple upload after recording
           appState,
           dispatch,
           APP_ACTIONS
