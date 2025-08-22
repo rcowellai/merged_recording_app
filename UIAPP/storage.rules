@@ -33,8 +33,8 @@ service firebase.storage {
         fileName.matches('chunk_[0-9]+\\.(webm|mp4|m4a)') &&
         request.resource.contentType.matches('(video|audio)/.*');
       
-      // Owner can read their own recordings
-      allow read: if isAuthenticated() && isOwner(userId);
+      // Allow read for valid anonymous sessions
+      allow read: if isValidAnonymousUpload(sessionId);
     }
 
     match /users/{userId}/recordings/{sessionId}/final/{fileName} {
@@ -44,8 +44,8 @@ service firebase.storage {
         fileName.matches('recording\\.(webm|mp4|m4a)') &&
         request.resource.contentType.matches('(video|audio)/.*');
       
-      // Owner can read their own recordings
-      allow read: if isAuthenticated() && isOwner(userId);
+      // Allow read for valid anonymous sessions
+      allow read: if isValidAnonymousUpload(sessionId);
     }
 
     match /users/{userId}/recordings/{sessionId}/thumbnail.jpg {
@@ -54,8 +54,8 @@ service firebase.storage {
         request.resource.size < 5 * 1024 * 1024 && // 5MB thumbnail limit
         request.resource.contentType.matches('image/.*');
       
-      // Owner can read their own recordings
-      allow read: if isAuthenticated() && isOwner(userId);
+      // Allow read for valid anonymous sessions
+      allow read: if isValidAnonymousUpload(sessionId);
     }
 
     // C05: Memory recordings storage - enhanced path structure
