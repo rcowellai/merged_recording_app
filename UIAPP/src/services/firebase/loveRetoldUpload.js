@@ -15,6 +15,10 @@ import { ref, uploadBytesResumable } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { storage, db } from './index.js';
 import { uploadErrorTracker } from '../../utils/uploadErrorTracker.js';
+import { 
+  completeRecordingWithConflictHandling, 
+  executeWithRetry 
+} from './transactions.js';
 // UID-FIX-SLICE-A: Removed generateStoragePaths import - using direct path construction with full userId
 
 // Debug Firebase imports
@@ -262,137 +266,91 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           );
         });
 
-        // SLICE-B: Update session with Love Retold's expected field structure
+        // STEP 2: Atomic upload completion with storage coordination
         try {
-          console.log('📊 Starting Slice B Firestore update (Love Retold status system)...');
+          console.log('📊 Starting Step 2 atomic completion (atomic upload + status update)...');
           
-          // Prepare update data using Love Retold's field structure with dot notation
-          const updateData = {
-            status: 'ReadyForTranscription', // SLICE-B FIX: Use Love Retold's status value
-            recordingCompletedAt: new Date()
-            // SLICE-B FIX: Removed 'updatedAt' - not allowed in Firestore rules
-            // PHASE 2 FIX: fileType completely removed per Love Retold team - use recordingData.mimeType instead
-            // SLICE-B FIX: Removed 'askerName' - Love Retold populates this when creating sessions
+          // Prepare completion data for atomic transaction
+          const completionData = {
+            fileSize: recordingBlob.size,
+            mimeType: actualMimeType,
+            duration: options.duration // Optional duration from options
           };
           
-          // CRITICAL FIX: Always use finalVideo field for ALL recordings (per Love Retold team)
-          // Love Retold functions only look for storagePaths.finalVideo regardless of media type
-          updateData['storagePaths.finalVideo'] = finalPath;
-          
-          // Add optional recording metadata if available
-          if (recordingBlob.size) {
-            updateData['recordingData.fileSize'] = recordingBlob.size;
-            console.log('📊 Adding fileSize:', recordingBlob.size);
-          }
-          
-          if (actualMimeType) {
-            updateData['recordingData.mimeType'] = actualMimeType;
-            console.log('📊 Adding mimeType:', actualMimeType);
-          }
-          
-          // Add duration if provided in options (future enhancement)
-          if (options.duration) {
-            updateData['recordingData.duration'] = options.duration;
-            console.log('📊 Adding duration:', options.duration);
-          }
-          
-          // PHASE 2 FIX: fileType completely removed per Love Retold team
-          // Use recordingData.mimeType for media type identification instead
-          
-          console.log('📊 Complete update data (Love Retold compatible):', updateData);
-          console.log('🔍 DEBUG: mediaType for reference:', mediaType);
-          console.log('🔍 VALIDATION: Critical fields check:', {
-            hasStatus: !!updateData.status,
-            hasRecordingData: Object.keys(updateData).some(key => key.startsWith('recordingData.')),
-            hasStoragePath: Object.keys(updateData).some(key => key.startsWith('storagePaths.'))
-          });
-          
-          // Customer support: Track Firestore update attempt for troubleshooting
-          uploadErrorTracker.logInfo('Attempting Firestore completion update', {
+          // Customer support: Track atomic completion attempt
+          uploadErrorTracker.logInfo('Attempting atomic completion with transaction', {
             sessionId,
             fullUserId,
             truncatedUserId: sessionComponents.userId,
             expectedStoragePath: finalPath,
             status: 'ReadyForTranscription',
-            step: 'firestoreUpdate'
+            step: 'atomicCompletion',
+            completionData
           });
           
-          await updateDoc(doc(db, 'recordingSessions', sessionId), updateData);
+          // Execute atomic completion with retry logic and conflict handling
+          await executeWithRetry(
+            () => completeRecordingWithConflictHandling(sessionId, completionData, finalPath),
+            3, // maxRetries
+            1000 // baseDelay (1 second)
+          );
           
-          console.log('✅ Slice B: Session updated with Love Retold field structure');
+          console.log('✅ Step 2: Recording completed with atomic transaction');
           
-          // Love Retold integration: Track successful pipeline trigger
-          uploadErrorTracker.logInfo('Love Retold transcription pipeline triggered', {
+          // Love Retold integration: Track successful atomic pipeline trigger
+          uploadErrorTracker.logInfo('Love Retold transcription pipeline triggered atomically', {
             sessionId,
             fullUserId,
             truncatedUserId: sessionComponents.userId,
             storagePath: finalPath,
             previousStatus: 'Uploading',
             status: 'ReadyForTranscription',
-            step: 'firestoreUpdate',
-            firestoreUpdate: {
+            step: 'atomicCompletion',
+            atomicTransaction: {
               attempted: true,
-              success: true
+              success: true,
+              storageCleanupRisk: 'eliminated'
             }
           });
           
-        } catch (firestoreError) {
-          // PHASE 2 FIX: Enhanced error handling with retry logic per Love Retold team
-          console.warn('⚠️ Firestore update failed but upload succeeded:', firestoreError);
-          console.log('📝 Recording is safely stored at:', finalPath);
+        } catch (atomicError) {
+          // STEP 2: Enhanced error handling - file cleanup handled by transaction
+          console.error('❌ Atomic completion failed:', atomicError);
           
-          // RETRY ONCE: Attempt Firestore update retry as recommended by Love Retold team
+          // Admin diagnostic: Log atomic transaction failure
+          uploadErrorTracker.logError('Atomic upload completion failed - file cleaned up automatically', {
+            sessionId,
+            fullUserId,
+            truncatedUserId: sessionComponents.userId,
+            expectedStoragePath: finalPath,
+            step: 'atomicCompletionFailed',
+            atomicTransaction: {
+              attempted: true,
+              success: false,
+              error: atomicError.message,
+              fileCleanedUp: true,
+              orphanedFileRisk: 'eliminated'
+            }
+          });
+          
+          // Mark session as failed (transaction already cleaned up uploaded file)
           try {
-            console.log('🔄 Attempting Firestore update retry...');
             await updateDoc(doc(db, 'recordingSessions', sessionId), {
-              status: 'ReadyForTranscription',
-              'storagePaths.finalVideo': finalPath,
-              recordingCompletedAt: new Date(),
+              status: 'failed',
               error: {
-                code: 'FIRESTORE_UPDATE_RETRY',
-                message: 'Initial update failed, retrying',
+                code: 'ATOMIC_COMPLETION_FAILED',
+                message: atomicError.message,
                 timestamp: new Date(),
                 retryable: true,
-                retryCount: 1
+                step: 'atomicTransaction'
               }
             });
-            
-            console.log('✅ Firestore update retry succeeded');
-            uploadErrorTracker.logInfo('Firestore update retry succeeded', {
-              sessionId,
-              fullUserId,
-              step: 'firestoreUpdateRetry',
-              retrySuccessful: true
-            });
-            
-          } catch (retryError) {
-            // CONTINUE: Log warning but don't fail user experience
-            console.error('❌ Firestore update failed after retry:', retryError);
-            
-            // Admin diagnostic: Log complete failure for customer support investigation
-            uploadErrorTracker.logWarning('Firestore update failed after retry - Love Retold functions will still process file', {
-              sessionId,
-              fullUserId,
-              truncatedUserId: sessionComponents.userId,
-              expectedStoragePath: finalPath,
-              status: 'ReadyForTranscription',
-              step: 'firestoreUpdateRetryFailed',
-              firestoreUpdate: {
-                attempted: true,
-                retryAttempted: true,
-                success: false,
-                initialError: firestoreError.message,
-                retryError: retryError.message
-              },
-              additionalData: {
-                uploadSuccessful: true,
-                recordingSafelyStored: true,
-                transcriptionMayBeDelayed: true,
-                loveRetoldWillStillProcess: true
-              }
-            });
-            // Don't throw error - upload was successful, Love Retold functions will still process the uploaded file
+          } catch (statusError) {
+            console.error('Failed to set error status:', statusError);
           }
+          
+          // Re-throw error to fail the upload (honest error reporting)
+          throw new Error('Upload completion failed. Please try recording again.');
         }
         
         return {
