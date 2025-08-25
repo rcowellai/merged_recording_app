@@ -61,12 +61,12 @@ class FirebaseFunctionsService {
       console.log('📥 Response data field:', result?.data);
       console.log('📥 Response data type:', typeof result?.data);
       
-      // Handle getRecordingSession response format directly
+      // Handle Love Retold getRecordingSession response format
       if (result && result.data) {
         const data = result.data;
-        console.log('✅ Processing getRecordingSession response:', data);
+        console.log('✅ Processing Love Retold getRecordingSession response:', data);
         
-        // Trust server-provided messages and status - no client-side override
+        // Map Love Retold response to expected format
         this.lastError = null;
         return {
           status: data.status || 'unknown',

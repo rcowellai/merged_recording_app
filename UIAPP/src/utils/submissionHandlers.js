@@ -131,155 +131,150 @@ export function createSubmissionHandler({
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: 0 });
       console.log('✅ Upload state initialized');
 
-      // NEW: Love Retold Integration - Use proper sessionId and userId  
-      const result = await firebaseErrorHandler.withFallback(
-        // Love Retold upload operation
-        async () => {
-          firebaseErrorHandler.log('info', 'Starting Love Retold upload', {
-            fileName,
-            captureMode,
-            fileSize: recordedBlob.size,
-            sessionId: sessionId,
-            userId: sessionComponents?.userId
-          }, {
-            service: 'love-retold-upload',
-            operation: 'love-retold-upload'
+      // NEW: Love Retold Integration - Different logic for Love Retold vs standalone sessions
+      console.log('🔍 Checking Love Retold session data...');
+      console.log('Session validation:', {
+        hasSessionId: !!sessionId,
+        sessionIdValue: sessionId,
+        hasSessionComponents: !!sessionComponents,
+        sessionComponentsValue: sessionComponents,
+        hasUserId: !!(sessionComponents && sessionComponents.userId),
+        userIdValue: sessionComponents?.userId
+      });
+
+      let result;
+
+      if (sessionId && sessionComponents && sessionComponents.userId) {
+        // LOVE RETOLD SESSION: No fallback - direct upload or direct error
+        console.log('✅ Love Retold session detected - using direct upload (no fallback)');
+        firebaseErrorHandler.log('info', 'Starting Love Retold upload', {
+          fileName,
+          captureMode,
+          fileSize: recordedBlob.size,
+          sessionId: sessionId,
+          userId: sessionComponents?.userId
+        }, {
+          service: 'love-retold-upload',
+          operation: 'love-retold-upload'
+        });
+        
+        firebaseErrorHandler.log('debug', 'Using Love Retold Upload Service', {
+          sessionId,
+          userId: sessionComponents.userId,
+          promptId: sessionComponents.promptId
+        }, {
+          service: 'love-retold-upload',
+          operation: 'proper-integration'
+        });
+        
+        console.log(`🚀 LOVE RETOLD UPLOAD: Direct upload (no localStorage fallback)`);
+        
+        // Customer support: Track upload start with full context
+        uploadErrorTracker.logInfo('Love Retold upload starting', {
+          sessionId,
+          fullUserId: sessionData?.fullUserId,
+          truncatedUserId: sessionComponents?.userId,
+          step: 'uploadStart',
+          status: 'Uploading',
+          fileSize: recordedBlob.size,
+          mimeType: actualMimeType
+        });
+        
+        const uploadResult = await uploadLoveRetoldRecording(
+          recordedBlob,
+          sessionId,
+          sessionComponents,
+          sessionData,
+          {
+            mediaType: captureMode,
+            actualMimeType: actualMimeType,
+            onProgress: (progress) => {
+              dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
+            },
+            maxRetries: 3
+          }
+        );
+        
+        console.log(`✅ LOVE RETOLD UPLOAD SUCCESS: Upload completed`);
+        
+        if (uploadResult.success) {
+          // Customer support: Track successful upload completion
+          uploadErrorTracker.logInfo('Love Retold upload completed successfully', {
+            sessionId,
+            fullUserId: sessionData?.fullUserId,
+            truncatedUserId: sessionComponents?.userId,
+            step: 'uploadFinalize',
+            status: 'ReadyForTranscription',
+            storagePath: uploadResult.storagePath,
+            uploadMethod: uploadResult.uploadMethod || 'simple'
           });
           
-          // Check if we have proper Love Retold session data
-          console.log('🔍 Checking Love Retold session data...');
-          console.log('Session validation:', {
-            hasSessionId: !!sessionId,
-            sessionIdValue: sessionId,
-            hasSessionComponents: !!sessionComponents,
-            sessionComponentsValue: sessionComponents,
-            hasUserId: !!(sessionComponents && sessionComponents.userId),
-            userIdValue: sessionComponents?.userId
-          });
-
-          if (sessionId && sessionComponents && sessionComponents.userId) {
-            console.log('✅ Love Retold session data is valid, using Love Retold upload');
-            firebaseErrorHandler.log('debug', 'Using Love Retold Upload Service', {
-              sessionId,
-              userId: sessionComponents.userId,
-              promptId: sessionComponents.promptId
-            }, {
-              service: 'love-retold-upload',
-              operation: 'proper-integration'
-            });
-            
-            // Simple upload flow - no progressive upload logic
-            // Simple single upload after recording completes
-            console.log(`🚀 FINAL UPLOAD: Using simple single upload`);
-            
-            // Customer support: Track upload start with full context
-            uploadErrorTracker.logInfo('Love Retold upload starting', {
-              sessionId,
-              fullUserId: sessionData?.fullUserId,
-              truncatedUserId: sessionComponents?.userId,
-              step: 'uploadStart',
-              status: 'Uploading',
-              fileSize: recordedBlob.size,
-              mimeType: actualMimeType
-            });
-            
-            const uploadResult = await uploadLoveRetoldRecording(
-              recordedBlob,
-              sessionId,
-              sessionComponents,
-              sessionData, // UID-FIX-SLICE-A: Pass sessionData for full userId
-              {
-                mediaType: captureMode,
-                actualMimeType: actualMimeType,
-                onProgress: (progress) => {
-                  dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
-                },
-                maxRetries: 3
-              }
-            );
-            
-            console.log(`✅ FINAL UPLOAD SUCCESS: Upload completed`);
-            
-            if (uploadResult.success) {
-              // Customer support: Track successful upload completion
-              uploadErrorTracker.logInfo('Love Retold upload completed successfully', {
-                sessionId,
-                fullUserId: sessionData?.fullUserId,
-                truncatedUserId: sessionComponents?.userId,
-                step: 'uploadFinalize',
-                status: 'ReadyForTranscription',
-                storagePath: uploadResult.storagePath,
-                uploadMethod: uploadResult.uploadMethod || 'simple'
-              });
-              
-              return {
-                docId: sessionId, // Use sessionId as docId for Love Retold
-                downloadURL: null, // Love Retold handles download URLs internally
-                storagePath: uploadResult.storagePath
-              };
-            } else {
-              throw new Error('Love Retold upload failed');
-            }
-            
-          } else {
-            console.log('❌ Love Retold session data is invalid, falling back to legacy upload');
-            console.log('Fallback reason:', {
-              noSessionId: !sessionId,
-              noSessionComponents: !sessionComponents,
-              noUserId: !(sessionComponents && sessionComponents.userId)
-            });
-            firebaseErrorHandler.log('debug', 'Using C05 Memory Recording fallback', null, {
+          result = {
+            docId: sessionId, // Use sessionId as docId for Love Retold
+            downloadURL: null, // Love Retold handles download URLs internally
+            storagePath: uploadResult.storagePath
+          };
+        } else {
+          throw new Error('Love Retold upload failed');
+        }
+        
+      } else {
+        // STANDALONE SESSION: Use fallback logic for non-Love Retold sessions
+        console.log('❌ Not a Love Retold session - using fallback upload logic');
+        result = await firebaseErrorHandler.withFallback(
+          // Primary: Firebase memory recording
+          async () => {
+            console.log('📤 Attempting Firebase memory recording upload...');
+            firebaseErrorHandler.log('debug', 'Using C05 Memory Recording upload', null, {
               service: 'recording-upload',
               operation: 'c05-upload'
             });
             
             // Generate userId and memoryId for Firebase memory recording
-            const userId = 'anonymous'; // Could be enhanced to use actual user ID
+            const userId = 'anonymous';
             const memoryId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
-            // Use C05 uploadMemoryRecording function
             const uploadResult = await uploadMemoryRecording(
               recordedBlob,
               userId,
               memoryId,
               {
                 mediaType: captureMode,
-                fileName: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for Firebase naming
+                fileName: fileName.replace(/\.[^/.]+$/, ''),
                 onProgress: (progress) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress }),
                 linkToFirestore: true
               }
             );
             
-            // Map Firebase result to expected format
             return {
               docId: memoryId,
               downloadURL: uploadResult.downloadURL,
               storagePath: uploadResult.storagePath
             };
-          }
-        },
-        // LocalStorage fallback operation
-        async () => {
-          firebaseErrorHandler.log('info', 'Using localStorage fallback for upload', {
-            fileName,
-            captureMode
-          }, {
-            service: 'recording-upload',
-            operation: 'localStorage-fallback'
-          });
-          
-          // Use local storage upload (preserves original logic)
-          return await uploadRecordingLocal(
-            recordedBlob,
-            fileName,
-            captureMode,
-            (fraction) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: fraction }),
-            actualMimeType
-          );
-        },
-        { maxRetries: 2 }, // Recording uploads get fewer retries
-        'recording-upload'
-      );
+          },
+          // Fallback: LocalStorage upload
+          async () => {
+            console.log('📱 Using localStorage fallback for standalone session...');
+            firebaseErrorHandler.log('info', 'Using localStorage fallback for upload', {
+              fileName,
+              captureMode
+            }, {
+              service: 'recording-upload',
+              operation: 'localStorage-fallback'
+            });
+            
+            return await uploadRecordingLocal(
+              recordedBlob,
+              fileName,
+              captureMode,
+              (fraction) => dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: fraction }),
+              actualMimeType
+            );
+          },
+          { maxRetries: 2 },
+          'recording-upload'
+        );
+      }
 
       // If successful, we have docId and downloadURL
       dispatch({ type: APP_ACTIONS.SET_DOC_ID, payload: result.docId });
@@ -320,10 +315,11 @@ export function createSubmissionHandler({
         operation: 'final-error'
       });
       
-      // Show user-friendly error message
-      console.error('🚨 Showing error to user:', mappedError.message);
-      alert(mappedError.message || 'Something went wrong during upload. Please try again.');
+      // Show user-friendly error message via error screen instead of alert
+      console.error('🚨 Setting error state for user:', mappedError.message);
       dispatch({ type: APP_ACTIONS.SET_UPLOAD_IN_PROGRESS, payload: false });
+      dispatch({ type: APP_ACTIONS.SET_ERROR_MESSAGE, payload: mappedError.message || 'Something went wrong during upload. Please try again.' });
+      dispatch({ type: APP_ACTIONS.SET_SHOW_ERROR, payload: true });
     }
   };
 

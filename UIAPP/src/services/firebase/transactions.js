@@ -51,6 +51,13 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
       }
       
       const currentData = sessionDoc.data();
+      
+      // Idempotent completion: if already completed, return success
+      if (currentData.status === 'ReadyForTranscription') {
+        console.log(`✅ Session ${sessionId} already completed, returning success`);
+        return { success: true };
+      }
+      
       if (!['Recording', 'Uploading'].includes(currentData.status)) {
         throw createError(
           UPLOAD_ERRORS.INVALID_STATE,
@@ -59,7 +66,7 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
         );
       }
       
-      // Atomic update of ALL completion fields
+      // Atomic update of ALL completion fields (anonymous user permissions compliant)
       transaction.update(sessionRef, {
         status: 'ReadyForTranscription',
         'storagePaths.finalVideo': uploadedFilePath,
@@ -67,9 +74,8 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
         'recordingData.fileSize': completionData.fileSize,
         'recordingData.mimeType': completionData.mimeType,
         recordingCompletedAt: new Date(),
-        updatedAt: new Date(),
         // Clear any previous errors (Love Retold will automatically delete prompt)
-        'transcription.error': null
+        error: null
       });
       
       console.log(`✅ Transaction prepared for session ${sessionId}`);
@@ -262,10 +268,9 @@ export async function updateRecordingStatusAtomic(sessionId, newStatus, addition
         );
       }
       
-      // Prepare update data
+      // Prepare update data (anonymous user permissions compliant)
       const updateData = {
         status: newStatus,
-        updatedAt: new Date(),
         ...additionalFields
       };
       

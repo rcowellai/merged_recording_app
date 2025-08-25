@@ -95,7 +95,7 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
         });
 
         // Check if session validation returned an error status
-        if (!data.isValid || data.status !== 'valid') {
+        if (!data.isValid) {
           // Handle business rule errors with exact messages from Love Retold
           debugLogger.log('info', 'SessionValidator', 'Session validation failed', { 
             sessionId,

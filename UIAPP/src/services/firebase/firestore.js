@@ -518,25 +518,6 @@ class FirebaseFirestoreService {
       const docRef = doc(db, 'recordingSessions', sessionId);
       await updateDoc(docRef, updateData);
       
-      // Also update the recordingStatus in the prompts collection
-      try {
-        // Parse sessionId to extract promptId
-        const { parseSessionId } = await import('../../utils/sessionParser.js');
-        const sessionComponents = parseSessionId(sessionId);
-        
-        if (sessionComponents.promptId) {
-          const promptRef = doc(db, 'prompts', sessionComponents.promptId);
-          await updateDoc(promptRef, {
-            recordingStatus: status,
-            updatedAt: serverTimestamp()
-          });
-          console.log('📝 Prompt recordingStatus updated successfully to:', status);
-        }
-      } catch (promptUpdateError) {
-        console.warn('Failed to update prompt recordingStatus (non-critical):', promptUpdateError.message);
-        // Continue - session update succeeded, prompt update failure shouldn't break the flow
-      }
-      
       console.log('📝 Recording status updated successfully to:', status);
       this.lastError = null;
     } catch (error) {

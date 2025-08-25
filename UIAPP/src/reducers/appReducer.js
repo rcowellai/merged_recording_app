@@ -17,6 +17,11 @@ export const APP_ACTIONS = {
   SET_UPLOAD_IN_PROGRESS: 'SET_UPLOAD_IN_PROGRESS',
   SET_UPLOAD_FRACTION: 'SET_UPLOAD_FRACTION',
   
+  // Error actions
+  SET_SHOW_ERROR: 'SET_SHOW_ERROR',
+  SET_ERROR_MESSAGE: 'SET_ERROR_MESSAGE',
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  
   // Media player actions
   SET_IS_PLAYING: 'SET_IS_PLAYING',
   SET_CURRENT_TIME: 'SET_CURRENT_TIME',
@@ -37,6 +42,10 @@ export const initialAppState = {
   // Upload states (from App.js lines 67-68)
   uploadInProgress: false,
   uploadFraction: 0,
+  
+  // Error states
+  showError: false,
+  errorMessage: null,
   
   // Media player states (from App.js lines 72-74)
   isPlaying: false,
@@ -64,6 +73,15 @@ export const appReducer = (state, action) => {
       
     case APP_ACTIONS.SET_UPLOAD_FRACTION:
       return { ...state, uploadFraction: action.payload };
+      
+    case APP_ACTIONS.SET_SHOW_ERROR:
+      return { ...state, showError: action.payload };
+      
+    case APP_ACTIONS.SET_ERROR_MESSAGE:
+      return { ...state, errorMessage: action.payload };
+      
+    case APP_ACTIONS.CLEAR_ERROR:
+      return { ...state, showError: false, errorMessage: null };
       
     case APP_ACTIONS.SET_IS_PLAYING:
       return { ...state, isPlaying: action.payload };

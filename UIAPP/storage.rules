@@ -17,12 +17,12 @@ service firebase.storage {
              firestore.get(/databases/(default)/documents/recordingSessions/$(sessionId)).data.expiresAt > request.time;
     }
     
-    // Enhanced validation for anonymous uploads
+    // Enhanced validation for anonymous uploads - Love Retold status values
     function isValidAnonymousUpload(sessionId) {
       return request.auth != null && 
              request.auth.token.firebase.sign_in_provider == 'anonymous' &&
              firestore.exists(/databases/(default)/documents/recordingSessions/$(sessionId)) &&
-             firestore.get(/databases/(default)/documents/recordingSessions/$(sessionId)).data.status in ['pending', 'active', 'recording', 'uploading'];
+             firestore.get(/databases/(default)/documents/recordingSessions/$(sessionId)).data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'ReadyForTranscription', 'failed'];
     }
     
     // Love Retold recording storage - anonymous upload allowed

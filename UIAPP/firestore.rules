@@ -84,12 +84,6 @@ service cloud.firestore {
         request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
-      
-      // RECORDING APP: Allow anonymous users to update recordingStatus field only
-      allow update: if request.auth != null 
-        && request.auth.token.firebase.sign_in_provider == 'anonymous'
-        && onlyUpdatingFields(['recordingStatus', 'updatedAt'])
-        && request.resource.data.recordingStatus in ['recording', 'Uploading', 'processing', 'completed', 'ReadyForTranscription', 'transcribed', 'failed'];
     }
     
     // LEGACY: User prompts subcollection - maintain backward compatibility
@@ -111,7 +105,7 @@ service cloud.firestore {
       // Anonymous read access (anyone with link can read - for recording app)
       allow read: if true;
       
-      // RECORDING APP: Anonymous authentication updates (limited fields and status transitions)
+      // RECORDING APP: Anonymous authentication updates (enhanced for nested fields)
       allow update: if request.auth != null 
         && request.auth.token.firebase.sign_in_provider == 'anonymous'
         && resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
@@ -119,10 +113,18 @@ service cloud.firestore {
         && request.resource.data.userId == resource.data.userId  // Cannot change ownership
         && request.resource.data.promptId == resource.data.promptId  // Cannot change prompt
         && request.resource.data.storytellerId == resource.data.storytellerId // Cannot change storyteller
-        && onlyUpdatingFields([
-          'status', 'recordingData', 'storagePaths', 
-          'recordingStartedAt', 'recordingCompletedAt', 'error'
-        ]);
+        && (
+          // Allow general recording updates (start, progress, etc.)
+          onlyUpdatingFields([
+            'status', 'recordingData', 'storagePaths',
+            'recordingStartedAt', 'recordingCompletedAt', 'error', 'updatedAt'
+          ])
+          ||
+          // Allow specific completion updates (atomic transaction)
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'storagePaths.finalVideo', 'recordingData.uploadProgress',
+                     'recordingData.fileSize', 'recordingData.mimeType', 'recordingCompletedAt', 'error', 'updatedAt'])
+        );
       
       // LOVE RETOLD MAIN APP: Authenticated users can create/delete their own sessions
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;

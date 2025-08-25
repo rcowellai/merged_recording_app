@@ -288,12 +288,9 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
             completionData
           });
           
-          // Execute atomic completion with retry logic and conflict handling
-          await executeWithRetry(
-            () => completeRecordingWithConflictHandling(sessionId, completionData, finalPath),
-            3, // maxRetries
-            1000 // baseDelay (1 second)
-          );
+          // Execute atomic completion with built-in transaction conflict handling
+          // Note: handleTransactionConflicts already provides retry logic for conflicts
+          await completeRecordingWithConflictHandling(sessionId, completionData, finalPath);
           
           console.log('✅ Step 2: Recording completed with atomic transaction');
           
@@ -338,11 +335,10 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           try {
             await updateDoc(doc(db, 'recordingSessions', sessionId), {
               status: 'failed',
-              'transcription.error': {
+              error: {
                 message: atomicError.message,
                 timestamp: new Date()
-              },
-              updatedAt: new Date()
+              }
             });
           } catch (statusError) {
             console.error('Failed to set error status:', statusError);
@@ -390,11 +386,10 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
       // Mark as failed - Love Retold will automatically reset prompt to 'queued' for retry
       await updateDoc(doc(db, 'recordingSessions', sessionId), {
         status: 'failed',
-        'transcription.error': {
+        error: {
           message: lastError.message,
           timestamp: new Date()
-        },
-        updatedAt: new Date()
+        }
       });
       
       // Admin diagnostic: Track complete upload failure for support escalation
