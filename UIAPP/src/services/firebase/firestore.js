@@ -52,7 +52,7 @@ import {
   UPLOAD_ERRORS 
 } from '../../utils/errors';
 import { 
-  updateRecordingStatusAtomic,
+  updateRecordingStatusAtomic as updateRecordingStatusAtomicUtil,
   executeWithRetry 
 } from './transactions.js';
 
@@ -843,7 +843,7 @@ class FirebaseFirestoreService {
     try {
       console.log('🔄 Atomic status update:', sessionId, '→', newStatus);
       
-      const result = await updateRecordingStatusAtomic(sessionId, newStatus, additionalFields);
+      const result = await updateRecordingStatusAtomicUtil(sessionId, newStatus, additionalFields);
       
       console.log('✅ Atomic status update successful:', result);
       this.lastError = null;
