@@ -27,7 +27,7 @@ import {
  */
 class FirebaseFunctionsService {
   constructor() {
-    this.validateSessionFunction = httpsCallable(functions, 'validateRecordingSession');
+    this.validateSessionFunction = httpsCallable(functions, 'getRecordingSession');
     this.defaultTimeout = 4000; // 4 seconds (same as MVPAPP)
     this.lastError = null;
   }
@@ -49,7 +49,7 @@ class FirebaseFunctionsService {
         setTimeout(() => reject(new Error('Firebase function timeout')), timeoutMs);
       });
       
-      console.log('🚀 Calling Firebase function validateRecordingSession...');
+      console.log('🚀 Calling Firebase function getRecordingSession...');
       
       const result = await Promise.race([
         this.validateSessionFunction({ sessionId }),
@@ -61,47 +61,26 @@ class FirebaseFunctionsService {
       console.log('📥 Response data field:', result?.data);
       console.log('📥 Response data type:', typeof result?.data);
       
-      // Handle both response formats from MVPAPP
+      // Handle Love Retold getRecordingSession response format
       if (result && result.data) {
         const data = result.data;
-        console.log('✅ Processing valid response data:', data);
+        console.log('✅ Processing Love Retold getRecordingSession response:', data);
         
-        let transformedResponse;
-        
-        // Check if this is the Love Retold main app response format
-        if (data.valid !== undefined && data.session) {
-          console.log('📱 Detected Love Retold main app response format');
-          // Transform from main app format to recording app format
-          transformedResponse = {
-            status: data.session.status || 'pending',
-            message: 'Session is valid and ready for recording',
-            isValid: data.valid,
-            sessionData: {
-              questionText: data.session.promptText || data.session.questionText,
-              createdAt: data.session.createdAt,
-              expiresAt: data.session.expiresAt,
-            },
-            // Include the full session data
-            session: data.session
-          };
-        } else {
-          console.log('🔧 Detected Recording app response format');
-          // This is our recording app format
-          transformedResponse = {
-            status: data.status || 'unknown',
-            message: data.message || 'Unknown status',
-            isValid: data.isValid || false,
-            sessionData: data.sessionData || null,
-            // UID-FIX-SLICE-A: Include session field for full userId access
-            session: data.session || null,
-            // Include any additional data from the original response
-            ...data
-          };
-        }
-        
-        console.log('🔄 Transformed response:', transformedResponse);
+        // Map Love Retold response to expected format
         this.lastError = null;
-        return transformedResponse;
+        return {
+          status: data.status || 'unknown',
+          message: data.message || 'Session validation failed',
+          isValid: data.status === 'valid',
+          sessionData: data.session ? {
+            questionText: data.session.promptText || data.session.questionText,
+            storytellerName: data.session.storytellerName,
+            askerName: data.session.askerName,
+            createdAt: data.session.createdAt,
+            expiresAt: data.session.expiresAt,
+          } : null,
+          session: data.session || null
+        };
       }
       
       // Fallback if no data
@@ -114,7 +93,7 @@ class FirebaseFunctionsService {
       console.error('Error validating session:', error);
       this.lastError = this.mapFunctionError(error);
       
-      // Handle timeout specifically
+      // Handle timeout specifically - client-side error
       if (error.message === 'Firebase function timeout') {
         return {
           status: 'error',
@@ -122,7 +101,7 @@ class FirebaseFunctionsService {
         };
       }
       
-      // Handle network-related errors specifically
+      // Handle network-related errors specifically - client-side errors
       if (error.code === 'functions/network-error' || 
           error.code === 'functions/internal' ||
           error.name === 'NetworkError' ||
@@ -134,25 +113,6 @@ class FirebaseFunctionsService {
         };
       }
       
-      // Handle different error types
-      if (error.code === 'functions/not-found') {
-        return {
-          status: 'removed',
-          message: 'This question has been removed by the account owner'
-        };
-      }
-      
-      // Handle expired sessions
-      if (error.code === 'functions/failed-precondition' || 
-          error.code === 'functions/permission-denied' ||
-          error.message?.includes('expired') ||
-          error.message?.includes('link expired')) {
-        return {
-          status: 'expired',
-          message: 'This recording link has expired (links are valid for 7 days)'
-        };
-      }
-      
       if (error.code === 'functions/unavailable') {
         return {
           status: 'error',
@@ -160,7 +120,7 @@ class FirebaseFunctionsService {
         };
       }
       
-      // Default error handling - always return error status, never throw
+      // Default error handling for genuine client-side errors - always return error status, never throw
       return {
         status: 'error',
         message: 'Unable to validate session. Please check your connection and try again.'
@@ -168,191 +128,6 @@ class FirebaseFunctionsService {
     }
   }
 
-  /**
-   * Enhanced status mapping with defensive handling and rich status objects
-   * Maintains exact same interface as MVPAPP getEnhancedSessionStatus
-   * 
-   * @param {string} status - Session status (may be null, undefined, or unexpected)
-   * @param {string} customMessage - Custom message from server
-   * @returns {Object} Rich status object with message, canRecord, category, and normalized status
-   */
-  getEnhancedSessionStatus(status, customMessage = '') {
-    // Defensive normalization of status input
-    const normalizedStatus = (() => {
-      if (status === null || status === undefined) {
-        console.warn('⚠️ Null/undefined status received, treating as unknown');
-        return 'unknown';
-      }
-      if (typeof status !== 'string') {
-        console.warn('⚠️ Non-string status received:', typeof status, status, 'treating as unknown');
-        return 'unknown';
-      }
-      return status.toLowerCase().trim();
-    })();
-    
-    // Comprehensive status definitions with rich metadata (from MVPAPP)
-    const statusDefinitions = {
-      // Ready states - can record
-      'active': {
-        message: 'Ready to record your memory',
-        canRecord: true,
-        category: 'ready',
-        status: 'active'
-      },
-      'pending': {
-        message: 'Ready to record your memory',
-        canRecord: true,
-        category: 'ready', 
-        status: 'pending'
-      },
-      
-      // Completed states - cannot record
-      'completed': {
-        message: 'This memory has already been recorded',
-        canRecord: false,
-        category: 'completed',
-        status: 'completed'
-      },
-      
-      // Progress states - cannot record (recording in progress)
-      'processing': {
-        message: 'Your recording is being processed',
-        canRecord: false,
-        category: 'progress',
-        status: 'processing'
-      },
-      'recording': {
-        message: 'Recording is currently in progress',
-        canRecord: false,
-        category: 'progress',
-        status: 'recording'
-      },
-      'uploading': {
-        message: 'Your recording is being uploaded',
-        canRecord: false,
-        category: 'progress',
-        status: 'uploading'
-      },
-      
-      // Error states - cannot record
-      'expired': {
-        message: 'This recording link has expired (links are valid for 7 days)',
-        canRecord: false,
-        category: 'error',
-        status: 'expired'
-      },
-      'removed': {
-        message: 'This question has been removed by the account owner',
-        canRecord: false,
-        category: 'error',
-        status: 'removed'
-      },
-      'failed': {
-        message: 'Recording failed. Please try again.',
-        canRecord: false,
-        category: 'error',
-        status: 'failed'
-      },
-      'invalid': {
-        message: 'Invalid recording session. Please check your link.',
-        canRecord: false,
-        category: 'error',
-        status: 'invalid'
-      },
-      'error': {
-        message: customMessage || 'Unable to load recording session',
-        canRecord: false,
-        category: 'error',
-        status: 'error'
-      },
-      
-      // Unknown/fallback states
-      'unknown': {
-        message: 'Session status unknown. Please refresh and try again.',
-        canRecord: false,
-        category: 'unknown',
-        status: 'unknown'
-      }
-    };
-    
-    const statusObj = statusDefinitions[normalizedStatus];
-    
-    if (statusObj) {
-      return statusObj;
-    }
-    
-    // Defensive fallback for truly unexpected statuses
-    console.warn('⚠️ Unknown session status encountered:', status, '(normalized:', normalizedStatus, ') - logging for monitoring');
-    
-    // Return safe fallback
-    return {
-      message: `Unexpected session state (${normalizedStatus}). Please refresh and try again.`,
-      canRecord: false,
-      category: 'unknown',
-      status: 'unknown'
-    };
-  }
-
-  /**
-   * Legacy compatibility function - maintains backward compatibility
-   * @param {string} status - Session status
-   * @param {string} customMessage - Custom message from server
-   * @returns {string} User-friendly message
-   */
-  getSessionStatusMessage(status, customMessage = '') {
-    const statusObj = this.getEnhancedSessionStatus(status, customMessage);
-    return statusObj.message;
-  }
-
-  /**
-   * Check if session allows recording
-   * @param {string} status - Session status
-   * @returns {boolean} Whether recording is allowed
-   */
-  canRecord(status) {
-    const statusObj = this.getEnhancedSessionStatus(status);
-    return statusObj.canRecord;
-  }
-
-  /**
-   * Get status category for UI styling and behavior
-   * @param {string} status - Session status
-   * @returns {string} Status category (ready, completed, progress, error, unknown)
-   */
-  getStatusCategory(status) {
-    const statusObj = this.getEnhancedSessionStatus(status);
-    return statusObj.category;
-  }
-
-  /**
-   * Check if status represents an error state
-   * @param {string} status - Session status
-   * @returns {boolean} Whether status is an error state
-   */
-  isErrorStatus(status) {
-    const category = this.getStatusCategory(status);
-    return category === 'error' || category === 'unknown';
-  }
-
-  /**
-   * Check if status represents a completed state
-   * @param {string} status - Session status
-   * @returns {boolean} Whether status is a completed state
-   */
-  isCompletedStatus(status) {
-    const category = this.getStatusCategory(status);
-    return category === 'completed';
-  }
-
-  /**
-   * Check if status represents a progress state
-   * @param {string} status - Session status
-   * @returns {boolean} Whether status is a progress state
-   */
-  isProgressStatus(status) {
-    const category = this.getStatusCategory(status);
-    return category === 'progress';
-  }
 
   /**
    * Get last function call error
@@ -439,13 +214,6 @@ export default firebaseFunctionsService;
 
 // Export methods with preserved context (fixes "this" binding issue)
 export const validateSession = (...args) => firebaseFunctionsService.validateSession(...args);
-export const getEnhancedSessionStatus = (...args) => firebaseFunctionsService.getEnhancedSessionStatus(...args);
-export const getSessionStatusMessage = (...args) => firebaseFunctionsService.getSessionStatusMessage(...args);
-export const canRecord = (...args) => firebaseFunctionsService.canRecord(...args);
-export const getStatusCategory = (...args) => firebaseFunctionsService.getStatusCategory(...args);
-export const isErrorStatus = (...args) => firebaseFunctionsService.isErrorStatus(...args);
-export const isCompletedStatus = (...args) => firebaseFunctionsService.isCompletedStatus(...args);
-export const isProgressStatus = (...args) => firebaseFunctionsService.isProgressStatus(...args);
 export const getLastError = (...args) => firebaseFunctionsService.getLastError(...args);
 export const clearError = (...args) => firebaseFunctionsService.clearError(...args);
 

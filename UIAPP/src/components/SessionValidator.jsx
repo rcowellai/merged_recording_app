@@ -88,7 +88,27 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
         });
         
         const data = await validateSession(sessionId);
-        debugLogger.log('info', 'SessionValidator', 'Firebase validation successful', { 
+        debugLogger.log('info', 'SessionValidator', 'Firebase validation response received', { 
+          sessionId, 
+          status: data.status,
+          message: data.message
+        });
+
+        // Check if session validation returned an error status
+        if (!data.isValid) {
+          // Handle business rule errors with exact messages from Love Retold
+          debugLogger.log('info', 'SessionValidator', 'Session validation failed', { 
+            sessionId,
+            status: data.status,
+            message: data.message
+          });
+          setError(data.message || 'Session validation failed');
+          setLoading(false);
+          return;
+        }
+
+        // Session is valid - proceed with setup
+        debugLogger.log('info', 'SessionValidator', 'Session validation successful', { 
           sessionId, 
           sessionData: data 
         });

@@ -51,6 +51,10 @@ import {
   createError, 
   UPLOAD_ERRORS 
 } from '../../utils/errors';
+import { 
+  updateRecordingStatusAtomic as updateRecordingStatusAtomicUtil,
+  executeWithRetry 
+} from './transactions.js';
 
 /**
  * Firebase Firestore Service
@@ -510,6 +514,7 @@ class FirebaseFirestoreService {
         updateData.error = metadata.error;
       }
       
+      // Update recording session
       const docRef = doc(db, 'recordingSessions', sessionId);
       await updateDoc(docRef, updateData);
       
@@ -805,6 +810,75 @@ class FirebaseFirestoreService {
       day: 'numeric'
     });
   }
+
+  /**
+   * STEP 2: Transaction-aware status update with validation
+   * Atomic status updates with state transition validation
+   * 
+   * @param {string} sessionId - Recording session document ID
+   * @param {string} newStatus - New status to set
+   * @param {Object} additionalFields - Additional fields to update
+   * @returns {Promise<{previousStatus: string, newStatus: string}>}
+   */
+  async updateRecordingStatusAtomic(sessionId, newStatus, additionalFields = {}) {
+    try {
+      console.log('🔄 Atomic status update:', sessionId, '→', newStatus);
+      
+      const result = await updateRecordingStatusAtomicUtil(sessionId, newStatus, additionalFields);
+      
+      console.log('✅ Atomic status update successful:', result);
+      this.lastError = null;
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Atomic status update failed:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
+
+  /**
+   * STEP 2: Enhanced upload reference with retry logic
+   * Transaction-safe upload reference tracking
+   * 
+   * @param {string} sessionId - Recording session document ID
+   * @param {string} storagePath - Storage path to reference
+   * @param {Object} metadata - Additional metadata
+   * @returns {Promise<void>}
+   */
+  async addUploadReferenceAtomic(sessionId, storagePath, metadata = {}) {
+    try {
+      console.log('📎 Adding upload reference atomically:', sessionId, '→', storagePath);
+      
+      await executeWithRetry(
+        async () => {
+          const uploadRef = {
+            path: storagePath,
+            uploadedAt: serverTimestamp(),
+            ...metadata
+          };
+          
+          const docRef = doc(db, 'recordingSessions', sessionId);
+          await updateDoc(docRef, {
+            storagePaths: arrayUnion(uploadRef),
+            updatedAt: serverTimestamp()
+          });
+        },
+        3, // maxRetries
+        1000 // baseDelay
+      );
+      
+      console.log('📎 Atomic upload reference added successfully');
+      this.lastError = null;
+      
+    } catch (error) {
+      console.error('Error adding upload reference atomically:', error);
+      const mappedError = this.mapFirestoreError(error);
+      this.lastError = mappedError;
+      throw mappedError;
+    }
+  }
 }
 
 // Create singleton instance following UIAPP patterns
@@ -830,6 +904,8 @@ export const updateRecordingProgress = firebaseFirestoreService.updateRecordingP
 export const addUploadReference = firebaseFirestoreService.addUploadReference.bind(firebaseFirestoreService);
 export const removeUploadReference = firebaseFirestoreService.removeUploadReference.bind(firebaseFirestoreService);
 export const getUploadReferences = firebaseFirestoreService.getUploadReferences.bind(firebaseFirestoreService);
+export const updateRecordingStatusAtomic = firebaseFirestoreService.updateRecordingStatusAtomic.bind(firebaseFirestoreService);
+export const addUploadReferenceAtomic = firebaseFirestoreService.addUploadReferenceAtomic.bind(firebaseFirestoreService);
 export const getLastError = firebaseFirestoreService.getLastError.bind(firebaseFirestoreService);
 export const clearError = firebaseFirestoreService.clearError.bind(firebaseFirestoreService);
 export const cleanup = firebaseFirestoreService.cleanup.bind(firebaseFirestoreService);

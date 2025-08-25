@@ -22,7 +22,12 @@
       "Bash(npm test:*)",
       "Bash(firebase hosting:channel:list:*)",
       "Bash(firebase functions:list:*)",
-      "Bash(firebase functions:log:*)"
+      "Bash(firebase functions:log:*)",
+      "Bash(firebase use:*)",
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
+      "Bash(grep:*)",
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)"
     ],
     "deny": [],
     "ask": [],

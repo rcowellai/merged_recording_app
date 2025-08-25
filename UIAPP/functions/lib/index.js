@@ -37,7 +37,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.warmup = exports.logger = exports.processRecording = exports.validateRecordingSession = exports.createStory = exports.validateSession = void 0;
+exports.warmup = exports.logger = exports.processRecording = exports.createStory = exports.validateSession = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const v2_1 = require("firebase-functions/v2");
@@ -55,7 +55,6 @@ const processRecording_1 = require("./recordings/processRecording");
 Object.defineProperty(exports, "processRecording", { enumerable: true, get: function () { return processRecording_1.processRecording; } });
 const validateSession_1 = require("./sessions/validateSession");
 Object.defineProperty(exports, "validateSession", { enumerable: true, get: function () { return validateSession_1.validateSession; } });
-Object.defineProperty(exports, "validateRecordingSession", { enumerable: true, get: function () { return validateSession_1.validateSession; } });
 const createStory_1 = require("./stories/createStory");
 Object.defineProperty(exports, "createStory", { enumerable: true, get: function () { return createStory_1.createStory; } });
 // Export utility functions for testing

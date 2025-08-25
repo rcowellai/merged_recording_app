@@ -20,10 +20,7 @@ import useRecordingFlow from '../hooks/useRecordingFlow';
 // Mock Firebase services
 jest.mock('../services/firebase', () => ({
   initializeAuth: jest.fn(),
-  validateSession: jest.fn(),
-  canRecord: jest.fn(),
-  getEnhancedSessionStatus: jest.fn(),
-  isErrorStatus: jest.fn()
+  validateSession: jest.fn()
 }));
 
 // Mock Firebase error handler
@@ -128,13 +125,7 @@ describe('useRecordingFlow Hook - C09 Firebase Integration', () => {
       message: 'Session is valid',
       isValid: true
     });
-    mockServices.canRecord.mockReturnValue(true);
-    mockServices.getEnhancedSessionStatus.mockReturnValue({
-      message: 'Ready to record',
-      canRecord: true,
-      status: 'active'
-    });
-    mockServices.isErrorStatus.mockReturnValue(false);
+    // Functions removed - validateSession now returns all needed information directly
     
     // Reset window location
     window.location.search = '';
@@ -215,12 +206,7 @@ describe('useRecordingFlow Hook - C09 Firebase Integration', () => {
         message: 'Recording already completed',
         isValid: true
       });
-      mockServices.canRecord.mockReturnValue(false);
-      mockServices.getEnhancedSessionStatus.mockReturnValue({
-        message: 'Recording already completed',
-        canRecord: false,
-        status: 'completed'
-      });
+      // Functions removed - validateSession now returns all needed information directly
       
       const { result } = renderHook(() => useRecordingFlow());
       

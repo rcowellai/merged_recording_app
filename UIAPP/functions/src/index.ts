@@ -29,8 +29,7 @@ export {
   createStory,
 };
 
-// Alias for backward compatibility with client expectation
-export { validateSession as validateRecordingSession };
+// Note: Removed validateRecordingSession alias - now using Love Retold's getRecordingSession directly
 
 // Export storage triggered functions
 export {

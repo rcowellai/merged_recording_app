@@ -34,6 +34,7 @@ import ProgressOverlay from './ProgressOverlay';
 import RadixStartOverDialog from './RadixStartOverDialog';
 import PlyrMediaPlayer from './PlyrMediaPlayer';
 import ConfettiScreen from './confettiScreen';
+import ErrorScreen from './ErrorScreen';
 import AppBanner from './AppBanner';
 
 import '../styles/App.css';
@@ -266,6 +267,33 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           }
 
           return null;
+        }
+
+        // Error Screen Short-Circuit - takes priority over confetti
+        if (appState.showError) {
+          debugLogger.log('info', 'AppContent', 'Rendering error screen', { 
+            errorMessage: appState.errorMessage 
+          });
+          
+          const handleRetry = () => {
+            debugLogger.log('info', 'AppContent', 'Error retry clicked');
+            dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
+            // Stay in submit stage so user can retry upload
+          };
+          
+          const handleCancel = () => {
+            debugLogger.log('info', 'AppContent', 'Error cancel clicked - starting over');
+            dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
+            navigationHandlers.handleStartOverConfirm();
+          };
+          
+          return (
+            <ErrorScreen 
+              errorMessage={appState.errorMessage}
+              onRetry={handleRetry}
+              onCancel={handleCancel}
+            />
+          );
         }
 
         // Confetti Short-Circuit (preserves exact logic from original App.js:106-108)
