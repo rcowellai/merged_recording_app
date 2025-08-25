@@ -199,7 +199,7 @@ firebase storage:rules:get
 #### Function Rollback
 ```bash
 # List function versions
-gcloud functions list --project=loveretold-testproject
+gcloud functions list --project=love-retold-webapp
 
 # Rollback to previous version
 firebase functions:delete validateRecordingSession
@@ -278,7 +278,7 @@ firebase deploy --only firestore:rules,storage:rules
 - [CLAUDE.md](../UIAPP/CLAUDE.md) - Development guidelines
 
 ### External Resources
-- [Firebase Console](https://console.firebase.google.com/project/loveretold-testproject)
+- [Firebase Console](https://console.firebase.google.com/project/love-retold-webapp)
 - [Production App](https://record-loveretold-app.web.app)
 - [GitHub Repository](https://github.com/[org]/[repo])
 

@@ -68,8 +68,8 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
         'recordingData.mimeType': completionData.mimeType,
         recordingCompletedAt: new Date(),
         updatedAt: new Date(),
-        // Clear any previous errors
-        error: null
+        // Clear any previous errors (Love Retold will automatically delete prompt)
+        'transcription.error': null
       });
       
       console.log(`✅ Transaction prepared for session ${sessionId}`);

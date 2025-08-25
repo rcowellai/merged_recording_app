@@ -78,14 +78,7 @@ export {
 
 export {
   // Functions service methods
-  validateSession,
-  getEnhancedSessionStatus,
-  getSessionStatusMessage,
-  canRecord,
-  getStatusCategory,
-  isErrorStatus,
-  isCompletedStatus,
-  isProgressStatus
+  validateSession
 } from './functions';
 
 export {

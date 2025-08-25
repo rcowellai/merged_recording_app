@@ -1,0 +1,143 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for security validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAnonymousUser() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+    
+    // Helper function for Love Retold anonymous updates (Recording App)
+    function onlyUpdatingFields(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(fields);
+    }
+    
+    // ==========================================
+    // LOVE RETOLD MAIN APP COLLECTIONS
+    // ==========================================
+    
+    // COLLECTIONS THAT USE PREFIX (dev_ in development)
+    
+    // Users collection - uses prefix in firebaseAuthService
+    match /dev_users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // FLAT COLLECTIONS - Phase 2 Migration
+    
+    // Storytellers flat collection - optimized for scalability
+    match /dev_storytellers/{storytellerId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    match /storytellers/{storytellerId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    
+    // LEGACY: Storytellers subcollection - maintain backward compatibility
+    match /dev_user_storytellers/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /user_storytellers/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // COLLECTIONS THAT DON'T USE PREFIX
+    
+    // Library collections - NO prefix in firestoreLibraryService
+    match /library_categories/{categoryId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /library_prompts/{promptId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Prompts flat collection - optimized for scalability  
+    match /dev_prompts/{promptId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    match /prompts/{promptId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    
+    // LEGACY: User prompts subcollection - maintain backward compatibility
+    match /user_prompts/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Future collections
+    match /user_stories/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ==========================================
+    // RECORDING APP COLLECTIONS  
+    // ==========================================
+    
+    // Recording sessions - ENHANCED: Support for both Love Retold main app AND recording app
+    match /recordingSessions/{sessionId} {
+      // Anonymous read access (anyone with link can read - for recording app)
+      allow read: if true;
+      
+      // RECORDING APP: Anonymous authentication updates (limited fields and status transitions)
+      allow update: if request.auth != null 
+        && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
+        && request.resource.data.status in ['Recording', 'Uploading', 'ReadyForTranscription', 'failed']
+        && request.resource.data.userId == resource.data.userId  // Cannot change ownership
+        && request.resource.data.promptId == resource.data.promptId  // Cannot change prompt
+        && request.resource.data.storytellerId == resource.data.storytellerId // Cannot change storyteller
+        && onlyUpdatingFields([
+          'status', 'recordingData', 'storagePaths', 
+          'recordingStartedAt', 'recordingCompletedAt', 'error'
+        ]);
+      
+      // LOVE RETOLD MAIN APP: Authenticated users can create/delete their own sessions
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // LOVE RETOLD MAIN APP: Authenticated users can read/write their own sessions
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Stories collection - for future use by both apps
+    match /stories/{storyId} {
+      allow read, write: if isAuthenticated() && 
+                        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Analytics collection (write-only for metrics)
+    match /analytics/{document=**} {
+      allow write: if isAuthenticated();
+      allow read: if false; // Admin SDK only
+    }
+  }
+}

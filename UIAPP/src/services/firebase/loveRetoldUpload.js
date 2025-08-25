@@ -334,16 +334,15 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           });
           
           // Mark session as failed (transaction already cleaned up uploaded file)
+          // Love Retold will automatically reset prompt to 'queued' for retry
           try {
             await updateDoc(doc(db, 'recordingSessions', sessionId), {
               status: 'failed',
-              error: {
-                code: 'ATOMIC_COMPLETION_FAILED',
+              'transcription.error': {
                 message: atomicError.message,
-                timestamp: new Date(),
-                retryable: true,
-                step: 'atomicTransaction'
-              }
+                timestamp: new Date()
+              },
+              updatedAt: new Date()
             });
           } catch (statusError) {
             console.error('Failed to set error status:', statusError);
@@ -388,15 +387,14 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
     
     // Mark session as failed if all attempts fail (preserves MVPAPP error handling)
     try {
+      // Mark as failed - Love Retold will automatically reset prompt to 'queued' for retry
       await updateDoc(doc(db, 'recordingSessions', sessionId), {
         status: 'failed',
-        error: {
-          code: 'UPLOAD_FAILED',
+        'transcription.error': {
           message: lastError.message,
-          timestamp: new Date(),
-          retryable: true,
-          retryCount: maxRetries
-        }
+          timestamp: new Date()
+        },
+        updatedAt: new Date()
       });
       
       // Admin diagnostic: Track complete upload failure for support escalation

@@ -2,6 +2,12 @@
  * Session Validation Function - Epic 1.5 Core Integration
  * HTTP callable function to validate recording session status
  * Used by recording app to check session validity before recording
+ * 
+ * BUSINESS RULES:
+ * A) If a UID has already been used to submit a recording → "This memory has already been recorded"
+ * B) If the prompt tied to the UID was deleted after the UID was issued → "This question has been deleted by <<UserId>> and is no longer available to record"
+ * C) If the prompt was sent >365 days ago → "This link is over 365 days old and can no longer be accessed"
+ * D) If the UID doesn't exist → "This recording link is invalid or no longer exists"
  */
 
 import * as functions from 'firebase-functions/v2';
@@ -73,14 +79,14 @@ export const validateSession = functions.https.onCall<ValidateSessionRequest, Pr
         return {
           isValid: false,
           status: 'removed',
-          message: 'Recording session not found or has been removed',
+          message: 'This recording link is invalid or no longer exists',
         };
       }
 
       const sessionData = sessionDoc.data()!;
       const now = admin.firestore.Timestamp.now();
 
-      // Check if session is expired
+      // Check if session is expired (Business Rule C)
       if (sessionData.expiresAt && sessionData.expiresAt.toMillis() < now.toMillis()) {
         loggerInstance.info('Session expired', {
           sessionId,
@@ -90,16 +96,26 @@ export const validateSession = functions.https.onCall<ValidateSessionRequest, Pr
         return {
           isValid: false,
           status: 'expired',
-          message: 'This recording link has expired. Please contact the sender for a new link.',
+          message: 'This link is over 365 days old and can no longer be accessed',
         };
       }
 
-      // Check session status
-      if (sessionData.status === 'completed') {
+      // Define all post-recording statuses that indicate recording has already happened (Business Rule A)
+      const POST_RECORDING_STATUSES = [
+        'completed', 'processing', 'transcribed', 'ReadyForTranscription',
+        'uploading', 'recording', 'Transcribed', 'Processing', 'Uploading', 'Recording'
+      ];
+
+      // Check if recording has already been done (Business Rule A)
+      if (POST_RECORDING_STATUSES.includes(sessionData.status)) {
+        loggerInstance.info('Session already recorded', {
+          sessionId,
+          status: sessionData.status,
+        });
         return {
           isValid: false,
           status: 'completed',
-          message: 'This recording has already been completed.',
+          message: 'This memory has already been recorded',
         };
       }
 
@@ -111,27 +127,29 @@ export const validateSession = functions.https.onCall<ValidateSessionRequest, Pr
         };
       }
 
+      // Validate that prompt text exists (Business Rule B)
+      const promptText = sessionData.promptText || sessionData.questionText;
+      if (!promptText || promptText.trim() === '') {
+        const deletedBy = sessionData.deletedBy || 'the account owner';
+        loggerInstance.warn('Session has no prompt text - treating as deleted', {
+          sessionId,
+          hasPromptText: !!sessionData.promptText,
+          hasQuestionText: !!sessionData.questionText,
+          deletedBy,
+        });
+        return {
+          isValid: false,
+          status: 'removed',
+          message: `This question has been deleted by ${deletedBy} and is no longer available to record`,
+        };
+      }
+
       // Accept both 'active' and 'pending' as valid recording states
       if (sessionData.status !== 'active' && sessionData.status !== 'pending') {
         return {
           isValid: false,
           status: 'invalid',
           message: `Session status is ${sessionData.status}`,
-        };
-      }
-
-      // Validate that prompt text exists - critical data integrity check
-      const promptText = sessionData.promptText || sessionData.questionText;
-      if (!promptText || promptText.trim() === '') {
-        loggerInstance.warn('Session has no prompt text - treating as removed', {
-          sessionId,
-          hasPromptText: !!sessionData.promptText,
-          hasQuestionText: !!sessionData.questionText,
-        });
-        return {
-          isValid: false,
-          status: 'removed',
-          message: 'This prompt has been removed or is no longer available.',
         };
       }
 

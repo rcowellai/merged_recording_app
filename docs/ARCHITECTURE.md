@@ -297,7 +297,7 @@ firebase deploy --only hosting
 
 ### 9.3 Production URLs
 - **App**: https://record-loveretold-app.web.app
-- **Firebase Project**: loveretold-testproject
+- **Firebase Project**: love-retold-webapp
 - **Functions Region**: us-central1
 
 ---

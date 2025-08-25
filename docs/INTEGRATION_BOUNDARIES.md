@@ -50,7 +50,7 @@
   - Payment and subscription handling
 
 ⚠️ SHARED RESOURCES (Coordination Required):
-  - Firebase project: loveretold-testproject
+  - Firebase project: love-retold-webapp
   - Firestore: recordingSessions collection
   - Storage: /users/{userId}/recordings/ paths
   - Cloud Functions namespace
@@ -298,7 +298,7 @@ Application Metrics:
 - [PRD.md](./PRD.md) - Product requirements and questions
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture
 - [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) - Implementation history
-- [Firebase Console](https://console.firebase.google.com/project/loveretold-testproject)
+- [Firebase Console](https://console.firebase.google.com/project/love-retold-webapp)
 
 ---
 

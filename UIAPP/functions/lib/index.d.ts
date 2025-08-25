@@ -7,7 +7,6 @@ import { processRecording } from './recordings/processRecording';
 import { validateSession } from './sessions/validateSession';
 import { createStory } from './stories/createStory';
 export { validateSession, createStory, };
-export { validateSession as validateRecordingSession };
 export { processRecording, };
 export { loggerInstance as logger } from './utils/logger';
 /**
