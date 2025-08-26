@@ -27,6 +27,8 @@
       "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
       "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
       "Bash(grep:*)",
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
       "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)"
     ],
     "deny": [],

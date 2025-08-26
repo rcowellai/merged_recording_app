@@ -17,7 +17,7 @@
  * 4. If storage cleanup fails → log but preserve original error
  */
 
-import { doc, runTransaction } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db } from '../../config/firebase';
 import { storage } from '../../config/firebase';
@@ -75,7 +75,8 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
         'recordingData.mimeType': completionData.mimeType,
         recordingCompletedAt: new Date(),
         // Clear any previous errors (Love Retold will automatically delete prompt)
-        error: null
+        error: null,
+        updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
       });
       
       console.log(`✅ Transaction prepared for session ${sessionId}`);
@@ -271,7 +272,8 @@ export async function updateRecordingStatusAtomic(sessionId, newStatus, addition
       // Prepare update data (anonymous user permissions compliant)
       const updateData = {
         status: newStatus,
-        ...additionalFields
+        ...additionalFields,
+        updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
       };
       
       transaction.update(sessionRef, updateData);

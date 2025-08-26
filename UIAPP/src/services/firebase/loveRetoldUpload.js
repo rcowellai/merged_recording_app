@@ -12,7 +12,7 @@
  */
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from './index.js';
 import { uploadErrorTracker } from '../../utils/uploadErrorTracker.js';
 import { 
@@ -184,8 +184,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         status: 'Uploading', // SLICE-B FIX: Use Love Retold's status value
         'recordingData.fileSize': recordingBlob.size,
         'recordingData.mimeType': recordingBlob.type,
-        'recordingData.uploadStartedAt': new Date()
-        // FIRESTORE-FIX: Remove updatedAt and serverTimestamp - not allowed for anonymous users
+        'recordingData.uploadStartedAt': new Date(),
+        updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
       });
       console.log('✅ Session status updated to Uploading (Love Retold status)');
       
@@ -242,7 +242,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
               if (Math.round(progress) % 10 === 0) {
                 updateDoc(doc(db, 'recordingSessions', sessionId), {
                   'recordingData.uploadProgress': Math.round(progress),
-                  'recordingData.lastUpdated': new Date()
+                  'recordingData.lastUpdated': new Date(),
+                  updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
                 }).catch(err => {
                   console.warn('Progress update failed:', err);
                   // Upload failure tracking: Log progress update issues
@@ -338,7 +339,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
               error: {
                 message: atomicError.message,
                 timestamp: new Date()
-              }
+              },
+              updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
             });
           } catch (statusError) {
             console.error('Failed to set error status:', statusError);
@@ -389,7 +391,8 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         error: {
           message: lastError.message,
           timestamp: new Date()
-        }
+        },
+        updatedAt: serverTimestamp() // ✅ REQUIRED FIELD
       });
       
       // Admin diagnostic: Track complete upload failure for support escalation
