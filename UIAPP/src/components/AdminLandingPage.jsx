@@ -12,7 +12,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { COLORS, LAYOUT } from '../config';
 
 const AdminLandingPage = () => {
   // Admin sections configuration

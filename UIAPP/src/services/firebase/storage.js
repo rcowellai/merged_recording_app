@@ -304,7 +304,7 @@ class FirebaseStorageService {
   async getDownloadURL(storagePath) {
     try {
       // Handle gs:// format paths
-      const path = storagePath.replace(/^gs:\/\/[^\/]+\//, '');
+      const path = storagePath.replace(/^gs:\/\/[^/]+\//, '');
       const mediaRef = ref(storage, path);
       const downloadURL = await firebaseGetDownloadURL(mediaRef);
       
@@ -318,26 +318,6 @@ class FirebaseStorageService {
     }
   }
 
-  /**
-   * Delete a file from storage
-   * @param {string} storagePath - Storage path to delete
-   * @returns {Promise<void>}
-   */
-  async deleteFile(storagePath) {
-    try {
-      const path = storagePath.replace(/^gs:\/\/[^\/]+\//, '');
-      const fileRef = ref(storage, path);
-      await deleteObject(fileRef);
-      
-      console.log('🗑️ File deleted successfully:', path);
-      this.lastError = null;
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      const mappedError = this.mapStorageError(error);
-      this.lastError = mappedError;
-      throw mappedError;
-    }
-  }
 
   /**
    * Get file metadata
@@ -346,7 +326,7 @@ class FirebaseStorageService {
    */
   async getFileMetadata(storagePath) {
     try {
-      const path = storagePath.replace(/^gs:\/\/[^\/]+\//, '');
+      const path = storagePath.replace(/^gs:\/\/[^/]+\//, '');
       const fileRef = ref(storage, path);
       const metadata = await getMetadata(fileRef);
       
@@ -570,7 +550,7 @@ class FirebaseStorageService {
   async getSignedUrl(filePath, expirationTime = 60 * 60 * 1000) { // 1 hour default
     try {
       // Clean the file path (remove gs:// prefix if present)
-      const cleanPath = filePath.replace(/^gs:\/\/[^\/]+\//, '');
+      const cleanPath = filePath.replace(/^gs:\/\/[^/]+\//, '');
       const fileRef = ref(storage, cleanPath);
       
       // Firebase Storage getDownloadURL provides signed URLs by default
@@ -605,7 +585,7 @@ class FirebaseStorageService {
   async deleteFile(filePath, options = {}) {
     try {
       // Clean the file path
-      const cleanPath = filePath.replace(/^gs:\/\/[^\/]+\//, '');
+      const cleanPath = filePath.replace(/^gs:\/\/[^/]+\//, '');
       const fileRef = ref(storage, cleanPath);
       
       // Delete from storage

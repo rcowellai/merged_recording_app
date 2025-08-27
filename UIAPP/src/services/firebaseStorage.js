@@ -29,16 +29,13 @@
 
 import {
   getDownloadURL,
-  deleteFile,
-  getFileMetadata,
-  getSignedUrl
+  deleteFile
 } from './firebase/storage.js';
 import {
   getUserRecordingSessions,
   getAllRecordingSessions,
   getRecordingSession,
-  updateRecordingSession,
-  deleteStory
+  updateRecordingSession
 } from './firebase/firestore.js';
 import { createError, UPLOAD_ERRORS } from '../utils/errors.js';
 import { firebaseErrorHandler } from '../utils/firebaseErrorHandler.js';

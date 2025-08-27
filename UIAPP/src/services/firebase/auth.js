@@ -15,11 +15,6 @@
  */
 
 import { auth, initializeAnonymousAuth as baseInitAnonymousAuth } from '../../config/firebase';
-import { 
-  createError, 
-  classifyStorageError,
-  UPLOAD_ERRORS 
-} from '../../utils/errors';
 import { firebaseErrorHandler } from '../../utils/firebaseErrorHandler';
 
 /**

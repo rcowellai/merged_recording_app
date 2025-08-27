@@ -7,8 +7,7 @@
  */
 
 import { 
-  uploadMemoryRecording, 
-  linkStorageToFirestore,
+  uploadMemoryRecording,
   deleteFile 
 } from './storage.js';
 import { 
@@ -19,17 +18,6 @@ import {
 import { createError, UPLOAD_ERRORS } from '../../utils/errors.js';
 import { ENV_CONFIG } from '../../config/index.js';
 
-/**
- * Generate recording storage path following MVPAPP conventions
- * @param {string} sessionId - Recording session ID
- * @param {string} userId - User ID
- * @param {string} fileExtension - File extension
- * @returns {string} Storage path
- */
-function generateRecordingStoragePath(sessionId, userId, fileExtension = 'mp4') {
-  const timestamp = Date.now();
-  return `users/${userId}/recordings/${sessionId}/${timestamp}_recording.${fileExtension}`;
-}
 
 /**
  * Create RecordingMetadata object from upload parameters
@@ -81,7 +69,6 @@ export async function uploadRecordingWithMetadata(blob, sessionInfo, options = {
       fileName = 'recording',
       duration = 0,
       onProgress = () => {},
-      onChunkUploaded = () => {},
       maxRetries = 3,
       linkToFirestore = true
     } = { ...sessionInfo, ...options };

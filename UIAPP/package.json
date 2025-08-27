@@ -41,7 +41,6 @@
     "deploy:firebase": "firebase deploy",
     "emulate": "firebase emulators:start",
     "emulate:with-ui": "firebase emulators:start --enable-ui",
-    "emulate:functions": "firebase emulators:start --only functions",
     "emulate:storage": "firebase emulators:start --only storage,auth",
     "firebase:init": "firebase init",
     "test:emulator": "cross-env REACT_APP_USE_EMULATOR=true npm run test:ci",

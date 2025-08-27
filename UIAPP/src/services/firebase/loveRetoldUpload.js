@@ -16,8 +16,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from './index.js';
 import { uploadErrorTracker } from '../../utils/uploadErrorTracker.js';
 import { 
-  completeRecordingWithConflictHandling, 
-  executeWithRetry 
+  completeRecordingWithConflictHandling
 } from './transactions.js';
 // UID-FIX-SLICE-A: Removed generateStoragePaths import - using direct path construction with full userId
 
@@ -232,7 +231,7 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         const uploadTask = uploadBytesResumable(storageRef, recordingBlob, metadata);
         console.log('✅ Upload task created, starting upload...');
         
-        const result = await new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           uploadTask.on('state_changed',
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;

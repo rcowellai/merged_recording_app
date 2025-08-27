@@ -278,7 +278,7 @@ export const useLayoutUtils = () => {
 };
 
 // Export all components as default object for easier imports
-export default {
+const Primitives = {
   Container,
   FlexBox,
   Grid,
@@ -290,3 +290,5 @@ export default {
   OverlayContainer,
   useLayoutUtils
 };
+
+export default Primitives;

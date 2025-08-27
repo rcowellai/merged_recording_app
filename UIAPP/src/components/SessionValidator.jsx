@@ -179,7 +179,7 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
     };
 
     loadSession();
-  }, [sessionId, propSessionComponents]);
+  }, [sessionId, propSessionComponents, sessionComponents?.userId]);
 
   // Loading state
   if (loading) {
