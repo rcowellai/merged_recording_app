@@ -169,7 +169,7 @@ const startRecording = async () => {
     mimeType: getBestSupportedMimeType(captureMode) // 'audio/mp4;codecs=mp4a.40.2' preferred
   });
   
-  // Start recording timer (30 second limit)
+  // Start recording timer (15-minute limit - 900 seconds)
   setIsRecording(true);
   setElapsedSeconds(0);
   
@@ -2056,7 +2056,7 @@ REACT_APP_DEBUG_MODE=true
 REACT_APP_LOG_LEVEL=debug
 
 # Recording Configuration
-REACT_APP_MAX_RECORDING_DURATION=30
+REACT_APP_MAX_RECORDING_DURATION=900
 REACT_APP_SUPPORTED_AUDIO_CODECS=audio/mp4;codecs=mp4a.40.2,audio/webm;codecs=opus
 REACT_APP_SUPPORTED_VIDEO_CODECS=video/mp4;codecs=h264,video/webm;codecs=vp8
 ```
@@ -2384,6 +2384,48 @@ describe('Upload Flow Integration', () => {
   });
 });
 ```
+
+---
+
+## OPEN QUESTIONS
+
+The following items require verification or additional investigation to achieve complete documentation accuracy:
+
+### Storage Path Field Names
+**Question**: Confirm the exact field name used for storage paths in Firestore documents  
+**Current Reference**: `storagePaths.finalVideo` (lines 295, 386, 427, 1490)  
+**Verification Step**: Query an actual completed session in production Firestore to confirm field structure  
+**Context**: Multiple atomic transaction references use this field name but requires production data validation  
+
+### Progressive Upload Status
+**Question**: Verify if progressive upload was completely removed or remains as a feature flag  
+**Current Reference**: "Progressive upload removed - using simple full upload after recording" (lines 17, 295)  
+**Verification Step**: Check for any remaining progressive upload code paths in `useRecordingFlow.js` and `loveRetoldUpload.js`  
+**Context**: Comments indicate removal but should confirm no residual implementation exists  
+
+### Error Field Structure Validation
+**Question**: Confirm the exact structure of error objects stored in Firestore  
+**Current Reference**: `error: { message: string, timestamp: Date }` (lines 390-393, 440-443)  
+**Verification Step**: Review actual error documents in production Firestore or test with deliberately failed upload  
+**Context**: Error handling patterns reference this structure throughout documentation  
+
+### Master API Response Format Verification
+**Question**: Validate complete Master API response schemas match documented interfaces  
+**Current Reference**: `MasterValidationResponse` interface (lines 115-126)  
+**Verification Step**: Capture actual Master API responses for all status types (`valid`, `removed`, `expired`, `completed`)  
+**Context**: Dual validation system depends on accurate Master API interface definitions  
+
+### Cloud Function Deployment Status
+**Question**: Confirm which Cloud Functions are currently deployed and operational  
+**Current Reference**: `validateSession`, `processRecording`, `createStory` (lines 75-79)  
+**Verification Step**: Check Firebase console Functions section and test each endpoint  
+**Context**: Documentation assumes all functions are deployed but deployment status should be verified  
+
+### UID-FIX-SLICE-A Implementation Completeness  
+**Question**: Verify UID-FIX-SLICE-A is fully implemented across all upload paths  
+**Current Reference**: "UID-FIX-SLICE-A: Use full userId from session data" (lines 233-234)  
+**Verification Step**: Test session components with truncated vs full user IDs to confirm consistent behavior  
+**Context**: Critical for proper user data isolation and storage organization  
 
 ---
 
