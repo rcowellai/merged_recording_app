@@ -34,7 +34,7 @@ The Love Retold Recording Platform provides a frictionless audio/video memory ca
 2. **Validation** → validateRecordingSession Cloud Function (4s timeout)
 3. **Permission** → Browser media permission request (audio/video)
 4. **Countdown** → 3-2-1-BEGIN visual countdown
-5. **Recording** → 30-second max duration with pause/resume
+5. **Recording** → 15-minute max duration (900 seconds) with pause/resume
 6. **Review** → Plyr media player for playback
 7. **Upload** → Firebase Storage with localStorage fallback
 8. **Completion** → Confetti animation and success confirmation
@@ -62,7 +62,7 @@ The Love Retold Recording Platform provides a frictionless audio/video memory ca
 
 ### 3.2 Recording Capabilities (Implemented)
 - **Media Types**: Audio-only and audio+video modes
-- **Duration**: 30-second maximum with auto-stop
+- **Duration**: 15-minute maximum (900 seconds) with auto-stop
 - **Controls**: Start, pause, resume, stop, re-record
 - **Preview**: Live video preview during recording
 - **Formats**: MP4 (preferred), WebM (fallback)
@@ -118,9 +118,9 @@ src/services/
 ```
 
 ### 4.4 Key Configurations
-- **Environment**: VITE_* variables for Firebase config
-- **Feature Flags**: VITE_STORAGE_TYPE (firebase/local)
-- **Limits**: 30s recording, 500MB storage, 10MB chunks
+- **Environment**: REACT_APP_* variables for Firebase config
+- **Feature Flags**: REACT_APP_STORAGE_TYPE (firebase/local)
+- **Limits**: 900s (15 min) recording, 500MB storage, 10MB chunks
 - **Timeouts**: 4s function calls, 30s upload timeout
 
 ---
@@ -160,9 +160,9 @@ src/services/
 ## 7. Performance & Monitoring
 
 ### 7.1 Current Metrics
-- **Bundle Size**: 276.72kB (gzipped)
+- **Bundle Size**: 1.03MB total (987KB JS + 44KB CSS)
 - **Load Time**: <3s on 3G (validated)
-- **Memory Usage**: <100MB for 30s recording
+- **Memory Usage**: <100MB for 15-minute recording
 - **Browser Support**: 98%+ compatibility achieved
 
 ### 7.2 Monitoring Points

@@ -29,12 +29,16 @@
       "Bash(grep:*)",
       "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
       "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
-      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)"
+      "Read(/C:\\Users\\RobbieC\\Pictures\\Screenshots/**)",
+      "Bash(git push:*)",
+      "Bash(del:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "C:\\c\\Users\\RobbieC\\Desktop\\Apps"
+      "C:\\Users\\RobbieC\\Desktop\\Apps"
     ]
   }
 }
