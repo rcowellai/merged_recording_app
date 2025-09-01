@@ -800,4 +800,7 @@ export const {
   cleanup
 } = firebaseStorageService;
 
-console.log('📦 Firebase Storage Service: LOADED');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('FirebaseStorage', '📦 Firebase Storage Service: LOADED');
+}

@@ -9,14 +9,14 @@ import React, { useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import SessionValidator from './components/SessionValidator.jsx';
 import { extractSessionIdFromUrl } from './utils/sessionParser.js';
-import debugLogger from './utils/debugLogger.js';
+import AppLogger from './utils/AppLogger.js';
 
 function App() {
-  debugLogger.componentMounted('App');
+  AppLogger.lifecycle('App', 'mounted');
   const { sessionId } = useParams();
   const location = useLocation();
   
-  debugLogger.log('info', 'App', 'App initializing', {
+  AppLogger.info('App', 'App initializing', {
     currentUrl: window.location.href,
     userAgent: navigator.userAgent,
     sessionIdFromParams: sessionId,
@@ -25,7 +25,7 @@ function App() {
   
   // Log route changes
   useEffect(() => {
-    debugLogger.log('info', 'ROUTER', 'Route changed', {
+    AppLogger.info('Router', 'Route changed', {
       pathname: location.pathname,
       search: location.search,
       hash: location.hash,
@@ -34,25 +34,40 @@ function App() {
     });
   }, [location, sessionId]);
 
+  // Initialize AppLogger after app startup is complete
+  useEffect(() => {
+    // Defer initialization to ensure all initial app logging completes first
+    const initTimeout = setTimeout(() => {
+      try {
+        AppLogger.deferredInit();
+        AppLogger.info('App', 'AppLogger deferred initialization complete');
+      } catch (error) {
+        AppLogger.error('App', 'AppLogger initialization failed', { error: error.message }, error);
+      }
+    }, 100); // Small delay to ensure all synchronous logging is complete
+
+    return () => clearTimeout(initTimeout);
+  }, []);
+
   // If we have a sessionId from path params, use SessionValidator
   if (sessionId) {
-    debugLogger.log('info', 'App', 'Session ID found in path params, using SessionValidator', { sessionId });
+    AppLogger.info('App', 'Session ID found in path params, using SessionValidator', { sessionId });
     return <SessionValidator />;
   }
 
   // Check for query parameters
   const querySessionId = extractSessionIdFromUrl();
-  debugLogger.log('info', 'App', 'Checking query parameters', { querySessionId });
+  AppLogger.info('App', 'Checking query parameters', { querySessionId });
   
   if (querySessionId) {
-    debugLogger.log('info', 'App', 'Session ID found in query params, redirecting', { querySessionId });
+    AppLogger.info('App', 'Session ID found in query params, redirecting', { querySessionId });
     // Redirect to path-based URL
     window.location.href = `/${querySessionId}`;
     return null;
   }
 
   // No session found, show info page
-  debugLogger.log('info', 'App', 'No session found, showing info page');
+  AppLogger.info('App', 'No session found, showing info page');
   return (
     <div className="app-container">
       <div className="app-header">

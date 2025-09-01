@@ -502,6 +502,13 @@ class FirebaseFirestoreService {
           updateData['recordingData.fileType'] = metadata.fileType;
           console.log('🔍 VALIDATION: Added missing fileType to recordingData:', metadata.fileType);
         }
+        
+        // Enhanced validation: Ensure both locations have fileType for compatibility
+        if (metadata.fileType) {
+          updateData['recordingData.fileType'] = metadata.fileType; // Nested location (preferred)
+          updateData.fileType = metadata.fileType; // Direct property (for backward compatibility)
+          console.log('🔍 ENHANCED VALIDATION: Set fileType in both locations for compatibility:', metadata.fileType);
+        }
       }
       
       if (status === 'completed' && metadata.recordingCompletedAt) {
@@ -912,4 +919,7 @@ export const cleanup = firebaseFirestoreService.cleanup.bind(firebaseFirestoreSe
 // Export utility functions as static methods
 export const { formatDuration, formatDate } = FirebaseFirestoreService;
 
-console.log('📚 Firebase Firestore Service: LOADED');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('FirebaseFirestore', '📚 Firebase Firestore Service: LOADED');
+}

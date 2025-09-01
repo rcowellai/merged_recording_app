@@ -18,7 +18,6 @@ import { firebaseErrorHandler } from './firebaseErrorHandler';
 import { uploadLoveRetoldRecording } from '../services/firebase/loveRetoldUpload.js';
 
 // Import debug utilities
-import { logUploadStep, addDebugLog } from './uploadDebugger.js';
 import { uploadErrorTracker } from './uploadErrorTracker.js';
 
 /**
@@ -41,7 +40,6 @@ export function createSubmissionHandler({
   
   // Handle submit (preserves exact logic from App.js:113-177)
   const handleSubmit = async () => {
-    logUploadStep('UPLOAD STARTED', 'start');
     console.log('🚀 SUBMIT HANDLER STARTED');
     
     // Customer support: Track upload initiation for troubleshooting
@@ -66,7 +64,6 @@ export function createSubmissionHandler({
     };
     
     console.log('📊 Submit Handler Debug Info:', debugInfo);
-    addDebugLog('Submit handler initialized', debugInfo);
 
     try {
       if (!recordedBlobUrl) {

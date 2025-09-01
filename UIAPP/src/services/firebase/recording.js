@@ -390,5 +390,9 @@ export function validateRecordingUpload(blob, sessionInfo) {
   return validation;
 }
 
-console.log('🎙️ Firebase Recording Upload Service (C06): LOADED');
-console.log('📦 Features: chunked uploads, metadata persistence, session integration');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('FirebaseRecording', '🎙️ Firebase Recording Upload Service (C06): LOADED', {
+    features: 'chunked uploads, metadata persistence, session integration'
+  });
+}

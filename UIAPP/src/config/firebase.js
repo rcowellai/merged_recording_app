@@ -45,7 +45,8 @@ if (missingVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 
-console.log('🔥 Firebase initialized for Love Retold project:', process.env.REACT_APP_FIREBASE_PROJECT_ID);
+// Initialization logging moved to AppLogger for admin control
+// AppLogger.service('Firebase', '🔥 Firebase initialized for Love Retold project', { projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID });
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

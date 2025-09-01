@@ -288,5 +288,9 @@ export function getLocalStorageStats() {
   };
 }
 
-console.log('📱 Local Recording Service: ENABLED');
-console.log('💾 Recordings will be stored in browser localStorage');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('LocalRecording', '📱 Local Recording Service: ENABLED', {
+    storage: 'Recordings will be stored in browser localStorage'
+  });
+}

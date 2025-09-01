@@ -1,3 +1,5 @@
+import AppLogger from '../utils/AppLogger';
+
 /**
  * 🔥 Firebase Storage & Download Service for UIAPP (C07)
  * =====================================================
@@ -108,9 +110,20 @@ class FirebaseStorageService {
             this.lastError = null;
             return downloadUrl;
           } else {
+            // Log session data for debugging
+            console.error('❌ Incomplete session data:', {
+              sessionId: path,
+              hasDownloadUrl: !!session?.downloadUrl,
+              hasStoragePath: !!session?.storagePath,
+              sessionKeys: Object.keys(session || {}),
+              sessionStatus: session?.status,
+              hasRecordingData: !!session?.recordingData,
+              recordingDataKeys: session?.recordingData ? Object.keys(session.recordingData) : []
+            });
+            
             throw createError(
               UPLOAD_ERRORS.INVALID_FILE,
-              `Recording session ${path} has no storage path or download URL`
+              `Recording session ${path} has no storage path or download URL. Session may be incomplete - check console for details.`
             );
           }
         } else {
@@ -289,7 +302,7 @@ class FirebaseStorageService {
         docId: session.id, // Admin page compatibility
         sessionId: session.sessionId,
         userId: session.userId,
-        fileType: session.fileType || 'audio',
+        fileType: session.recordingData?.fileType || session.fileType || 'audio',
         fileName: this.generateFileName(session),
         downloadURL: session.downloadUrl || null,
         storagePath: session.storagePath || null,
@@ -587,6 +600,6 @@ export const clearError = () => firebaseStorageService.clearError();
 // UIAPP compatibility exports (matching localRecordingService interface)
 export const fetchAllRecordings = (filters) => firebaseStorageService.listRecordings(filters);
 export const fetchRecording = (recordingId) => firebaseStorageService.getRecording(recordingId);
-
-console.log('🔥 Firebase Storage & Download Service (C07): LOADED');
-console.log('📦 Features: download URLs, listing, deletion, cleanup, quota monitoring');
+AppLogger.service('FirebaseStorageDownload', '🔥 Firebase Storage & Download Service (C07): LOADED', {
+  features: 'download URLs, listing, deletion, cleanup, quota monitoring'
+});

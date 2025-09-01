@@ -150,5 +150,9 @@ export const getFirebaseServicesStatus = () => {
   };
 };
 
-console.log('🔥 Firebase Services Module: LOADED');
-console.log('📊 Available services: auth, firestore, storage, functions, recording (C06), download (C07)');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('FirebaseServices', '🔥 Firebase Services Module: LOADED', {
+    services: 'auth, firestore, storage, functions, recording (C06), download (C07)'
+  });
+}

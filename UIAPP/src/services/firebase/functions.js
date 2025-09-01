@@ -217,4 +217,7 @@ export const validateSession = (...args) => firebaseFunctionsService.validateSes
 export const getLastError = (...args) => firebaseFunctionsService.getLastError(...args);
 export const clearError = (...args) => firebaseFunctionsService.clearError(...args);
 
-console.log('🔧 Firebase Functions Service: LOADED');
+// Service initialization logging
+if (typeof window !== 'undefined' && window.AppLogger) {
+  window.AppLogger.service('FirebaseFunctions', '🔧 Firebase Functions Service: LOADED');
+}

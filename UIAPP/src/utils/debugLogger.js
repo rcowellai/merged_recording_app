@@ -9,7 +9,8 @@ class DebugLogger {
     this.enabled = false;
     this.context = 'UIAPP';
     this.startTime = Date.now();
-    console.log('🔇 General debug logging temporarily disabled - Upload analysis mode active');
+    // Initialization message moved to AppLogger for admin control
+    // console.log('🔇 General debug logging temporarily disabled - Upload analysis mode active');
   }
 
   enable() {

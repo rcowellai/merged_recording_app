@@ -22,7 +22,6 @@ import FirebaseErrorBoundary from './FirebaseErrorBoundary';
 // Utility functions
 import { createSubmissionHandler } from '../utils/submissionHandlers';
 import { createNavigationHandlers } from '../utils/navigationHandlers';
-import { initializeUploadDebugging } from '../utils/uploadDebugger.js';
 
 // Existing components (unchanged)
 import PromptCard from './PromptCard';
@@ -75,10 +74,6 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     hasSessionComponents: !!sessionComponents
   });
 
-  // Initialize upload debugging panel
-  useEffect(() => {
-    initializeUploadDebugging();
-  }, []);
   
   return (
     <FirebaseErrorBoundary component="Recording App">

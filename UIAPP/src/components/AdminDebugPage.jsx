@@ -13,7 +13,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { uploadErrorTracker } from '../utils/uploadErrorTracker';
+import AppLogger from '../utils/AppLogger';
 
 const AdminDebugPage = () => {
   const [errors, setErrors] = useState([]);
@@ -29,8 +29,8 @@ const AdminDebugPage = () => {
   }, [refreshKey]);
 
   const loadErrorData = () => {
-    const allErrors = uploadErrorTracker.getErrors();
-    const summaryData = uploadErrorTracker.getSummary();
+    const allErrors = AppLogger.getErrors();
+    const summaryData = AppLogger.getSummary();
     
     // Sort by timestamp (newest first)
     const sortedErrors = allErrors.sort((a, b) => 
@@ -43,7 +43,7 @@ const AdminDebugPage = () => {
 
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all error logs? This cannot be undone.')) {
-      uploadErrorTracker.clearErrors();
+      AppLogger.clearErrors();
       setErrors([]);
       setSelectedError(null);
       setSummary({});
@@ -56,7 +56,7 @@ const AdminDebugPage = () => {
   };
 
   const handleExport = () => {
-    const exportData = uploadErrorTracker.exportErrors();
+    const exportData = JSON.stringify(AppLogger.exportErrors(), null, 2);
     const blob = new Blob([exportData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -66,22 +66,20 @@ const AdminDebugPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Filter errors based on type and search
+  // Filter errors based on level and search
   const filteredErrors = errors.filter(error => {
-    // Type filter
-    if (filter !== 'all' && error.type !== filter) {
+    // Level filter (AppLogger uses 'level' instead of 'type')
+    if (filter !== 'all' && error.level !== filter) {
       return false;
     }
     
-    // Search filter
+    // Search filter (adapted for AppLogger structure)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
-        error.sessionId?.toLowerCase().includes(searchLower) ||
-        error.fullUserId?.toLowerCase().includes(searchLower) ||
-        error.truncatedUserId?.toLowerCase().includes(searchLower) ||
+        error.source?.toLowerCase().includes(searchLower) ||
         error.message?.toLowerCase().includes(searchLower) ||
-        error.errorCode?.toLowerCase().includes(searchLower)
+        JSON.stringify(error.data || {}).toLowerCase().includes(searchLower)
       );
     }
     
@@ -94,12 +92,13 @@ const AdminDebugPage = () => {
     return date.toLocaleString();
   };
 
-  // Get color based on error type
-  const getTypeColor = (type) => {
-    switch(type) {
+  // Get color based on error level
+  const getLevelColor = (level) => {
+    switch(level) {
       case 'error': return '#ff4444';
-      case 'warning': return '#ffaa00';
+      case 'warn': return '#ffaa00';
       case 'info': return '#4444ff';
+      case 'debug': return '#888888';
       default: return '#888888';
     }
   };
@@ -399,10 +398,10 @@ const AdminDebugPage = () => {
                   <span 
                     style={{
                       ...styles.errorType, 
-                      backgroundColor: getTypeColor(error.type)
+                      backgroundColor: getLevelColor(error.level)
                     }}
                   >
-                    {error.type?.toUpperCase()}
+                    {error.level?.toUpperCase()}
                   </span>
                   {formatTimestamp(error.timestamp)}
                 </div>

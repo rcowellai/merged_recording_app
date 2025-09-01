@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ConsoleDebugToggle from './ConsoleDebugToggle';
 
 const AdminLandingPage = () => {
   // Admin sections configuration
@@ -301,6 +302,9 @@ const AdminLandingPage = () => {
           <div style={styles.statusValue}>{systemStatus.lastMigration}</div>
         </div>
       </div>
+
+      {/* Debug Controls */}
+      <ConsoleDebugToggle />
 
       {/* Admin Sections */}
       <div style={styles.sectionsGrid}>

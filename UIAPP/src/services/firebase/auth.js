@@ -16,6 +16,7 @@
 
 import { auth, initializeAnonymousAuth as baseInitAnonymousAuth } from '../../config/firebase';
 import { firebaseErrorHandler } from '../../utils/firebaseErrorHandler';
+import AppLogger from '../../utils/AppLogger';
 
 /**
  * Firebase Authentication Service
@@ -236,4 +237,4 @@ export const {
   cleanup: cleanupAuth
 } = firebaseAuthService;
 
-console.log('🔒 Firebase Authentication Service: LOADED');
+AppLogger.service('FirebaseAuth', '🔒 Firebase Authentication Service: LOADED');

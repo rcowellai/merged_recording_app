@@ -38,7 +38,13 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "C:\\Users\\RobbieC\\Desktop\\Apps"
+      "C:\\Users\\RobbieC\\Desktop\\loveretoldrecorder"
     ]
-  }
+  },
+  "disabledMcpjsonServers": [
+    "context7",
+    "sequential-thinking",
+    "magic",
+    "playwright"
+  ]
 }
