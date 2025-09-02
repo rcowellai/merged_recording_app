@@ -5,8 +5,10 @@
 This document provides a comprehensive technical guide for developers working with the debugging, error logging, and administrative interfaces in the LoveRetoldRecorder application. The system implements a sophisticated 4-layer debugging ecosystem designed for production observability, development efficiency, and customer support workflows.
 
 **Target Audience**: Frontend developers, DevOps engineers, and support teams
-**Last Updated**: 2024-08-29
-**Architecture Version**: 2.0
+**Last Updated**: 2025-01-02 (Updated to reflect current AppLogger architecture)
+**Architecture Version**: 2.1 - Unified AppLogger System
+
+> **📝 ARCHITECTURE UPDATE**: This document has been updated to reflect the current implementation using the unified AppLogger system. Legacy references to SafeConsoleController, debugLogger, and uploadErrorTracker have been replaced with current AppLogger implementation details.
 
 ---
 
@@ -34,58 +36,63 @@ The debugging system follows a **layered observability approach** with **adminis
 
 ### Current State Analysis
 - **100+ total console statements** distributed across 27+ files
-- **Admin-controlled console output** via SafeConsoleController system
+- **Admin-controlled console output** via unified AppLogger system
 - **Environment-controlled logging** using `NODE_ENV` and `REACT_APP_DEBUG_LOGGING`
 - **Emoji-prefixed categorization** for easy visual filtering
-- **Primary logging system with admin toggle** (production-ready control)
+- **Unified logging system with admin toggle** (production-ready control)
 
 ### Key Files & Components
 
-#### Enhanced Console Control System (NEW)
+#### Unified AppLogger System (CURRENT)
 
-**SafeConsoleController** (`src/utils/safeConsoleController.js`)
+**AppLogger** (`src/utils/AppLogger.js`)
 ```javascript
-class SafeConsoleController {
+class AppLogger {
   constructor() {
-    this.isEnabled = this.loadStateWithFallback(); // Admin-controlled state
-    this.isInitialized = false; // Deferred initialization
-    this.originalConsole = {}; // Preserved console methods
-    this.safeInitialize(); // Safe startup without enforcement
+    this.CONSOLE_STATE_KEY = 'admin-console-debug-enabled';
+    this.ERRORS_KEY = 'loveRetoldUploadErrors';
+    this.enabled = null;
+    this.errors = [];
+    this.originalConsole = {};
+    this.initialize(); // Unified initialization
   }
   
   // Core Methods: enable(), disable(), deferredInit(), getState()
-  // Emergency Recovery: forceRestoreConsole()
-  // Window API: enableConsoleDebug(), disableConsoleDebug()
+  // Logging API: info(), warn(), error(), debug(), lifecycle()
+  // Error Management: getErrors(), clearErrors(), exportErrors()
+  // Window API: Available as window.AppLogger
 }
 ```
 
 **Key Features**:
+- **Unified System**: Replaces SafeConsoleController, debugLogger, uploadErrorTracker
 - **Admin Control**: Toggle via web interface at `/admin`
-- **Deferred Init**: Prevents timing conflicts with app startup
 - **State Persistence**: localStorage with comprehensive error handling
-- **Fail-Safe**: Emergency recovery and browser compatibility
-- **Integration**: Coordinates with debugLogger system
+- **Error Storage**: 50-error rolling buffer with export functionality
+- **Service Logging**: Component lifecycle and service initialization tracking
 
-#### Legacy Debug System (MAINTAINED)
+#### Legacy Components (DEPRECATED)
+
+**safeConsoleController.js** (`src/utils/safeConsoleController.js`)
+```javascript
+// STATUS: Exists but not integrated with current architecture
+// REPLACED BY: AppLogger unified system
+```
 
 **debugLogger.js** (`src/utils/debugLogger.js`)
 ```javascript
 class DebugLogger {
   constructor() {
-    this.enabled = false; // Controlled by SafeConsoleController
-    this.context = 'UIAPP';
-    this.startTime = Date.now();
+    this.enabled = false; // Currently disabled
+    // Legacy system - functionality moved to AppLogger
   }
-  
-  // Methods: log(), enable(), disable(), storeError()
-  // Window API: enableDebug(), disableDebug(), getDebugErrors()
 }
 ```
 
-**Key Configuration**:
-- **Status**: Integrated with SafeConsoleController
-- **Storage**: localStorage with 50-error rolling buffer
-- **Coordination**: Auto-enabled/disabled by console toggle
+**Key Status**:
+- **safeConsoleController**: Not used in current implementation
+- **debugLogger**: Disabled by default (line 9: `enabled = false`)
+- **AppLogger**: Active unified system handling all logging functionality
 
 #### Environment-Controlled Logging Pattern
 ```javascript
@@ -104,17 +111,44 @@ if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_DEBUG_LOGGIN
 
 #### Adding New Console Logging
 ```javascript
-// ✅ Recommended Pattern
-import debugLogger from '../utils/debugLogger';
+// ✅ Current Recommended Pattern (AppLogger)
+import AppLogger from '../utils/AppLogger';
 
 // Component lifecycle
-debugLogger.componentMounted('ComponentName', { props });
+AppLogger.lifecycle('ComponentName', 'mounted', { props });
 
 // Error logging with context
-debugLogger.log('error', 'ComponentName', 'Operation failed', { context }, error);
+AppLogger.error('ComponentName', 'Operation failed', { context }, error);
 
-// Firebase operations
-debugLogger.firebaseSuccess('storage', 'upload', { fileSize: 1024 });
+// Service operations
+AppLogger.service('StorageService', 'Upload completed', { fileSize: 1024 });
+
+// Info and debug logging
+AppLogger.info('ComponentName', 'Processing data', { dataSize: 100 });
+AppLogger.debug('ComponentName', 'Debug information', { debugData });
+```
+
+#### AppLogger API Reference
+```javascript
+// Core logging methods
+AppLogger.info(source, message, data?)     // General information
+AppLogger.warn(source, message, data?)     // Warnings
+AppLogger.error(source, message, data?, error?) // Errors with optional error object
+AppLogger.debug(source, message, data?)    // Debug information
+
+// Specialized methods
+AppLogger.lifecycle(component, event, data?) // Component lifecycle events
+AppLogger.service(service, event, data?)    // Service initialization/events
+
+// Error management
+AppLogger.getErrors()      // Get stored errors
+AppLogger.clearErrors()    // Clear error storage
+AppLogger.exportErrors()   // Export errors as JSON
+
+// Admin control
+AppLogger.enable()         // Enable console output
+AppLogger.disable()        // Disable console output
+AppLogger.getState()       // Get current state and diagnostics
 ```
 
 #### Environment Configuration
@@ -122,30 +156,41 @@ debugLogger.firebaseSuccess('storage', 'upload', { fileSize: 1024 });
 // ❌ Avoid Direct Environment Checks
 if (process.env.NODE_ENV === 'development') { ... }
 
-// ✅ Use Centralized Logging
-debugLogger.log('info', 'ComponentName', 'Message', data);
+// ✅ Use AppLogger (handles environment internally)
+AppLogger.info('ComponentName', 'Message', data);
 ```
 
 ### Admin Console Control Usage
 
 #### Accessing Console Controls
 1. **Navigate to**: `/admin` (https://record-loveretold-app.web.app/admin)
-2. **Locate**: "Console Debug Control" section
+2. **Locate**: "Console Debug Control" section (ConsoleDebugToggle component)
 3. **Toggle State**: Enable/Disable console debugging via visual switch
 4. **Test Functionality**: Use "Test Console Output" button to verify current state
 5. **Monitor Diagnostics**: View browser compatibility and system status
+6. **Real-time Status**: Live updates of initialization state and error counts
 
 #### Console Control States
 - **ENABLED** (Default): All console debugging visible, full development mode
 - **DISABLED**: Clean console output, production-like experience
 - **State Persistence**: Automatically saved to localStorage across sessions
 
+#### Console Control API
+```javascript
+// Browser console commands (AppLogger system)
+window.AppLogger.getState()        // Check current status and diagnostics
+window.AppLogger.enable()          // Enable console debugging
+window.AppLogger.disable()         // Disable console debugging
+window.AppLogger.getErrors()       // View stored error log
+window.AppLogger.clearErrors()     // Clear error storage
+```
+
 #### Emergency Recovery
 ```javascript
 // Browser console commands for troubleshooting
-window.safeConsoleController.getState()           // Check current status
-window.enableConsoleDebug()                       // Force enable console
-window.safeConsoleController.forceRestoreConsole() // Emergency restore
+window.AppLogger.getState()                    // Check current status
+window.AppLogger.enable()                      // Force enable console
+// No emergency restore needed - AppLogger handles failures gracefully
 ```
 
 ### Maintenance Tasks (UPDATED)
@@ -290,61 +335,72 @@ const adminSections = [
 ];
 ```
 
-#### ConsoleDebugToggle.jsx - Debug Control Interface (NEW)
+#### ConsoleDebugToggle.jsx - Debug Control Interface (ACTIVE)
 **Route**: Embedded in `/admin`
-**Purpose**: Real-time console debugging control with diagnostics
+**Purpose**: Real-time console debugging control with AppLogger integration
 
 **Core Features**:
 ```javascript
-// Console debug toggle component
+// Console debug toggle component using AppLogger
 const ConsoleDebugToggle = () => {
   // State: isEnabled, diagnostics, error handling
   // UI: Visual toggle switch, test buttons, status display
-  // Integration: SafeConsoleController coordination
+  // Integration: window.AppLogger API coordination
+  
+  const handleToggle = () => {
+    const result = isEnabled 
+      ? window.AppLogger.disable()
+      : window.AppLogger.enable();
+  };
 };
 ```
 
 **Key Capabilities**:
-- **Visual Toggle**: Professional switch interface with state indication
-- **Test Console**: "Test Console Output" button for verification
-- **Diagnostics**: Browser compatibility and system status display
-- **Error Handling**: Graceful error display and recovery options
-- **State Persistence**: Automatic localStorage management
-- **Real-time Updates**: Live status updates and refresh capabilities
+- **Visual Toggle**: Professional switch interface with real-time state indication
+- **Test Console**: "Test Console Output" button for immediate verification
+- **System Diagnostics**: Browser compatibility, localStorage status, and error counts
+- **Error Handling**: Graceful error display with detailed error messages
+- **State Persistence**: Automatic localStorage management via AppLogger
+- **Live Monitoring**: Real-time updates of console state and system status
 
-#### AdminDebugPage.jsx - Error Investigation
+#### AdminDebugPage.jsx - Error Investigation  
 **Route**: `/admin/debug`
-**Purpose**: Comprehensive upload error diagnosis
+**Purpose**: Comprehensive error analysis using AppLogger system
 
 **Key Features**:
 ```javascript
-// Error filtering and search
+// Error filtering and search using AppLogger
 const filteredErrors = errors.filter(error => {
-  // Type filter: all, errors, warnings, info
-  // Search: sessionId, userId, message, errorCode
+  // Level filter: all, errors, warnings, info (AppLogger structure)
+  // Search: sessionId, userId, message, component, service
 });
 
-// Error summary statistics
+// Error summary statistics from AppLogger
 const summary = {
   totalErrors, totalWarnings, totalInfo,
-  pathMismatches, firestoreFailures
+  componentErrors, serviceErrors, lifecycleErrors
 };
 
-// Export functionality
+// Export functionality using AppLogger
 const handleExport = () => {
-  const exportData = uploadErrorTracker.exportErrors();
+  const exportData = JSON.stringify(AppLogger.exportErrors(), null, 2);
   // Downloads JSON file for support tickets
 };
 ```
 
 **Data Integration**:
 ```javascript
-import { uploadErrorTracker } from '../utils/uploadErrorTracker';
+import AppLogger from '../utils/AppLogger';
 
-// Load error data
+// Load error data from unified system
 const loadErrorData = () => {
-  const allErrors = uploadErrorTracker.getErrors();
-  const summaryData = uploadErrorTracker.getSummary();
+  const allErrors = AppLogger.getErrors();
+  const summaryData = AppLogger.getSummary();
+};
+
+// Clear errors via AppLogger
+const handleClearErrors = () => {
+  AppLogger.clearErrors();
 };
 ```
 
@@ -445,39 +501,49 @@ import { useTokens } from '../components/TokenProvider';
 
 ### Core Infrastructure
 
-#### debugLogger.js - Comprehensive Logging System
-**Status**: Currently disabled (Line 9)
-**Purpose**: Unified logging for development and production
+#### AppLogger.js - Unified Development System
+**Status**: Active and fully integrated
+**Purpose**: Comprehensive logging, error tracking, and admin control
 
 ```javascript
-// Global window API
-window.debugLogger = debugLogger;
-window.enableDebug = () => debugLogger.enable();
-window.disableDebug = () => debugLogger.disable();
-window.getDebugErrors = () => debugLogger.getStoredErrors();
-window.clearDebugErrors = () => debugLogger.clearStoredErrors();
+// Global window API (automatically available)
+window.AppLogger = appLogger;
+
+// Core API methods
+window.AppLogger.enable();           // Enable console debugging
+window.AppLogger.disable();          // Disable console debugging
+window.AppLogger.getState();         // Get system state and diagnostics
+window.AppLogger.getErrors();        // Get stored errors
+window.AppLogger.clearErrors();      // Clear error storage
+window.AppLogger.exportErrors();     // Export errors as JSON
 ```
 
 **Logging Categories**:
 ```javascript
 // Component lifecycle
-debugLogger.componentMounted('ComponentName', props);
-debugLogger.componentUnmounted('ComponentName');
-debugLogger.componentError('ComponentName', error, errorInfo);
+AppLogger.lifecycle('ComponentName', 'mounted', { props });
+AppLogger.lifecycle('ComponentName', 'unmounted');
+AppLogger.lifecycle('ComponentName', 'error', { error, errorInfo });
 
-// Firebase operations
-debugLogger.firebaseInit('storage');
-debugLogger.firebaseSuccess('storage', 'upload', data);
-debugLogger.firebaseError('storage', 'upload', error);
+// Service operations
+AppLogger.service('StorageService', 'initializing');
+AppLogger.service('StorageService', 'upload completed', { fileSize: 1024 });
+AppLogger.service('StorageService', 'upload failed', { error: 'Network timeout' });
 
-// Network operations
-debugLogger.networkRequest('/api/endpoint', 'POST');
-debugLogger.networkResponse('/api/endpoint', 200, data);
-debugLogger.networkError('/api/endpoint', error);
+// General logging
+AppLogger.info('ComponentName', 'Processing data', { count: 50 });
+AppLogger.warn('ComponentName', 'Performance warning', { duration: 2000 });
+AppLogger.error('ComponentName', 'Operation failed', { context }, error);
+AppLogger.debug('ComponentName', 'Debug information', { debugData });
+```
 
-// Performance monitoring
-debugLogger.performanceMark('operation-start');
-debugLogger.performanceMeasure('operation-duration', 'operation-start', 'operation-end');
+#### Legacy Components Status
+
+**debugLogger.js**
+```javascript
+// STATUS: Disabled (Line 9: enabled = false)
+// FUNCTIONALITY: Moved to AppLogger unified system
+// RECOMMENDATION: Use AppLogger for all new development
 ```
 
 #### Error Storage System
@@ -915,38 +981,49 @@ npm run build
 
 ### Debugging Commands
 ```javascript
-// Browser console commands
-window.enableDebug()           // Enable debug logging
-window.disableDebug()          // Disable debug logging  
-window.getDebugErrors()        // View stored errors
-window.clearDebugErrors()      // Clear error storage
+// Browser console commands (AppLogger system)
+window.AppLogger.enable()          // Enable console debugging
+window.AppLogger.disable()         // Disable console debugging
+window.AppLogger.getState()        // Get system state and diagnostics
+window.AppLogger.getErrors()       // View stored errors
+window.AppLogger.clearErrors()     // Clear error storage
+window.AppLogger.exportErrors()    // Export errors as JSON
 
-// Admin functions
-uploadErrorTracker.getErrors()           // Get all errors
-uploadErrorTracker.getSummary()          // Get error summary
-uploadErrorTracker.exportErrors()        // Export as JSON
-uploadErrorTracker.clearErrors()         // Clear all errors
+// Admin control verification
+window.AppLogger.getState().isEnabled     // Check if console is enabled
+window.AppLogger.getState().browserSupport // Check browser compatibility
+
+// Test logging
+window.AppLogger.info('TEST', 'Test info message');
+window.AppLogger.error('TEST', 'Test error message');
 ```
 
 ### Common Tasks
 
 #### Adding Console Logging
 ```javascript
-// Import debug logger
-import debugLogger from '../utils/debugLogger';
+// Import AppLogger (automatically available as window.AppLogger)
+import AppLogger from '../utils/AppLogger';
 
 // Component lifecycle
 useEffect(() => {
-  debugLogger.componentMounted('ComponentName', { props });
-  return () => debugLogger.componentUnmounted('ComponentName');
+  AppLogger.lifecycle('ComponentName', 'mounted', { props });
+  return () => AppLogger.lifecycle('ComponentName', 'unmounted');
 }, []);
 
 // Error handling
 try {
   // risky operation
 } catch (error) {
-  debugLogger.log('error', 'ComponentName', 'Operation failed', { context }, error);
+  AppLogger.error('ComponentName', 'Operation failed', { context }, error);
 }
+
+// Service logging
+AppLogger.service('ServiceName', 'initialization complete', { version: '1.0' });
+
+// General logging
+AppLogger.info('ComponentName', 'Data processed', { count: items.length });
+AppLogger.warn('ComponentName', 'Performance warning', { duration: processingTime });
 ```
 
 #### Creating Debug Overlays
@@ -1029,26 +1106,31 @@ const NewAdminPage = () => {
 
 #### Debug Logging Not Appearing
 **Symptoms**: Console messages not showing despite errors
-**Diagnosis**: Check if debugLogger is enabled
+**Diagnosis**: Check if AppLogger console output is enabled
 **Solution**:
 ```javascript
-// In browser console
-window.enableDebug()
+// In browser console - check current state
+window.AppLogger.getState()
 
-// Or update debugLogger.js line 9
-this.enabled = true;
+// Enable console output
+window.AppLogger.enable()
+
+// Verify admin interface shows enabled state at /admin
 ```
 
 #### Admin Debug Page Empty
 **Symptoms**: No errors showing in admin interface
-**Diagnosis**: Check localStorage for error data
+**Diagnosis**: Check AppLogger error storage
 **Solution**:
 ```javascript
-// Check localStorage directly
-JSON.parse(localStorage.getItem('loveRetoldUploadErrors') || '[]')
+// Check AppLogger error storage directly
+window.AppLogger.getErrors()
+
+// Check if AppLogger is properly initialized
+window.AppLogger.getState()
 
 // Trigger test error
-uploadErrorTracker.logError(new Error('Test error'), { test: true });
+window.AppLogger.error('TEST', 'Test error for admin debugging', { test: true });
 ```
 
 #### Visual Overlays Not Appearing
@@ -1094,61 +1176,68 @@ setInterval(() => {
 
 ## 📋 Maintenance Checklist
 
-### Weekly Tasks (UPDATED)
-- [ ] Review admin debug interface for new error patterns
-- [ ] Test console debug toggle functionality at `/admin`
-- [ ] Verify console performance impact (enabled vs disabled)
-- [ ] Check localStorage usage for error storage limits
-- [ ] Verify all overlay components render correctly
-- [ ] Test admin interface functionality and console diagnostics
+### Weekly Tasks (APPLOGGER SYSTEM)
+- [ ] Review admin debug interface (`/admin/debug`) for new error patterns via AppLogger
+- [ ] Test console debug toggle functionality at `/admin` (ConsoleDebugToggle component)
+- [ ] Verify AppLogger performance impact (enabled vs disabled state)
+- [ ] Monitor AppLogger error storage limits and clear if needed (`AppLogger.getErrors().length`)
+- [ ] Verify recording management dashboard debug tools (`/admin/recordings`)
+- [ ] Test AppLogger system diagnostics and browser compatibility
 
 ### Monthly Tasks
-- [ ] Audit console logging for consistency
-- [ ] Review error classification accuracy
-- [ ] Update error handling documentation
-- [ ] Performance testing of debug systems
+- [ ] Audit AppLogger usage patterns across codebase for consistency
+- [ ] Review AppLogger error classification and storage efficiency  
+- [ ] Update AppLogger integration documentation
+- [ ] Performance testing of AppLogger system (enabled vs disabled)
+- [ ] Review legacy component cleanup opportunities
 
 ### Quarterly Tasks
-- [ ] Complete accessibility audit of admin interfaces
-- [ ] Review and update error tracking requirements
-- [ ] Evaluate debug system performance impact
-- [ ] Plan debug system architectural improvements
+- [ ] Complete accessibility audit of admin interfaces (`/admin`, `/admin/recordings`)
+- [ ] Review AppLogger error tracking and storage requirements
+- [ ] Evaluate AppLogger system performance impact and optimization opportunities
+- [ ] Plan AppLogger feature enhancements based on usage patterns
+- [ ] Consider removing unused legacy components (safeConsoleController, debugLogger)
 
 ---
 
 ## 🔗 File Reference
 
-### Core Debug Files (UPDATED)
+### Core Debug Files (CURRENT ARCHITECTURE)
 ```
 src/utils/
-├── safeConsoleController.js    # ✨ NEW: Enhanced console control system
-├── debugLogger.js              # Legacy logging system (integrated with console controller)
-├── uploadErrorTracker.js       # Upload error tracking and persistence  
-└── firebaseErrorHandler.js    # Firebase error mapping and retry logic
+├── AppLogger.js                # ✅ ACTIVE: Unified logging, error tracking, and admin control
+├── safeConsoleController.js    # 🔴 LEGACY: Not integrated (replaced by AppLogger)
+├── debugLogger.js              # 🔴 LEGACY: Disabled by default (functionality moved to AppLogger)
+├── uploadErrorTracker.js       # 🔴 LEGACY: Error tracking functionality moved to AppLogger
+└── firebaseErrorHandler.js    # 🔴 LEGACY: Error mapping functionality moved to AppLogger
 
 src/components/
-├── ConsoleDebugToggle.jsx      # ✨ NEW: Admin console debug control interface
-├── AppErrorBoundary.jsx        # Global React error boundary
-├── FirebaseErrorBoundary.jsx   # Service-specific error boundary
-├── AdminDebugPage.jsx         # Admin error investigation interface
-├── AdminLandingPage.jsx       # 📝 UPDATED: Admin hub with console controls
-├── DatabaseAdminPage.jsx      # Firebase admin functions
-├── TokenAdmin.jsx            # Design token management
-├── CountdownOverlay.jsx       # Recording countdown display
-├── ProgressOverlay.jsx        # Upload progress visualization
-├── ModernConfirmModal.jsx     # Modern confirmation dialogs
-└── ErrorScreen.jsx           # User-facing error display
+├── ConsoleDebugToggle.jsx      # ✅ ACTIVE: Admin console debug control (uses AppLogger)
+├── AppErrorBoundary.jsx        # ✅ ACTIVE: Global React error boundary
+├── AdminDebugPage.jsx         # ✅ ACTIVE: Error investigation (uses AppLogger.getErrors())
+├── AdminLandingPage.jsx       # ✅ ACTIVE: Admin hub with ConsoleDebugToggle integrated
+├── DatabaseAdminPage.jsx      # ✅ ACTIVE: Firebase admin functions
+├── TokenAdmin.jsx            # ✅ ACTIVE: Design token management
+├── CountdownOverlay.jsx       # ✅ ACTIVE: Recording countdown display
+├── ProgressOverlay.jsx        # ✅ ACTIVE: Upload progress visualization
+├── ModernConfirmModal.jsx     # ✅ ACTIVE: Modern confirmation dialogs
+└── ErrorScreen.jsx           # ✅ ACTIVE: User-facing error display
+
+src/pages/
+└── AdminPage.jsx             # ✅ ACTIVE: Recording management dashboard with debug tools
 
 src/
-├── App.js                     # 📝 UPDATED: Added SafeConsoleController integration
+├── App.js                     # ✅ ACTIVE: AppLogger.deferredInit() integration
+├── index.js                  # ✅ ACTIVE: Route definitions including /admin/recordings
 ├── reducers/
-│   └── appReducer.js          # Centralized app state management
+│   └── appReducer.js          # ✅ ACTIVE: Centralized app state management
 └── config/
-    └── firebase.js            # Firebase configuration with logging
+    └── firebase.js            # ✅ ACTIVE: Firebase configuration (AppLogger integration)
 
-# ✨ NEW: Implementation Documentation
-├── CONSOLE_DEBUG_IMPLEMENTATION.md  # Complete implementation guide
-└── CONSOLE_DEBUG_QUICK_START.md    # Quick reference for usage
+# Current Implementation Status
+├── AppLogger System: ACTIVE    # Unified logging, admin control, error storage
+├── Legacy Components: PRESENT  # Exist but not integrated
+└── Admin Interface: FUNCTIONAL # Full debug capability via /admin
 ```
 
 ### State Management Files
