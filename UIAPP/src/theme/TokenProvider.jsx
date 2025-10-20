@@ -55,8 +55,8 @@ const DEFAULT_TOKENS = {
     cardBorderRadius: '12px'
   },
   banner: {
-    height: '100px',
-    zIndex: 998,
+    height: '64px',
+    zIndex: 40,
     backgroundColor: '#2C2F48',
     textColor: '#F5F4F0',
     enabled: true

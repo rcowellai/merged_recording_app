@@ -341,7 +341,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
 
             <div className="app-layout">
               <div className="banner-section">
-                <AppBanner logoSize={30} />
+                {/* Banner moved outside grid for sticky positioning */}
               </div>
               <div className="prompt-section">
                 {!appState.submitStage ? (
