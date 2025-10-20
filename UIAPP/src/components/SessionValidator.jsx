@@ -6,6 +6,7 @@ import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
 import debugLogger from '../utils/debugLogger.js';
 import { doc, getDoc } from 'firebase/firestore'; // UID-FIX-SLICE-A: Import Firestore
 import { db } from '../services/firebase'; // UID-FIX-SLICE-A: Import db
+import { ENV_CONFIG } from '../config'; // Import environment configuration
 
 // Import the existing App component to render when session is valid
 import AppContent from './AppContent.jsx';
@@ -30,9 +31,10 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
       debugLogger.log('info', 'SessionValidator', 'Starting session loading', {
         sessionId,
         currentUrl: window.location.href,
-        propSessionComponents: !!propSessionComponents
+        propSessionComponents: !!propSessionComponents,
+        sessionValidationEnabled: ENV_CONFIG.SESSION_VALIDATION_ENABLED
       });
-      
+
       if (!sessionId) {
         debugLogger.log('error', 'SessionValidator', 'No session ID provided');
         setError('No session ID provided in URL path');
@@ -42,6 +44,54 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
 
       try {
         setLoading(true);
+
+        // DEVELOPMENT MODE: Bypass session validation for testing
+        if (!ENV_CONFIG.SESSION_VALIDATION_ENABLED) {
+          debugLogger.log('info', 'SessionValidator', '🎭 DEVELOPMENT MODE: Bypassing session validation', {
+            sessionId,
+            reason: 'REACT_APP_SESSION_VALIDATION_ENABLED=false'
+          });
+
+          // Create mock session data for development testing
+          const mockSessionData = {
+            status: 'valid',
+            message: 'Development mode - session validation bypassed',
+            isValid: true,
+            sessionData: {
+              questionText: 'Test Recording Prompt - What is your favorite memory?',
+              storytellerName: 'Test Storyteller',
+              askerName: 'Test Asker',
+              createdAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            session: {
+              promptText: 'Test Recording Prompt - What is your favorite memory?',
+              storytellerName: 'Test Storyteller',
+              askerName: 'Test Asker',
+              createdAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            fullUserId: 'test-user-id-12345678901234567890',
+            isDevelopmentMode: true
+          };
+
+          // Create mock session components
+          const mockComponents = {
+            randomPrefix: 'testdev',
+            promptId: 'testprompt',
+            userId: 'testuser',
+            storytellerId: 'teststory',
+            timestamp: Math.floor(Date.now() / 1000)
+          };
+
+          setSessionData(mockSessionData);
+          setSessionComponents(mockComponents);
+          setError(null);
+          setLoading(false);
+
+          console.log('🎭 Development mode active - using mock session data');
+          return;
+        }
 
         // Parse session components if not provided (from URL parameter)
         if (!propSessionComponents && sessionId) {

@@ -33,7 +33,15 @@
       "Bash(git push:*)",
       "Bash(del:*)",
       "Bash(rm:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Read(//c/Users/RobbieC/**)",
+      "Bash(npm search:*)",
+      "Bash(npx @upstash/context7-mcp:*)",
+      "Bash(npx @modelcontextprotocol/server-sequential-thinking:*)",
+      "Bash(findstr /i readme)",
+      "Bash(npm start)",
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")"
     ],
     "deny": [],
     "ask": [],
@@ -41,10 +49,10 @@
       "C:\\Users\\RobbieC\\Desktop\\loveretoldrecorder"
     ]
   },
-  "disabledMcpjsonServers": [
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
     "context7",
-    "sequential-thinking",
-    "magic",
-    "playwright"
-  ]
+    "sequential-thinking"
+  ],
+  "disabledMcpjsonServers": []
 }
