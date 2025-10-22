@@ -1,0 +1,89 @@
+/*
+ * components.css
+ * --------------
+ * Recording and review component styles.
+ * Includes recording bar, review content, media player, and loading states.
+ *
+ * Dependencies: variables.css (uses color properties)
+ * Part of: Modular CSS architecture (split from App.css)
+ */
+
+/* ============= RECORDING BAR STYLES ============= */
+/* Timer bar content - lives inside .timer-bar-section */
+.recording-bar-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid aqua; /* DEBUG: Recording timer bar content */
+}
+
+/* ============= REVIEW MODE STYLES ============= */
+/* Inline review content layout */
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  border: 2px solid lime; /* DEBUG: Review content container */
+}
+
+.review-title {
+  font-size: 16px;
+  font-weight: 400;
+  color: #2C2F48;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Loading and validation states */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 2px solid lime; /* DEBUG: Loading container */
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #2C2F48;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-message {
+  color: #666666;
+  font-size: 16px;
+  text-align: center;
+  font-style: normal;
+  margin: 8px 0;
+  font-weight: 500;
+}
+
+/* Inline media player specific styles */
+.inline-media-player {
+  width: 100%;
+  border: 2px solid lime; /* DEBUG: Inline media player */
+}

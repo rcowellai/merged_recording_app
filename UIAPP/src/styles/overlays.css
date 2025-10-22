@@ -1,0 +1,207 @@
+/*
+ * overlays.css
+ * ------------
+ * Full-screen overlay components (countdown, confetti, error screens).
+ *
+ * Dependencies: variables.css (uses color and spacing properties)
+ * Part of: Modular CSS architecture (split from App.css)
+ */
+
+/* ---------------- Countdown Overlay ---------------- */
+.countdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(228,226,216,0.93);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+  border: 3px solid yellow; /* DEBUG: Countdown overlay */
+}
+
+/* Banner-active overlay adjustments */
+.banner-active .countdown-overlay,
+.banner-active .confirm-overlay {
+  top: var(--banner-height);
+  height: calc(100% - var(--banner-height));
+}
+.countdown-text {
+  font-size: 7rem;
+  font-weight: 500;
+  color: #2C2F48;
+  text-align: center;
+  border: 2px solid lime; /* DEBUG: Countdown text */
+}
+
+/* ---------------- Confetti Screen ---------------- */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;  /* Fallback for legacy browsers */
+  height: 100dvh; /* Dynamic viewport - excludes browser UI */
+  background-color: #F5F4F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  border: 3px solid yellow; /* DEBUG: Confetti overlay */
+}
+
+.confetti-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+  gap: 24px;
+  border: 2px solid lime; /* DEBUG: Confetti content */
+}
+
+.confetti-main-title {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 525;
+  color: #2C2F48;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.confetti-subtitle-line {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #2C2F48;
+  margin: 0;
+  line-height: 1.4;
+  max-width: 500px;
+}
+
+video {
+  overflow: hidden;
+}
+
+/* ---------------- Error Screen ---------------- */
+.error-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;  /* Fallback for legacy browsers */
+  height: 100dvh; /* Dynamic viewport - excludes browser UI */
+  background-color: #F5F4F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+  border: 3px solid yellow; /* DEBUG: Error screen overlay */
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid lime; /* DEBUG: Error container */
+}
+
+.error-icon {
+  margin-bottom: 24px;
+  opacity: 0.9;
+}
+
+.error-content h2 {
+  color: #dc3545;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  font-family: inherit;
+}
+
+.error-message {
+  color: #666666;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0 0 32px 0;
+  max-width: 300px;
+}
+
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: 24px;
+}
+
+.retry-button {
+  background-color: #2C2F48;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #1f2235;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: #666666;
+  border: 2px solid #ddd;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #f8f9fa;
+  border-color: #999;
+  color: #333;
+}
+
+.error-help {
+  font-size: 14px;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.error-help a {
+  color: #2C2F48;
+  text-decoration: none;
+}
+
+.error-help a:hover {
+  text-decoration: underline;
+}

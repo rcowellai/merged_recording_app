@@ -41,7 +41,9 @@
       "Bash(findstr /i readme)",
       "Bash(npm start)",
       "Bash(ipconfig)",
-      "Bash(findstr /i \"IPv4\")"
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(cat:*)",
+      "Bash(ren:*)"
     ],
     "deny": [],
     "ask": [],

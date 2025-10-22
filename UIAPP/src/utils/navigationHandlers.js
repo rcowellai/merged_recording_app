@@ -34,17 +34,18 @@ export function createNavigationHandlers({
   // Handle the actual start over confirmation
   const handleStartOverConfirm = () => {
     console.log('✨ Start over confirmed');
-    
+
     // Use comprehensive reset function from useRecordingFlow
     resetRecordingState();
-    
+
     // Reset app state (UI-related state)
+    dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SHOW_CONFETTI, payload: false });
     dispatch({ type: APP_ACTIONS.SET_DOC_ID, payload: null });
     dispatch({ type: APP_ACTIONS.SET_UPLOAD_IN_PROGRESS, payload: false });
     dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: 0 });
-    
+
     // Reset player state
     setIsPlayerReady(false);
   };
@@ -53,9 +54,10 @@ export function createNavigationHandlers({
   const handleStartOverYes = () => {
     // Use comprehensive reset function from useRecordingFlow
     resetRecordingState();
-    
+
     // Reset app state (UI-related state)
     dispatch({ type: APP_ACTIONS.SET_SHOW_START_OVER_CONFIRM, payload: false });
+    dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SHOW_CONFETTI, payload: false });
     dispatch({ type: APP_ACTIONS.SET_DOC_ID, payload: null });

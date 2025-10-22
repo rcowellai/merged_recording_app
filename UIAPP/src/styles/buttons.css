@@ -1,0 +1,120 @@
+/*
+ * buttons.css
+ * -----------
+ * Button layout patterns and component styles.
+ * Defines two-button, single-button, and single+preview layouts.
+ *
+ * Dependencies: variables.css (uses button CSS custom properties)
+ * Part of: Modular CSS architecture (split from App.css)
+ */
+
+/* ============= TWO-BUTTON LAYOUT ============= */
+.two-button-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border: 2px solid hotpink; /* DEBUG: Two-button row container */
+}
+.two-button-left {
+  width: 45%;
+  height: var(--btn-large-height);
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: 2px solid magenta; /* DEBUG: Left button */
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
+  cursor: var(--btn-cursor);
+  display: var(--btn-display);
+  align-items: var(--btn-align-items);
+  justify-content: var(--btn-justify-content);
+}
+.two-button-right {
+  width: 45%;
+  height: var(--btn-large-height);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: 2px solid magenta; /* DEBUG: Right button */
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
+  cursor: var(--btn-cursor);
+  display: var(--btn-display);
+  align-items: var(--btn-align-items);
+  justify-content: var(--btn-justify-content);
+}
+
+/* ============= SINGLE FULL-WIDTH BUTTON ============= */
+.single-button-full {
+  width: 100%;
+  height: var(--btn-large-height);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: 2px solid magenta; /* DEBUG: Single full-width button */
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
+  cursor: var(--btn-cursor);
+  display: var(--btn-display);
+  align-items: var(--btn-align-items);
+  justify-content: var(--btn-justify-content);
+}
+
+/* ============= SINGLE BUTTON LAYOUT ============= */
+.one-button-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  border: 2px solid hotpink; /* DEBUG: One-button row container */
+}
+.one-button-wide {
+  width: 75%;
+  height: var(--btn-large-height);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: 2px solid magenta; /* DEBUG: Single wide button */
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
+  cursor: var(--btn-cursor);
+  display: var(--btn-display);
+  align-items: var(--btn-align-items);
+  justify-content: var(--btn-justify-content);
+}
+
+/* ============= SINGLE PLUS PREVIEW =============
+   Border color changes are fully handled in AudioRecorder.jsx,
+   so no border is defined here. */
+.single-plus-video-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-end;
+  border: 2px solid hotpink; /* DEBUG: Single+video row container */
+}
+.single-plus-left {
+  width: 30%;
+  height: 120px;
+  background-color: #F5F4F0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid gold; /* DEBUG: Video preview placeholder */
+}
+.single-plus-right {
+  width: 65%;
+  height: var(--btn-large-height);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: 2px solid magenta; /* DEBUG: Recording action button */
+  border-radius: var(--btn-border-radius);
+  font-size: var(--btn-font-size);
+  cursor: var(--btn-cursor);
+  display: var(--btn-display);
+  align-items: var(--btn-align-items);
+  justify-content: var(--btn-justify-content);
+}
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #F5F4F0;
+  border-radius: 8px;
+  border: 2px solid gold; /* DEBUG: Video placeholder inner */
+}

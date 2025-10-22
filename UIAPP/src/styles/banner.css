@@ -1,0 +1,35 @@
+/*
+ * banner.css
+ * ----------
+ * Top banner component and banner-active state management.
+ *
+ * Dependencies: variables.css (uses banner CSS custom properties)
+ * Part of: Modular CSS architecture (split from App.css)
+ */
+
+/* ============= BANNER SYSTEM ============= */
+/* Top banner container */
+.app-banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--banner-height);
+  background-color: var(--banner-bg);
+  color: var(--banner-text);
+  z-index: var(--banner-z-index);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 16px;
+  font-weight: 500;
+  font-size: 1rem;
+  border: 3px solid cyan; /* DEBUG: Banner */
+}
+
+/* Banner-active state adjustments - grid layout compatibility */
+.banner-active .page-container {
+  /* Grid layout handles banner spacing internally */
+  box-sizing: border-box;
+}

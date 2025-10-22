@@ -1,0 +1,89 @@
+/*
+ * welcome-screen.css
+ * ------------------
+ * Styles for welcome state applied to page-container (red debug border).
+ * Uses existing layout structure - no custom containers needed.
+ *
+ * Desktop/Tablet: Primary blue background fills page-container
+ * Mobile: Background image fills page-container
+ * Button: Rendered in existing actions-section (purple debug border)
+ *
+ * Dependencies: variables.css (uses --btn-primary-bg color)
+ * Part of: Modular CSS architecture
+ */
+
+/* Desktop/Tablet: Solid blue background on page-container */
+@media (min-width: 768px) {
+  .page-container.welcome-state {
+    background-color: var(--btn-primary-bg); /* #2C2F48 */
+  }
+}
+
+/* Mobile: Background image with overlay on page-container */
+@media (max-width: 767px) {
+  .page-container.welcome-state {
+    background-image: linear-gradient(
+        rgba(44, 47, 72, 0.3),
+        rgba(44, 47, 72, 0.3)
+      ),
+      url('../Assets/Auth_Image.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* Remove background from app-layout (cyan border) on mobile */
+  .welcome-state .app-layout {
+    background-color: transparent;
+  }
+}
+
+/* Welcome Message Styling */
+.welcome-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left align */
+  justify-content: center;
+  text-align: left; /* Left align text */
+  height: 100%;
+  padding: 20px;
+  color: white;
+}
+
+/* Desktop/Tablet Font Styling */
+.welcome-line {
+  font-size: 1.35rem;    /* Desktop: Customize here (default: 1.35rem = ~21.6px) */
+  font-weight: 400;      /* Desktop: Customize here (default: 400 = normal) */
+  line-height: 1.4;
+  margin-bottom: 8px;
+  min-height: 1.4em; /* Prevent layout shift when second line appears */
+  width: 100%; /* Full width for proper left alignment */
+}
+
+/* Double spacing after first line */
+.welcome-line-1 {
+  margin-bottom: 16px; /* Double the default 8px */
+}
+
+/* Word fade-in animation */
+.welcome-word-fade {
+  display: inline-block;
+  animation: wordFadeIn 0.5s ease-in forwards;
+}
+
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile Font Styling */
+@media (max-width: 767px) {
+  .welcome-line {
+    font-size: 1.25rem;  /* Mobile: Customize here (default: 1.175rem = ~18.8px) */
+    font-weight: 400;     /* Mobile: Customize here (default: 600 = semi-bold) */
+  }
+}

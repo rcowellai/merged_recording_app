@@ -8,6 +8,8 @@
 // Action types
 export const APP_ACTIONS = {
   // Navigation actions
+  SET_SHOW_WELCOME: 'SET_SHOW_WELCOME',
+  SET_HAS_READ_PROMPT: 'SET_HAS_READ_PROMPT',
   SET_SUBMIT_STAGE: 'SET_SUBMIT_STAGE',
   SET_SHOW_START_OVER_CONFIRM: 'SET_SHOW_START_OVER_CONFIRM',
   SET_SHOW_CONFETTI: 'SET_SHOW_CONFETTI',
@@ -34,6 +36,8 @@ export const APP_ACTIONS = {
 // Initial state - matches the existing useState defaults exactly
 export const initialAppState = {
   // Navigation states (from App.js lines 62-65)
+  showWelcome: true, // Start with welcome screen visible
+  hasReadPrompt: false, // Track if user has read the prompt
   submitStage: false,
   showStartOverConfirm: false,
   showConfetti: false,
@@ -56,9 +60,15 @@ export const initialAppState = {
 // Reducer function
 export const appReducer = (state, action) => {
   switch (action.type) {
+    case APP_ACTIONS.SET_SHOW_WELCOME:
+      return { ...state, showWelcome: action.payload };
+
+    case APP_ACTIONS.SET_HAS_READ_PROMPT:
+      return { ...state, hasReadPrompt: action.payload };
+
     case APP_ACTIONS.SET_SUBMIT_STAGE:
       return { ...state, submitStage: action.payload };
-      
+
     case APP_ACTIONS.SET_SHOW_START_OVER_CONFIRM:
       return { ...state, showStartOverConfirm: action.payload };
       

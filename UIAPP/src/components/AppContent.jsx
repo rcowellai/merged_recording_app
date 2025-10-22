@@ -6,7 +6,7 @@
  */
 
 import React, { useReducer, useState, useCallback, useEffect } from 'react';
-import { FaMicrophoneAlt, FaVideo, FaCircle, FaPause, FaPlay, FaUndo, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaUndo, FaCloudUploadAlt, FaMicrophoneAlt, FaVideo } from 'react-icons/fa';
 import debugLogger from '../utils/debugLogger.js';
 
 // Configuration
@@ -23,20 +23,34 @@ import FirebaseErrorBoundary from './FirebaseErrorBoundary';
 import { createSubmissionHandler } from '../utils/submissionHandlers';
 import { createNavigationHandlers } from '../utils/navigationHandlers';
 
-// Existing components (unchanged)
+// Existing components
 import PromptCard from './PromptCard';
 import RecordingBar from './RecordingBar';
-import VideoPreview from './VideoPreview';
-import AudioRecorder from './AudioRecorder';
 import CountdownOverlay from './CountdownOverlay';
 import ProgressOverlay from './ProgressOverlay';
 import RadixStartOverDialog from './RadixStartOverDialog';
-import PlyrMediaPlayer from './PlyrMediaPlayer';
 import ConfettiScreen from './confettiScreen';
 import ErrorScreen from './ErrorScreen';
 import AppBanner from './AppBanner';
 
-import '../styles/App.css';
+// Screen components (Phase 2: Screen-based architecture)
+import WelcomeScreen from './screens/WelcomeScreen';
+import PromptReadScreen from './screens/PromptReadScreen';
+import ChooseModeScreen from './screens/ChooseModeScreen';
+import ReadyToRecordScreen from './screens/ReadyToRecordScreen';
+import ActiveRecordingScreen from './screens/ActiveRecordingScreen';
+import PausedRecordingScreen from './screens/PausedRecordingScreen';
+import ReviewRecordingContent from './screens/ReviewRecordingContent';
+
+// Modular CSS imports (split from App.css for maintainability)
+import '../styles/variables.css';
+import '../styles/layout.css';
+import '../styles/buttons.css';
+import '../styles/banner.css';
+import '../styles/overlays.css';
+import '../styles/components.css';
+import '../styles/focus-overrides.css';
+import '../styles/welcome-screen.css';
 
 function AppContent({ sessionId, sessionData, sessionComponents }) {
   debugLogger.componentMounted('AppContent', {
@@ -150,140 +164,148 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           return `${m}:${s < TIME_FORMAT.ZERO_PADDING_THRESHOLD ? '0' : ''}${s}`;
         };
 
-        // Render Helpers (preserves exact logic from original App.js:252-348)
-        function renderReviewButtons() {
-          return renderTwoButtonRow(
-            <>
-              <FaUndo style={{ marginRight: '8px' }} />
-              Start Over
-            </>,
-            navigationHandlers.handleStartOverClick,
-            <>
-              <FaCloudUploadAlt style={{ marginRight: '8px' }} />
-              Upload
-            </>,
-            handleSubmit
-          );
-        }
-
-        function renderTwoButtonRow(leftText, leftOnClick, rightText, rightOnClick) {
-          return (
-            <div className="two-button-row">
-              <button
-                type="button"
-                className="two-button-left"
-                onClick={leftOnClick}
-              >
-                {leftText}
-              </button>
-              <button
-                type="button"
-                className="two-button-right"
-                onClick={rightOnClick}
-              >
-                {rightText}
-              </button>
-            </div>
-          );
-        }
-
-        function renderSingleButtonPlusPreview(buttonText, buttonOnClick) {
-          const previewElement =
-            captureMode === 'audio'
-              ? <AudioRecorder stream={mediaStream} isRecording={isRecording} />
-              : <VideoPreview stream={mediaStream} />;
-
-          return (
-            <div className="single-plus-video-row">
-              <div className="single-plus-left">
-                {mediaStream ? previewElement : <div className="video-placeholder" />}
+        // Screen Router - determines which screen to show in actions-section
+        function renderCurrentActions() {
+          // Review stage: Show Start Over + Upload buttons
+          if (appState.submitStage) {
+            return (
+              <div className="two-button-row">
+                <button
+                  type="button"
+                  className="two-button-left"
+                  onClick={navigationHandlers.handleStartOverClick}
+                >
+                  <FaUndo style={{ marginRight: '8px' }} />
+                  Start Over
+                </button>
+                <button
+                  type="button"
+                  className="two-button-right"
+                  onClick={handleSubmit}
+                >
+                  <FaCloudUploadAlt style={{ marginRight: '8px' }} />
+                  Upload
+                </button>
               </div>
-              <button
-                type="button"
-                className="single-plus-right"
-                onClick={buttonOnClick}
-              >
-                {buttonText}
-              </button>
-            </div>
-          );
-        }
-
-        function renderBottomRow() {
-          // Show "Audio" & "Video" if no stream, captureMode == null, and not in submit stage
-          if (!mediaStream && captureMode == null && !appState.submitStage) {
-            return renderTwoButtonRow(
-              <>
-                <FaMicrophoneAlt style={{ marginRight: '8px' }} />
-                Audio
-              </>,
-              handleAudioClick,
-              <>
-                <FaVideo style={{ marginRight: '8px' }} />
-                Video
-              </>,
-              handleVideoClick
             );
           }
 
-          if (!isRecording && !isPaused && !appState.submitStage && mediaStream) {
-            // Start
-            return renderSingleButtonPlusPreview(
-              <>
-                <FaCircle style={{ marginRight: '8px' }} />
-                Start recording
-              </>,
-              handleStartRecording
+          // Prompt read screen - first screen after welcome
+          if (!appState.hasReadPrompt) {
+            return (
+              <PromptReadScreen
+                onContinue={() => {
+                  debugLogger.log('info', 'AppContent', 'Prompt read, proceeding to mode selection');
+                  dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: true });
+                }}
+              />
             );
           }
 
-          if (isRecording && !isPaused && !appState.submitStage) {
-            // Pause
-            return renderSingleButtonPlusPreview(
-              <>
-                <FaPause style={{ marginRight: '8px' }} />
-                Pause
-              </>,
-              handlePause
+          // Mode selection - choose audio or video
+          if (appState.hasReadPrompt && !mediaStream && captureMode == null) {
+            return (
+              <ChooseModeScreen
+                onAudioClick={handleAudioClick}
+                onVideoClick={handleVideoClick}
+              />
             );
           }
 
-          if (isPaused && !appState.submitStage) {
-            // Resume + Done
-            return renderTwoButtonRow(
-              <>
-                <FaPlay style={{ marginRight: '8px' }} />
-                Resume
-              </>,
-              handleResume,
-              'Done',
-              navigationHandlers.handleDoneAndSubmitStage
+          // Ready to start recording
+          if (!isRecording && !isPaused && mediaStream) {
+            return (
+              <ReadyToRecordScreen
+                captureMode={captureMode}
+                mediaStream={mediaStream}
+                onStartRecording={handleStartRecording}
+              />
+            );
+          }
+
+          // Recording in progress
+          if (isRecording && !isPaused) {
+            return (
+              <ActiveRecordingScreen
+                captureMode={captureMode}
+                mediaStream={mediaStream}
+                onPause={handlePause}
+              />
+            );
+          }
+
+          // Paused state
+          if (isPaused) {
+            return (
+              <PausedRecordingScreen
+                onResume={handleResume}
+                onDone={navigationHandlers.handleDoneAndSubmitStage}
+              />
             );
           }
 
           return null;
         }
 
+        // Welcome Screen - First screen users see
+        // Background applied to page-container via welcome-state class
+        // Message in prompt-section (green border), button in actions-section (purple border)
+        if (appState.showWelcome) {
+          const welcomeScreen = WelcomeScreen({
+            sessionData,
+            onContinue: () => {
+              debugLogger.log('info', 'AppContent', 'Welcome screen continue clicked');
+              dispatch({ type: APP_ACTIONS.SET_SHOW_WELCOME, payload: false });
+            }
+          });
+
+          return (
+            <>
+              <div className="page-container welcome-state">
+                <AppBanner logoSize={30} />
+
+                <div className="app-layout">
+                  {/* Timer bar section - empty for welcome screen */}
+                  <div className="timer-bar-section"></div>
+
+                  {/* Prompt section - contains animated welcome message */}
+                  <div className="prompt-section">
+                    {welcomeScreen.message}
+                  </div>
+
+                  {/* Spacing section - hidden for welcome */}
+                  <div className="spacing-section" style={{ visibility: 'hidden' }}></div>
+
+                  {/* Actions section - contains Continue button */}
+                  <div className="actions-section">
+                    {welcomeScreen.button}
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        }
+
         // Error Screen Short-Circuit - takes priority over confetti
         if (appState.showError) {
-          debugLogger.log('info', 'AppContent', 'Rendering error screen', { 
-            errorMessage: appState.errorMessage 
+          debugLogger.log('info', 'AppContent', 'Rendering error screen', {
+            errorMessage: appState.errorMessage
           });
-          
+
           const handleRetry = () => {
             debugLogger.log('info', 'AppContent', 'Error retry clicked');
             dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
             // Stay in submit stage so user can retry upload
           };
-          
+
           const handleCancel = () => {
             debugLogger.log('info', 'AppContent', 'Error cancel clicked - starting over');
             dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
             navigationHandlers.handleStartOverConfirm();
           };
-          
+
           return (
-            <ErrorScreen 
+            <ErrorScreen
               errorMessage={appState.errorMessage}
               onRetry={handleRetry}
               onCancel={handleCancel}
@@ -315,7 +337,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
             <div className="app-layout">
               {/* Timer bar section - always present, conditionally populated */}
               <div className="timer-bar-section">
-                {(isRecording || isPaused) && (
+                {(isRecording || isPaused) ? (
                   <div className="recording-bar-container">
                     <RecordingBar
                       elapsedSeconds={elapsedSeconds}
@@ -325,40 +347,66 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
                       formatTime={formatTime}
                     />
                   </div>
-                )}
+                ) : (appState.hasReadPrompt && !mediaStream && captureMode == null) ? (
+                  // ChooseModeScreen: Show "Choose your recording mode" text
+                  <div style={{
+                    fontSize: '0.95rem',
+                    color: '#2C2F48',
+                    fontFamily: 'inherit',
+                    textAlign: 'center',
+                    width: '100%'
+                  }}>
+                    Choose your recording mode
+                  </div>
+                ) : null}
               </div>
 
-              <div className="prompt-section">
+              <div
+                className="prompt-section"
+                style={{
+                  padding: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? '0' : undefined,
+                  display: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'flex' : undefined,
+                  alignItems: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'center' : undefined,
+                  justifyContent: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'center' : undefined
+                }}
+              >
                 {!appState.submitStage ? (
-                  <PromptCard sessionData={sessionData} />
-                ) : !recordedBlobUrl ? (
-                  <div className="review-content">
-                    <div className="review-title">Review your recording</div>
-                    <div className="loading-message">Preparing your recording...</div>
-                  </div>
+                  // Show PromptCard except when on ChooseModeScreen
+                  (appState.hasReadPrompt && !mediaStream && captureMode == null) ? (
+                    // ChooseModeScreen: Show icons only - padding removed from parent for true centering
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      width: '100%',
+                      gap: '30px'
+                    }}>
+                      <FaMicrophoneAlt size={100} color="#2C2F48" />
+                      <FaVideo size={100} color="#2C2F48" />
+                    </div>
+                  ) : (
+                    <PromptCard sessionData={sessionData} />
+                  )
                 ) : (
-                  <div className="review-content">
-                    <div className="review-title">Review your recording</div>
-                    <PlyrMediaPlayer
-                      src={recordedBlobUrl}
-                      type={captureMode}
-                      actualMimeType={actualMimeType}
-                      onReady={() => setIsPlayerReady(true)}
-                      className="inline-media-player"
-                    />
-                  </div>
+                  <ReviewRecordingContent
+                    recordedBlobUrl={recordedBlobUrl}
+                    captureMode={captureMode}
+                    actualMimeType={actualMimeType}
+                    isPlayerReady={isPlayerReady}
+                    onPlayerReady={() => setIsPlayerReady(true)}
+                  />
                 )}
               </div>
-              <div 
+              <div
                 className="spacing-section"
                 style={{
                   visibility: (mediaStream || appState.submitStage) ? 'hidden' : 'visible',
                 }}
               >
-                Choose your recording mode
               </div>
               <div className="actions-section">
-                {appState.submitStage ? renderReviewButtons() : renderBottomRow()}
+                {renderCurrentActions()}
               </div>
             </div>
 
