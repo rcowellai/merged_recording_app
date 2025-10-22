@@ -58,14 +58,14 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
             message: 'Development mode - session validation bypassed',
             isValid: true,
             sessionData: {
-              questionText: 'Test Recording Prompt - What is your favorite memory?',
+              questionText: 'What was the most memorable adventure from your childhood and what made it so special? Please describe what happened, where you were, and who was with you.',
               storytellerName: 'Test Storyteller',
               askerName: 'Test Asker',
               createdAt: new Date().toISOString(),
               expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             },
             session: {
-              promptText: 'Test Recording Prompt - What is your favorite memory?',
+              promptText: 'What was the most memorable adventure from your childhood and what made it so special? Please describe what happened, where you were, and who was with you.',
               storytellerName: 'Test Storyteller',
               askerName: 'Test Asker',
               createdAt: new Date().toISOString(),

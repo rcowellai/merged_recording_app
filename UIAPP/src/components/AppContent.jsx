@@ -309,40 +309,25 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         
         return (
           <>
-            <AppBanner logoSize={30} />
-            
             <div className="page-container">
-            {(isRecording || isPaused) && (
-              <div
-                className="recording-bar-container"
-                style={{
-                  position: 'fixed',
-                  top: 'calc(var(--banner-height) + 30px)',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '97%',
-                  maxWidth: '448px', // 480px - 32px (accounting for 16px padding on each side)
-                  zIndex: 999,
-                  display: 'flex',
-                  justifyContent: 'center',
-                }}
-              >
-                <div style={{ width: '100%', padding: '0 16px' }}>
-                  <RecordingBar
-                    elapsedSeconds={elapsedSeconds}
-                    totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
-                    isRecording={isRecording}
-                    isPaused={isPaused}
-                    formatTime={formatTime}
-                  />
-                </div>
-              </div>
-            )}
+            <AppBanner logoSize={30} />
 
             <div className="app-layout">
-              <div className="banner-section">
-                {/* Banner moved outside grid for sticky positioning */}
+              {/* Timer bar section - always present, conditionally populated */}
+              <div className="timer-bar-section">
+                {(isRecording || isPaused) && (
+                  <div className="recording-bar-container">
+                    <RecordingBar
+                      elapsedSeconds={elapsedSeconds}
+                      totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
+                      isRecording={isRecording}
+                      isPaused={isPaused}
+                      formatTime={formatTime}
+                    />
+                  </div>
+                )}
               </div>
+
               <div className="prompt-section">
                 {!appState.submitStage ? (
                   <PromptCard sessionData={sessionData} />

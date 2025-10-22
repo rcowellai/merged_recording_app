@@ -20,37 +20,40 @@ html, body {
   min-height: 100dvh; /* Dynamic viewport height - excludes browser UI */
 }
 
-/* 
-  Prompt Card Styles 
-  Let the .main-layout-container control max-width & centering. 
-  The card is simply 100% wide within that container. 
+/*
+  Prompt Card Styles
+  Let the .main-layout-container control max-width & centering.
+  The card is simply 100% wide within that container.
 */
 .card-container {
   width: 100%;
-  margin: var(--prompt-top-margin) 0 0 0; /* Use CSS variable for consistency */
+  margin: 0; /* Parent .prompt-section handles top spacing */
   box-sizing: border-box;
 
   background-color: #FFFFFF;
-  height: 320px; /* Fixed height, no min-height */
+  max-height: 100%; /* Flexible - fits parent container */
+  min-height: 200px; /* Minimum readable size */
   border-radius: 12px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 
-  padding: 16px;
+  padding: 4px;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  overflow: hidden;
+  overflow: hidden; /* No scroll - content should always fit */
+  border: 3px solid deeppink; /* DEBUG: Card container */
 }
 .card-content {
-  padding: 24px 16px;
+  padding: 15px 15px;
+  border: 2px solid coral; /* DEBUG: Card content */
 }
 
 /* Headings for the prompt */
 .heading {
-  font-size: 1.3rem;
-  font-weight: 525;
-  line-height: 1.3;
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.4;
   margin: 0;
   padding: 0;
 }
@@ -97,4 +100,13 @@ html, body {
   background-color: var(--btn-primary-bg, #2C2F48);
   color: var(--btn-primary-color, #F5F4F0);
   padding: 8px 16px;
+}
+
+/* ============= MOBILE RESPONSIVE ============= */
+/* Mobile font sizing for question text */
+@media (max-width: 767px) {
+  .heading {
+    font-size: 1.175rem; /* 18px */
+    font-weight: 600;    /* Medium weight */
+  }
 }
