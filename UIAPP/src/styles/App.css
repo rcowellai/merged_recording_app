@@ -10,51 +10,55 @@
 
 /* Page container => top-level layout wrapper */
 .page-container {
+  display: flex;
+  flex-direction: column;
   background-color: #F5F4F0;
   min-height: 100vh;  /* Fallback for legacy browsers */
   min-height: 100dvh; /* Dynamic viewport height - excludes browser UI */
   width: 100%;
   box-sizing: border-box;
   position: relative;
+  border: 3px solid red; /* DEBUG: Page container */
 }
 
-/* CSS Grid layout => exact constraint system */
+/* Flexbox layout => responsive vertical distribution */
 .app-layout {
-  display: grid;
-  grid-template-areas:
-    "banner"
-    "prompt"
-    "spacing"
-    "actions";
-  grid-template-rows:
-    64px         /* Fixed banner */
-    auto         /* Fixed prompt + 30px margin */
-    1fr          /* Dynamic spacing for text centering */
-    80px;        /* Fixed button height */
-  height: min(100vh, 700px);  /* Fallback for legacy browsers */
-  height: min(100dvh, 700px); /* Dynamic viewport - excludes browser UI */
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Fill remaining space after banner */
   width: 100%;
   max-width: 480px;
   margin: 0 auto; /* Desktop centering */
   box-sizing: border-box;
+  border: 3px solid blue; /* DEBUG: App layout container */
 }
 
-/* Grid area assignments */
-.banner-section {
-  grid-area: banner;
-  /* Banner remains fixed positioned for overlay compatibility */
-}
-
-.prompt-section {
-  grid-area: prompt;
+/* Flexbox section configurations */
+.timer-bar-section {
+  flex: 0 0 60px; /* Fixed 60px height - 30px for spacing + 30px for timer */
   width: 100%;
   padding: var(--prompt-top-margin) 16px 0 16px; /* 30px top + side padding */
   box-sizing: border-box;
-  min-height: 400px; /* Ensure enough height for review content centering */
+  display: flex;
+  align-items: flex-end; /* Align timer to bottom of section */
+  justify-content: center;
+  border: 3px solid lime; /* DEBUG: Timer bar section */
+}
+
+.prompt-section {
+  flex: 1 1 auto; /* Grows naturally to fit content */
+  min-height: 270px; /* Reduced by 30px - top spacing moved to timer-bar-section */
+  overflow: hidden; /* Contain card within boundaries */
+  width: 100%;
+  padding: 0 16px; /* Side padding only - top spacing now in timer-bar-section */
+  box-sizing: border-box;
+  border: 3px solid green; /* DEBUG: Prompt section */
 }
 
 .spacing-section {
-  grid-area: spacing;
+  flex: 1 1 auto; /* Allow growth to fill space and push actions to bottom */
+  min-height: 20px; /* Minimum breathing room */
+  max-height: 200px; /* Don't waste too much space */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,42 +68,69 @@
   margin: 0;
   padding: 0 16px;
   box-sizing: border-box;
+  border: 3px solid orange; /* DEBUG: Spacing section */
 }
 
 .actions-section {
-  grid-area: actions;
+  flex: 0 0 100px;
+  /* Fixed height - 80px buttons + 20px bottom gap */
   width: 100%;
-  padding: 0 16px 20px 16px; /* Added 20px bottom padding from buttons to screen edge */
+  padding: 0 16px 20px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end; /* Changed to flex-end to push buttons up from bottom */
+  justify-content: flex-end;
   box-sizing: border-box;
+  border: 3px solid purple; /* DEBUG: Actions section */
 }
 
-/* ============= RESPONSIVE GRID ============= */
-/* Mobile screens - ensure no scrolling */
-@media (max-height: 667px) {
-  .app-layout {
-    max-height: 100vh;  /* Fallback for legacy browsers */
-    max-height: 100dvh; /* Dynamic viewport on small screens */
-    min-height: 100vh;  /* Fallback for legacy browsers */
-    min-height: 100dvh; /* Dynamic viewport on small screens */
+/* ============= RESPONSIVE FLEXBOX ============= */
+/* Small screens - optimize spacing */
+@media (max-height: 600px) {
+  .timer-bar-section {
+    flex: 0 0 48px; /* 20px top spacing + 28px timer on tight screens */
+    padding-top: 20px; /* Reduce top spacing */
+  }
+  .prompt-section {
+    min-height: 220px; /* Reduced by 20px for tight screens */
+  }
+  .spacing-section {
+    min-height: 16px; /* Tighter spacing */
   }
 }
 
 /* Very small screens - minimal spacing */
-@media (max-height: 600px) {
+@media (max-height: 520px) {
+  .timer-bar-section {
+    flex: 0 0 40px; /* 16px top spacing + 24px timer on very tight screens */
+    padding-top: 16px; /* Minimal top spacing */
+  }
   .prompt-section {
-    padding-top: 20px; /* Reduce top margin on very small screens */
+    min-height: 184px; /* Reduced by 16px for very tight screens */
+  }
+  .spacing-section {
+    min-height: 12px;
+  }
+  .actions-section {
+    flex: 0 0 92px; /* 80px buttons + 12px gap */
+    padding-bottom: 12px; /* Reduce bottom gap */
   }
 }
 
-/* Desktop optimization */
+/* Desktop and Tablet optimization */
 @media (min-width: 768px) {
   .app-layout {
     /* Container already centered with margin: 0 auto */
     /* Grid handles all internal spacing */
+  }
+
+  .prompt-section {
+    max-height: 400px; /* Limit green section height on larger screens */
+    padding: 0; /* Remove side padding - card edges align with green border */
+  }
+
+  .spacing-section {
+    max-height: 150px; /* Limit orange spacing on larger screens */
   }
 }
 
@@ -126,12 +157,23 @@
   --banner-z-index: 40;
   --banner-bg: #2C2F48;
   --banner-text: #F5F4F0;
+
+  /* DEBUG borders */
+  --debug-border-page: 3px solid red;
+  --debug-border-layout: 3px solid blue;
+  --debug-border-prompt: 3px solid green;
+  --debug-border-spacing: 3px solid orange;
+  --debug-border-actions: 3px solid purple;
+  --debug-border-banner: 3px solid cyan;
+  --debug-border-button: 2px solid magenta;
+  --debug-border-overlay: 3px solid yellow;
+  --debug-border-content: 2px solid lime;
   
   /* Spacing control variables */
   --prompt-top-margin: 30px;  /* Distance from banner to prompt */
-  --button-bottom-gap: 40px;  /* Distance from buttons to screen bottom */
+  --button-bottom-gap: 20px;  /* Distance from buttons to screen bottom */
   --prompt-height: 320px;     /* Prompt box height */
-  --button-height: 80px;      /* Button area height */
+  --button-height: 100px;     /* Button area height (80px buttons + 20px gap) */
   
   /* Plyr.js Design Token Integration */
   --plyr-color-main: #2C2F48;                    /* App primary color */
@@ -159,13 +201,14 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
+  border: 2px solid hotpink; /* DEBUG: Two-button row container */
 }
 .two-button-left {
   width: 45%;
   height: var(--btn-large-height);
   background-color: var(--btn-secondary-bg);
   color: var(--btn-secondary-color);
-  border: var(--btn-border);
+  border: 2px solid magenta; /* DEBUG: Left button */
   border-radius: var(--btn-border-radius);
   font-size: var(--btn-font-size);
   cursor: var(--btn-cursor);
@@ -178,7 +221,7 @@
   height: var(--btn-large-height);
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-color);
-  border: var(--btn-border);
+  border: 2px solid magenta; /* DEBUG: Right button */
   border-radius: var(--btn-border-radius);
   font-size: var(--btn-font-size);
   cursor: var(--btn-cursor);
@@ -192,13 +235,14 @@
   width: 100%;
   display: flex;
   justify-content: flex-end;
+  border: 2px solid hotpink; /* DEBUG: One-button row container */
 }
 .one-button-wide {
   width: 75%;
   height: var(--btn-large-height);
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-color);
-  border: var(--btn-border);
+  border: 2px solid magenta; /* DEBUG: Single wide button */
   border-radius: var(--btn-border-radius);
   font-size: var(--btn-font-size);
   cursor: var(--btn-cursor);
@@ -215,6 +259,7 @@
   width: 100%;
   justify-content: space-between;
   align-items: flex-end;
+  border: 2px solid hotpink; /* DEBUG: Single+video row container */
 }
 .single-plus-left {
   width: 30%;
@@ -224,13 +269,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid gold; /* DEBUG: Video preview placeholder */
 }
 .single-plus-right {
   width: 65%;
   height: var(--btn-large-height);
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-color);
-  border: var(--btn-border);
+  border: 2px solid magenta; /* DEBUG: Recording action button */
   border-radius: var(--btn-border-radius);
   font-size: var(--btn-font-size);
   cursor: var(--btn-cursor);
@@ -243,6 +289,7 @@
   height: 100%;
   background-color: #F5F4F0;
   border-radius: 8px;
+  border: 2px solid gold; /* DEBUG: Video placeholder inner */
 }
 
 /* ============= BANNER SYSTEM ============= */
@@ -263,6 +310,7 @@
   padding: 0 16px;
   font-weight: 500;
   font-size: 1rem;
+  border: 3px solid cyan; /* DEBUG: Banner */
 }
 
 /* Banner-active state adjustments - grid layout compatibility */
@@ -285,6 +333,7 @@
   justify-content: center;
   align-items: center;
   z-index: 9998;
+  border: 3px solid yellow; /* DEBUG: Countdown overlay */
 }
 
 /* Banner-active overlay adjustments */
@@ -298,6 +347,7 @@
   font-weight: 500;
   color: #2C2F48;
   text-align: center;
+  border: 2px solid lime; /* DEBUG: Countdown text */
 }
 
 /* LEGACY Submit Overlay - Replaced by RadixMediaReviewDialog */
@@ -362,6 +412,7 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  border: 3px solid yellow; /* DEBUG: Confetti overlay */
 }
 
 .confetti-content {
@@ -374,6 +425,7 @@
   max-width: 600px;
   padding: 20px;
   gap: 24px;
+  border: 2px solid lime; /* DEBUG: Confetti content */
 }
 
 .confetti-main-title {
@@ -525,6 +577,16 @@ button::-moz-focus-inner {
   outline: none !important;
 }
 
+/* ============= RECORDING BAR STYLES ============= */
+/* Timer bar content - lives inside .timer-bar-section */
+.recording-bar-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid aqua; /* DEBUG: Recording timer bar content */
+}
+
 /* ============= REVIEW MODE STYLES ============= */
 /* Inline review content layout */
 .review-content {
@@ -540,6 +602,7 @@ button::-moz-focus-inner {
   justify-content: center;
   align-items: center;
   height: 100%;
+  border: 2px solid lime; /* DEBUG: Review content container */
 }
 
 .review-title {
@@ -560,6 +623,7 @@ button::-moz-focus-inner {
   min-height: 300px;
   padding: 40px 20px;
   text-align: center;
+  border: 2px solid lime; /* DEBUG: Loading container */
 }
 
 .loading-spinner {
@@ -590,6 +654,7 @@ button::-moz-focus-inner {
 /* Inline media player specific styles */
 .inline-media-player {
   width: 100%;
+  border: 2px solid lime; /* DEBUG: Inline media player */
 }
 
 /* Error Screen Styles */
@@ -607,6 +672,7 @@ button::-moz-focus-inner {
   z-index: 9999;
   padding: 20px;
   box-sizing: border-box;
+  border: 3px solid yellow; /* DEBUG: Error screen overlay */
 }
 
 .error-container {
@@ -621,6 +687,7 @@ button::-moz-focus-inner {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid lime; /* DEBUG: Error container */
 }
 
 .error-icon {
