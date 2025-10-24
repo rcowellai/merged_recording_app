@@ -39,7 +39,7 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
 
   return {
     bannerText: 'Video test',
-    timer: <AudioVisualizer mediaStream={mediaStream} height={20} width={80}/>,
+    timer: null,
     iconA3: (
       <MdSettings
         size={32}
@@ -63,6 +63,9 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
         boxSizing: 'border-box',
         overflow: 'hidden'
       }}>
+        {/* Audio visualizer */}
+        <AudioVisualizer mediaStream={mediaStream} height={20} width={80}/>
+
         {/* Video preview element */}
         <video
           ref={videoRef}
