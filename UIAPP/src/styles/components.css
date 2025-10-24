@@ -9,7 +9,7 @@
  */
 
 /* ============= RECORDING BAR STYLES ============= */
-/* Timer bar content - lives inside .timer-bar-section */
+/* RecordingBar component - displays in banner A2 during recording/paused states */
 .recording-bar-container {
   width: 100%;
   display: flex;

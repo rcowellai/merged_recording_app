@@ -2,14 +2,14 @@
  * MasterLayout.jsx
  * ----------------
  * Master layout structure used across all recording screens.
- * Provides consistent 3-section layout: timer, content, actions.
+ * Provides consistent 2-section layout with unified header.
  *
- * Sections:
- * - timer-bar-section: Top bar for timer/countdown (60px fixed)
+ * Structure:
+ * - app-banner: Flexible header with A1 (back) | A2 (content) | A3 (icon)
  * - prompt-section: Main content area (flex grows)
  * - actions-section: Bottom button area (100px fixed)
  *
- * Note: .spacing-section removed per architecture update
+ * Banner A2 supports: Logo (default), Text, or any React component (e.g., RecordingBar)
  */
 
 import React from 'react';
@@ -18,12 +18,11 @@ import { MdChevronLeft } from 'react-icons/md';
 import AppBanner from './AppBanner';
 
 function MasterLayout({
-  timer = null,
   content = null,
   actions = null,
   className = '',
   showBanner = true,
-  bannerText = null,
+  bannerContent = null,
   children = null,
   onBack = null,
   showBackButton = true,
@@ -37,13 +36,24 @@ function MasterLayout({
     <div className={`page-container ${className}`.trim()}>
 
       {/* ========================================
-          # HEADER
+          # HEADER - UNIFIED BANNER
           ========================================
-          Optional banner area (cyan in layout diagram)
-          Split into A1 (30px) | A2 (flex) | A3 (30px) on mobile
+          Single banner with flexible A2 content
+          - No bannerContent: AppBanner logo with blue background
+          - Has bannerContent: Custom content with gray background
+
+          A1: Back button (60px) | A2: Flexible content | A3: Icon slot (60px)
       */}
-      {showBanner && !bannerText && (
-        <div className="app-banner">
+      {showBanner && (
+        <div
+          className="app-banner"
+          style={{
+            backgroundColor: bannerContent
+              ? 'var(--color-neutral-default)'
+              : 'var(--banner-bg)'
+          }}
+        >
+          {/* A1 - Back Button (60px) */}
           <div className="section-a1">
             {showBackButton && onBack && (
               <MdChevronLeft
@@ -54,37 +64,13 @@ function MasterLayout({
               />
             )}
           </div>
+
+          {/* A2 - Flexible Content (flex-grow) */}
           <div className="section-a2">
-            <AppBanner logoSize={30} noWrapper={true} />
+            {bannerContent || <AppBanner logoSize={30} noWrapper={true} />}
           </div>
-          <div className="section-a3">
-            {iconA3}
-          </div>
-        </div>
-      )}
-      {showBanner && bannerText && (
-        <div className="app-banner" style={{ backgroundColor: 'var(--color-neutral-default)' }}>
-          <div className="section-a1">
-            {showBackButton && onBack && (
-              <MdChevronLeft
-                size={32}
-                color="var(--color-primary-default)"
-                onClick={onBack}
-                style={{ cursor: 'pointer' }}
-              />
-            )}
-          </div>
-          <div className="section-a2">
-            <div style={{
-              fontSize: 'var(--font-size-2xl)',
-              color: 'var(--color-primary-default)',
-              fontWeight: 'var(--font-weight-normal)',
-              fontFamily: 'inherit',
-              textAlign: 'center'
-            }}>
-              {bannerText}
-            </div>
-          </div>
+
+          {/* A3 - Icon Slot (60px) */}
           <div className="section-a3">
             {iconA3}
           </div>
@@ -95,18 +81,9 @@ function MasterLayout({
           # CONTENT CONTAINER
           ========================================
           Main layout container (dark blue border in layout diagram)
+          2-section layout: content area + actions
       */}
       <div className="app-layout">
-
-        {/* ========================================
-            # SECTION A (TOP BAR)
-            ========================================
-            Timer bar section - 60px fixed height (lime green in layout diagram)
-            For recording timer, countdown, or screen-specific text
-        */}
-        <div className="timer-bar-section">
-          {timer}
-        </div>
 
         {/* ========================================
             # SECTION B (MAIN AREA)
@@ -136,12 +113,11 @@ function MasterLayout({
 }
 
 MasterLayout.propTypes = {
-  timer: PropTypes.node,
   content: PropTypes.node,
   actions: PropTypes.node,
   className: PropTypes.string,
   showBanner: PropTypes.bool,
-  bannerText: PropTypes.string,
+  bannerContent: PropTypes.node,
   children: PropTypes.node,
   onBack: PropTypes.func,
   showBackButton: PropTypes.bool,

@@ -38,8 +38,7 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
   const showError = permissionState === 'denied';
 
   return {
-    bannerText: 'Video test',
-    timer: null,
+    bannerContent: 'Video test',
     iconA3: (
       <MdSettings
         size={32}

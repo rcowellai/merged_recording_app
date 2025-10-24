@@ -36,8 +36,7 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
   const showError = permissionState === 'denied';
 
   return {
-    bannerText: 'Sound test',
-    timer: null,
+    bannerContent: 'Sound test',
     iconA3: (
       <AudioDeviceSettings
         mediaStream={mediaStream}

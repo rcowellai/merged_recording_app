@@ -16,8 +16,7 @@ import { FaMicrophoneAlt, FaVideo } from 'react-icons/fa';
 
 function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
   return {
-    bannerText: 'Choose recording mode',
-    timer: null,
+    bannerContent: 'Choose recording mode',
     content: (
       <div style={{
         display: 'flex',

@@ -15,8 +15,7 @@ import PromptCard from '../PromptCard';
 
 function PromptReadScreen({ sessionData, onContinue, onBack }) {
   return {
-    bannerText: 'Your prompt',
-    timer: null,
+    bannerContent: 'Your prompt',
     content: <PromptCard sessionData={sessionData} />,
     actions: (
       <button

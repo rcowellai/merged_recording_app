@@ -16,8 +16,7 @@ import PromptCard from '../PromptCard';
 
 function ReadyToRecordScreen({ captureMode, mediaStream, onStartRecording, sessionData, onBack }) {
   return {
-    bannerText: "You're ready to record",
-    timer: null,
+    bannerContent: "You're ready to record",
     content: (
       <>
         <PromptCard sessionData={sessionData} />

@@ -54,6 +54,41 @@ import '../styles/components.css';
 import '../styles/focus-overrides.css';
 import '../styles/welcome-screen.css';
 
+/**
+ * formatBannerContent
+ * -------------------
+ * Formats banner content based on type for consistent header display.
+ *
+ * @param {*} content - Banner content (string, React node, or null)
+ * @returns {React.Node|null} Formatted content for banner A2 section
+ *
+ * Behavior:
+ * - String: Wraps with styling (like old bannerText pattern)
+ * - React node: Renders as-is (e.g., RecordingBar component)
+ * - null/undefined: Returns null (shows default logo)
+ */
+function formatBannerContent(content) {
+  if (!content) return null;
+
+  // String content: Apply text styling for consistency
+  if (typeof content === 'string') {
+    return (
+      <div style={{
+        fontSize: 'var(--font-size-2xl)',
+        color: 'var(--color-primary-default)',
+        fontWeight: 'var(--font-weight-normal)',
+        fontFamily: 'inherit',
+        textAlign: 'center'
+      }}>
+        {content}
+      </div>
+    );
+  }
+
+  // React component: Render directly (e.g., RecordingBar)
+  return content;
+}
+
 function AppContent({ sessionId, sessionData, sessionComponents }) {
   debugLogger.componentMounted('AppContent', {
     sessionId,
@@ -484,7 +519,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           return (
             <MasterLayout
               className="welcome-state"
-              timer={welcomeScreen.timer}
+              bannerContent={welcomeScreen.bannerContent}
               content={welcomeScreen.content}
               actions={welcomeScreen.actions}
               showBanner={true}
@@ -538,28 +573,28 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         // Get current screen object {timer, content, actions}
         const screen = getCurrentScreen();
 
-        // Calculate timer content - screen timer takes priority, fallback to RecordingBar
-        const timerContent = screen.timer || (
-          (isRecording || isPaused) ? (
-            <div className="recording-bar-container">
-              <RecordingBar
-                elapsedSeconds={elapsedSeconds}
-                totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
-                isRecording={isRecording}
-                isPaused={isPaused}
-                formatTime={formatTime}
-              />
-            </div>
-          ) : null
-        );
+        // RecordingBar content for active/paused states (displayed in header A2)
+        const recordingBarContent = (isRecording || isPaused) ? (
+          <div className="recording-bar-container">
+            <RecordingBar
+              elapsedSeconds={elapsedSeconds}
+              totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
+              isRecording={isRecording}
+              isPaused={isPaused}
+              formatTime={formatTime}
+            />
+          </div>
+        ) : null;
+
+        // Prioritize screen-specific banner content, fallback to RecordingBar
+        const bannerContent = screen.bannerContent || recordingBarContent;
 
         return (
           <MasterLayout
-            timer={timerContent}
+            bannerContent={formatBannerContent(bannerContent)}
             content={screen.content}
             actions={screen.actions}
             showBanner={true}
-            bannerText={screen.bannerText}
             onBack={screen.onBack}
             showBackButton={screen.showBackButton}
             iconA3={screen.iconA3}

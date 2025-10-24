@@ -34,26 +34,15 @@
 }
 
 /* Flexbox section configurations */
-.timer-bar-section {
-  flex: 0 0 60px; /* Fixed 60px height - 30px for spacing + 30px for timer */
-  width: 100%;
-  padding: var(--prompt-top-margin) var(--spacing-4) 0 var(--spacing-4); /* 30px top + side padding */
-  box-sizing: border-box;
-  display: flex;
-  align-items: flex-end; /* Align timer to bottom of section */
-  justify-content: center;
-  border: 3px solid lime; /* DEBUG: Timer bar section (SECTION A - LIME GREEN) */
-}
-
 .prompt-section {
   position: relative; /* Positioning context for absolutely positioned children */
   display: flex; /* Enable flex container for vertical centering control */
   flex-direction: column; /* Stack children vertically */
   flex: 1 1 auto; /* Grows naturally to fit content */
-  min-height: 270px; /* Reduced by 30px - top spacing moved to timer-bar-section */
+  min-height: 270px; /* Main content area - expands to fill available space */
   overflow: hidden; /* Contain card within boundaries */
   width: 100%;
-  padding: 0 var(--spacing-4); /* Side padding only - top spacing now in timer-bar-section */
+  padding: 0 var(--spacing-4); /* Side padding only */
   box-sizing: border-box;
   border: 3px solid green; /* DEBUG: Prompt section (SECTION B - DARK GREEN) */
 }
@@ -74,23 +63,15 @@
 /* ============= RESPONSIVE FLEXBOX ============= */
 /* Small screens - optimize spacing */
 @media (max-height: 600px) {
-  .timer-bar-section {
-    flex: 0 0 48px; /* 20px top spacing + 28px timer on tight screens */
-    padding-top: var(--spacing-5); /* Reduce top spacing */
-  }
   .prompt-section {
-    min-height: 220px; /* Reduced by 20px for tight screens */
+    min-height: 220px; /* Reduced for tight screens */
   }
 }
 
 /* Very small screens - minimal spacing */
 @media (max-height: 520px) {
-  .timer-bar-section {
-    flex: 0 0 40px; /* 16px top spacing + 24px timer on very tight screens */
-    padding-top: var(--spacing-4); /* Minimal top spacing */
-  }
   .prompt-section {
-    min-height: 184px; /* Reduced by 16px for very tight screens */
+    min-height: 184px; /* Reduced for very tight screens */
   }
   .actions-section {
     flex: 0 0 92px; /* 80px buttons + 12px gap */
