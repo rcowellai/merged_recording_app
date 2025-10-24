@@ -11,7 +11,7 @@
 :root {
   --btn-border: none;
   --btn-border-radius: 8px;
-  --btn-font-size: 0.95rem;
+  --btn-font-size: var(--font-size-base); /* Design system token: 1rem = 16px */
   --btn-cursor: pointer;
   --btn-display: flex;
   --btn-align-items: center;

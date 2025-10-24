@@ -87,15 +87,15 @@ const ModernConfirmModal = NiceModal.create(({
         };
       case 'info':
         return {
-          iconColor: tokens.colors.accent.bg,
-          confirmBg: tokens.colors.accent.bg,
-          confirmText: tokens.colors.accent.text
+          iconColor: tokens.colors.accent.DEFAULT,
+          confirmBg: tokens.colors.accent.DEFAULT,
+          confirmText: tokens.colors.accent.foreground
         };
       default: // warning
         return {
           iconColor: '#ffc107',
-          confirmBg: tokens.colors.accent.bg,
-          confirmText: tokens.colors.accent.text
+          confirmBg: tokens.colors.accent.DEFAULT,
+          confirmText: tokens.colors.accent.foreground
         };
     }
   };
@@ -124,7 +124,7 @@ const ModernConfirmModal = NiceModal.create(({
       <div
         className="modern-modal-content"
         style={{
-          backgroundColor: tokens.colors.card.bg,
+          backgroundColor: tokens.colors.background.light,
           borderRadius: '16px',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
           maxWidth: '400px',
@@ -158,8 +158,8 @@ const ModernConfirmModal = NiceModal.create(({
         <h2
           style={{
             fontSize: '1.25rem',
-            fontWeight: tokens.fonts.weights.semibold,
-            color: tokens.colors.card.text,
+            fontWeight: tokens.fontWeight.semibold,
+            color: tokens.colors.neutral.black,
             margin: '0 0 12px 0',
             lineHeight: 1.3
           }}
@@ -171,7 +171,7 @@ const ModernConfirmModal = NiceModal.create(({
         <p
           style={{
             fontSize: '1rem',
-            color: tokens.colors.textGray,
+            color: tokens.colors.neutral.gray['01'],
             lineHeight: 1.5,
             margin: '0 0 32px 0'
           }}
@@ -191,18 +191,18 @@ const ModernConfirmModal = NiceModal.create(({
             onClick={handleCancel}
             style={{
               padding: '12px 24px',
-              border: `1px solid ${tokens.colors.secondary.bg}`,
-              borderRadius: tokens.layout.borderRadius,
+              border: `1px solid ${tokens.colors.background.gray}`,
+              borderRadius: tokens.borderRadius.lg,
               backgroundColor: 'transparent',
-              color: tokens.colors.secondary.text,
+              color: tokens.colors.neutral.gray['03'],
               fontSize: '1rem',
-              fontWeight: tokens.fonts.weights.medium,
+              fontWeight: tokens.fontWeight.medium,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               minWidth: '90px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = tokens.colors.secondary.bg;
+              e.target.style.backgroundColor = tokens.colors.background.gray;
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = 'transparent';

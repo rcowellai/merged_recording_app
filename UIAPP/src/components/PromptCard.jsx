@@ -2,7 +2,7 @@
  * PromptCard.jsx
  * -------------
  * Displays the main question or prompt text on a stylized
- * "card." Ensures consistent branding and layout for 
+ * "card." Ensures consistent branding and layout for
  * the prompt itself.
  */
 
@@ -31,7 +31,7 @@ function PromptCard({ sessionData }) {
     return (
       <div className="card-container">
         <div className="card-content">
-          <div className="heading" style={{ color: '#d32f2f', textAlign: 'center' }}>
+          <div className="heading" style={{ color: 'var(--color-status-error)', textAlign: 'center' }}>
             Unable to load prompt details
           </div>
           <div className="subheading" style={{ textAlign: 'center' }}>

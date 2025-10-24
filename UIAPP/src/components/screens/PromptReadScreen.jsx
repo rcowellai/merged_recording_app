@@ -3,20 +3,32 @@
  * --------------------
  * First screen in recording flow - displays prompt with Continue button.
  * User reads the prompt before choosing audio or video mode.
+ *
+ * Returns standard screen format:
+ * - timer: null
+ * - content: PromptCard with session data
+ * - actions: Continue button
  */
 
 import React from 'react';
+import PromptCard from '../PromptCard';
 
-function PromptReadScreen({ onContinue }) {
-  return (
-    <button
-      type="button"
-      className="single-button-full"
-      onClick={onContinue}
-    >
-      Continue
-    </button>
-  );
+function PromptReadScreen({ sessionData, onContinue, onBack }) {
+  return {
+    bannerText: 'Your prompt',
+    timer: null,
+    content: <PromptCard sessionData={sessionData} />,
+    actions: (
+      <button
+        type="button"
+        className="single-button-full"
+        onClick={onContinue}
+      >
+        Continue
+      </button>
+    ),
+    onBack
+  };
 }
 
 export default PromptReadScreen;

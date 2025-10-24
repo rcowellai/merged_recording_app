@@ -144,6 +144,37 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     }
   }, []);
 
+  // Device switching handler
+  // Properly updates mediaStream state and preserves old stream on failure
+  const switchAudioDevice = useCallback(async (deviceId) => {
+    const oldStream = mediaStream; // Preserve old stream reference
+
+    try {
+      // Get new stream with specific device
+      const constraints = {
+        audio: deviceId === 'default'
+          ? true
+          : { deviceId: { exact: deviceId } }
+      };
+
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Only stop old stream AFTER new one succeeds
+      if (oldStream) {
+        oldStream.getTracks().forEach(track => track.stop());
+      }
+
+      // Update state with new stream
+      setMediaStream(newStream);
+      console.log('✅ Audio device switched successfully:', deviceId);
+      return newStream;
+    } catch (error) {
+      // oldStream is untouched - audio continues working
+      console.error('Failed to switch audio device:', error);
+      throw error; // Propagate to AppContent for user feedback
+    }
+  }, [mediaStream]);
+
   const handleStartRecording = useCallback(() => {
     if (!mediaStream) return;
 
@@ -307,6 +338,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     handleResume,
     handleDone,
     stopMediaStream,
-    resetRecordingState
+    resetRecordingState,
+    switchAudioDevice  // NEW: Device switching handler
   };
 }

@@ -10,6 +10,9 @@ import 'web-streams-polyfill/dist/polyfill';
 // Add TextEncoder/TextDecoder for Firebase compatibility
 import { TextEncoder, TextDecoder } from 'util';
 
+// Add fetch polyfill
+import 'whatwg-fetch';
+
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
@@ -20,9 +23,6 @@ process.env.REACT_APP_FIREBASE_PROJECT_ID = 'test-project';
 process.env.REACT_APP_FIREBASE_STORAGE_BUCKET = 'test-project.appspot.com';
 process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID = '123456789';
 process.env.REACT_APP_FIREBASE_APP_ID = '1:123456789:web:abcdef123456';
-
-// Add fetch polyfill
-import 'whatwg-fetch';
 
 // Mock additional globals for Firebase SDK
 Object.defineProperty(global, 'crypto', {

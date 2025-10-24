@@ -14,6 +14,14 @@ import {
   validateRecordingUpload
 } from './recording.js';
 
+// Import mocked dependencies
+import { uploadMemoryRecording, deleteFile } from './storage.js';
+import {
+  createRecordingSession,
+  updateRecordingSession,
+  getRecordingSession
+} from './firestore.js';
+
 // Mock dependencies
 jest.mock('./storage.js', () => ({
   uploadMemoryRecording: jest.fn(),
@@ -46,14 +54,6 @@ jest.mock('../../config/index.js', () => ({
     RECORDING_UPLOAD_ENABLED: true
   }
 }));
-
-// Import mocked dependencies
-import { uploadMemoryRecording, deleteFile } from './storage.js';
-import {
-  createRecordingSession,
-  updateRecordingSession,
-  getRecordingSession
-} from './firestore.js';
 
 describe('Firebase Recording Upload Service (C06)', () => {
   beforeEach(() => {

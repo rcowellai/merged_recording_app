@@ -13,11 +13,6 @@
 
 import { jest } from '@jest/globals';
 
-// Mock Firebase modules before importing service
-jest.mock('firebase/storage');
-jest.mock('../../config/firebase');
-jest.mock('./firestore.js');
-
 import {
   ref,
   uploadBytes,
@@ -32,6 +27,18 @@ import {
   removeUploadReference,
   updateRecordingStatus
 } from './firestore.js';
+
+import firebaseStorageService, {
+  uploadMemoryRecording,
+  getSignedUrl,
+  deleteFile,
+  linkStorageToFirestore
+} from './storage.js';
+
+// Mock Firebase modules before importing service
+jest.mock('firebase/storage');
+jest.mock('../../config/firebase');
+jest.mock('./firestore.js');
 
 // Set up Jest mocks with implementations
 beforeEach(() => {
@@ -51,13 +58,6 @@ beforeEach(() => {
   removeUploadReference.mockResolvedValue();
   updateRecordingStatus.mockResolvedValue();
 });
-
-import firebaseStorageService, {
-  uploadMemoryRecording,
-  getSignedUrl,
-  deleteFile,
-  linkStorageToFirestore
-} from './storage.js';
 
 describe('Firebase Storage Service - C05 Integration', () => {
   beforeEach(() => {

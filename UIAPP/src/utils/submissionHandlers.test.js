@@ -6,6 +6,14 @@
 
 import { createSubmissionHandler } from './submissionHandlers.js';
 
+// Import mocked dependencies
+import { uploadRecording as uploadRecordingLocal } from '../services/localRecordingService';
+import {
+  uploadMemoryRecording,
+  uploadRecordingWithMetadata,
+  isRecordingUploadEnabled
+} from '../services/firebase';
+
 // Mock dependencies
 jest.mock('../services/localRecordingService', () => ({
   uploadRecording: jest.fn()
@@ -28,14 +36,6 @@ jest.mock('../config', () => ({
 
 // Mock fetch for blob conversion
 global.fetch = jest.fn();
-
-// Import mocked dependencies
-import { uploadRecording as uploadRecordingLocal } from '../services/localRecordingService';
-import {
-  uploadMemoryRecording,
-  uploadRecordingWithMetadata,
-  isRecordingUploadEnabled
-} from '../services/firebase';
 
 describe('Submission Handlers (C06 Integration)', () => {
   const mockDispatch = jest.fn();

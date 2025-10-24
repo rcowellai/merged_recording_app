@@ -43,7 +43,11 @@
       "Bash(ipconfig)",
       "Bash(findstr /i \"IPv4\")",
       "Bash(cat:*)",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(findstr:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": [],

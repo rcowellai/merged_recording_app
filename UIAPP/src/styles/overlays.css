@@ -29,9 +29,9 @@
   height: calc(100% - var(--banner-height));
 }
 .countdown-text {
-  font-size: 7rem;
-  font-weight: 500;
-  color: #2C2F48;
+  font-size: var(--font-size-5xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-default);
   text-align: center;
   border: 2px solid lime; /* DEBUG: Countdown text */
 }
@@ -44,11 +44,11 @@
   width: 100%;
   height: 100vh;  /* Fallback for legacy browsers */
   height: 100dvh; /* Dynamic viewport - excludes browser UI */
-  background-color: #F5F4F0;
+  background-color: var(--color-neutral-default);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: var(--z-index-toast);
   border: 3px solid yellow; /* DEBUG: Confetti overlay */
 }
 
@@ -60,25 +60,25 @@
   text-align: center;
   width: 100%;
   max-width: 600px;
-  padding: 20px;
-  gap: 24px;
+  padding: var(--spacing-5);
+  gap: var(--spacing-6);
   border: 2px solid lime; /* DEBUG: Confetti content */
 }
 
 .confetti-main-title {
-  font-family: 'Open Sans', sans-serif;
-  font-size: 2.5rem;
-  font-weight: 525;
-  color: #2C2F48;
+  font-family: var(--font-primary);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-default);
   margin: 0;
   line-height: 1.3;
 }
 
 .confetti-subtitle-line {
-  font-family: 'Open Sans', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 400;
-  color: #2C2F48;
+  font-family: var(--font-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-primary-default);
   margin: 0;
   line-height: 1.4;
   max-width: 500px;
@@ -96,12 +96,12 @@ video {
   width: 100vw;
   height: 100vh;  /* Fallback for legacy browsers */
   height: 100dvh; /* Dynamic viewport - excludes browser UI */
-  background-color: #F5F4F0;
+  background-color: var(--color-neutral-default);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  padding: 20px;
+  z-index: var(--z-index-toast);
+  padding: var(--spacing-5);
   box-sizing: border-box;
   border: 3px solid yellow; /* DEBUG: Error screen overlay */
 }
@@ -114,51 +114,51 @@ video {
   text-align: center;
   max-width: 400px;
   width: 100%;
-  padding: 40px 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: var(--spacing-10) var(--spacing-5);
+  background: var(--color-background-light);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-xl);
   border: 2px solid lime; /* DEBUG: Error container */
 }
 
 .error-icon {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-6);
   opacity: 0.9;
 }
 
 .error-content h2 {
-  color: #dc3545;
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 16px 0;
+  color: var(--color-status-error);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4) 0;
   font-family: inherit;
 }
 
 .error-message {
-  color: #666666;
-  font-size: 16px;
+  color: var(--color-neutral-gray-03);
+  font-size: var(--font-size-base);
   line-height: 1.5;
-  margin: 0 0 32px 0;
+  margin: 0 0 var(--spacing-8) 0;
   max-width: 300px;
 }
 
 .error-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-3);
   width: 100%;
   max-width: 280px;
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-6);
 }
 
 .retry-button {
-  background-color: #2C2F48;
-  color: white;
+  background-color: var(--color-primary-default);
+  color: var(--color-primary-foreground);
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 500;
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -167,17 +167,17 @@ video {
 }
 
 .retry-button:hover {
-  background-color: #1f2235;
+  background-color: var(--color-primary-darker);
 }
 
 .cancel-button {
   background-color: transparent;
-  color: #666666;
-  border: 2px solid #ddd;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 500;
+  color: var(--color-neutral-gray-03);
+  border: 2px solid var(--color-border-neutral);
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -186,19 +186,19 @@ video {
 }
 
 .cancel-button:hover {
-  background-color: #f8f9fa;
-  border-color: #999;
-  color: #333;
+  background-color: var(--color-background-gray);
+  border-color: var(--color-neutral-gray-01);
+  color: var(--color-neutral-black);
 }
 
 .error-help {
-  font-size: 14px;
-  color: #888888;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-gray-01);
   line-height: 1.4;
 }
 
 .error-help a {
-  color: #2C2F48;
+  color: var(--color-primary-default);
   text-decoration: none;
 }
 

@@ -12,7 +12,7 @@
  * - Continue button: Advances to mode selection screen
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 /**
  * WelcomeMessage Component
@@ -29,13 +29,13 @@ function WelcomeMessage({ sessionData }) {
                     'Unknown';
 
   // All words to display (split into array)
-  const line1Words = ['Welcome', `${askerName},`];
-  const line2Words = ["It's", 'time', 'to', 'share', 'another', 'memory'];
+  const line1Words = useMemo(() => ['Welcome', `${askerName},`], [askerName]);
+  const line2Words = useMemo(() => ["It's", 'time', 'to', 'share', 'another', 'memory.'], []);
 
   const [displayedWords, setDisplayedWords] = useState([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
-  const allWords = [...line1Words, ...line2Words];
+  const allWords = useMemo(() => [...line1Words, ...line2Words], [line1Words, line2Words]);
   const line1Length = line1Words.length;
 
   useEffect(() => {
@@ -61,7 +61,6 @@ function WelcomeMessage({ sessionData }) {
   }, [currentWordIndex, allWords, line1Length]);
 
   // Split displayed words into two lines
-  const line1Display = displayedWords.slice(0, line1Length).join(' ');
   const line2Display = displayedWords.slice(line1Length).join(' ');
 
   return (
@@ -91,11 +90,17 @@ function WelcomeMessage({ sessionData }) {
 /**
  * WelcomeScreen Component
  * Main welcome screen container with message and button
+ *
+ * Returns standard screen format:
+ * - timer: null (welcome screen has no timer)
+ * - content: Animated welcome message
+ * - actions: Continue button
  */
 function WelcomeScreen({ sessionData, onContinue }) {
   return {
-    message: <WelcomeMessage sessionData={sessionData} />,
-    button: (
+    timer: null,
+    content: <WelcomeMessage sessionData={sessionData} />,
+    actions: (
       <button
         type="button"
         className="single-button-full"
@@ -103,7 +108,8 @@ function WelcomeScreen({ sessionData, onContinue }) {
       >
         Continue
       </button>
-    )
+    ),
+    showBackButton: false
   };
 }
 

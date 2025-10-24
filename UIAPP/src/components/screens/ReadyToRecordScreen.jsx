@@ -1,36 +1,43 @@
 /**
  * ReadyToRecordScreen.jsx
  * -----------------------
- * Shows media preview (video or audio) with "Start Recording" button.
- * User can see their camera/microphone feed before starting.
+ * Displays prompt card with single "RECORD" button to begin recording.
+ * Simplified interface without preview - user clicks green button to start.
+ *
+ * Returns standard screen format:
+ * - timer: null
+ * - content: PromptCard with session data
+ * - actions: Single full-width green "RECORD" button
  */
 
 import React from 'react';
-import { FaCircle } from 'react-icons/fa';
-import VideoPreview from '../VideoPreview';
-import AudioRecorder from '../AudioRecorder';
+import { FaChevronDown } from 'react-icons/fa';
+import PromptCard from '../PromptCard';
 
-function ReadyToRecordScreen({ captureMode, mediaStream, onStartRecording }) {
-  const previewElement =
-    captureMode === 'audio'
-      ? <AudioRecorder stream={mediaStream} isRecording={false} />
-      : <VideoPreview stream={mediaStream} />;
-
-  return (
-    <div className="single-plus-video-row">
-      <div className="single-plus-left">
-        {mediaStream ? previewElement : <div className="video-placeholder" />}
-      </div>
+function ReadyToRecordScreen({ captureMode, mediaStream, onStartRecording, sessionData, onBack }) {
+  return {
+    bannerText: "You're ready to record",
+    timer: null,
+    content: (
+      <>
+        <PromptCard sessionData={sessionData} />
+        {/* Bouncing arrow indicator - positioned flush at bottom of SECTION B (screen-specific override) */}
+        <div className="bounce-arrow-container" style={{ bottom: 0 }}>
+          <FaChevronDown className="bounce-arrow" style={{ margin: 0, padding: 0 }} />
+        </div>
+      </>
+    ),
+    actions: (
       <button
         type="button"
-        className="single-plus-right"
+        className="single-button-full green-button"
         onClick={onStartRecording}
       >
-        <FaCircle style={{ marginRight: '8px' }} />
-        Start recording
+        RECORD
       </button>
-    </div>
-  );
+    ),
+    onBack
+  };
 }
 
 export default ReadyToRecordScreen;

@@ -14,10 +14,11 @@ import Logo from '../Assets/Logo.png';
  * AppBanner Component
  * Displays a permanent logo banner at the top of the application
  */
-const AppBanner = ({ 
+const AppBanner = ({
   logoSize = 60,  // Change this value to adjust logo size
-  className = '', 
-  style = {} 
+  className = '',
+  style = {},
+  noWrapper = false  // When true, return just the logo without wrapper
 }) => {
   const { tokens } = useTokens();
 
@@ -38,13 +39,23 @@ const AppBanner = ({
     maxHeight: '80%', // Ensures logo doesn't exceed banner height
   };
 
+  const logoElement = (
+    <img
+      src={Logo}
+      alt="Love Retold Logo"
+      style={logoStyle}
+    />
+  );
+
+  // If noWrapper is true, return just the logo (used in MasterLayout's A2 section)
+  if (noWrapper) {
+    return logoElement;
+  }
+
+  // Otherwise return wrapped in app-banner div (legacy usage)
   return (
     <div className={`app-banner ${className}`.trim()} style={bannerStyle}>
-      <img 
-        src={Logo} 
-        alt="Love Retold Logo" 
-        style={logoStyle}
-      />
+      {logoElement}
     </div>
   );
 };
@@ -52,7 +63,8 @@ const AppBanner = ({
 AppBanner.propTypes = {
   logoSize: PropTypes.number,
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
+  noWrapper: PropTypes.bool
 };
 
 export default AppBanner;

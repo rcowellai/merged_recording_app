@@ -19,22 +19,38 @@
   }
 }
 
-/* Mobile: Background image with overlay on page-container */
+/* Mobile: Background image on page-container */
 @media (max-width: 767px) {
   .page-container.welcome-state {
-    background-image: linear-gradient(
-        rgba(44, 47, 72, 0.3),
-        rgba(44, 47, 72, 0.3)
-      ),
-      url('../Assets/Auth_Image.png');
+    background-image: url('../Assets/Auth_Image.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
   }
 
+  /* Remove banner background on mobile - show logo only */
+  .welcome-state .app-banner {
+    background-color: transparent;
+  }
+
   /* Remove background from app-layout (cyan border) on mobile */
   .welcome-state .app-layout {
     background-color: transparent;
+  }
+
+  /* Transparent button with white outline on mobile */
+  .welcome-state .single-button-full {
+    background-color: transparent;
+    color: var(--color-primary-foreground) !important; /* White text */
+    border: 1px solid var(--color-primary-foreground); /* White border */
+    font-size: var(--font-size-base); /* 16px */
+    font-weight: var(--font-weight-medium); /* 500 */
+    line-height: 1.5; /* 24px line-height */
+  }
+
+  /* Hover state for transparent button */
+  .welcome-state .single-button-full:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* 10% white overlay */
   }
 }
 
@@ -43,26 +59,26 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Left align */
-  justify-content: center;
+  justify-content: flex-start; /* Top align in SECTION B */
   text-align: left; /* Left align text */
-  height: 100%;
-  padding: 20px;
-  color: white;
+  flex: 1; /* Grow to fill SECTION B */
+  padding: var(--spacing-5);
+  color: var(--color-primary-foreground);
 }
 
 /* Desktop/Tablet Font Styling */
 .welcome-line {
-  font-size: 1.35rem;    /* Desktop: Customize here (default: 1.35rem = ~21.6px) */
-  font-weight: 400;      /* Desktop: Customize here (default: 400 = normal) */
+  font-size: var(--font-size-xl);    /* Desktop: 1.25rem = 20px */
+  font-weight: var(--font-weight-normal);
   line-height: 1.4;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-2);
   min-height: 1.4em; /* Prevent layout shift when second line appears */
   width: 100%; /* Full width for proper left alignment */
 }
 
 /* Double spacing after first line */
 .welcome-line-1 {
-  margin-bottom: 16px; /* Double the default 8px */
+  margin-bottom: var(--spacing-4); /* Double the default spacing */
 }
 
 /* Word fade-in animation */
@@ -83,7 +99,7 @@
 /* Mobile Font Styling */
 @media (max-width: 767px) {
   .welcome-line {
-    font-size: 1.25rem;  /* Mobile: Customize here (default: 1.175rem = ~18.8px) */
-    font-weight: 400;     /* Mobile: Customize here (default: 600 = semi-bold) */
+    font-size: var(--font-size-xl);  /* Mobile: 1.25rem = 20px */
+    font-weight: var(--font-weight-normal);
   }
 }

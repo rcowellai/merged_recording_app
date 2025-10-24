@@ -29,10 +29,9 @@ import AdminLandingPage from './components/AdminLandingPage';
 import AdminDebugPage from './components/AdminDebugPage';
 import DatabaseAdminPage from './components/DatabaseAdminPage';
 
-// Import TokenProvider and TokenAdmin
+// Import TokenProvider and LayoutProvider
 import { TokenProvider } from './theme/TokenProvider';
 import { LayoutProvider } from './components/layout';
-import TokenAdmin from './pages/TokenAdmin';
 import DemoPage from './pages/DemoPage'; 
 
 debugLogger.log('info', 'index.js', 'Starting React app render');
@@ -60,7 +59,6 @@ root.render(
               <Route path="/admin/recordings" element={<AdminPage />} />
               <Route path="/admin/debug" element={<AdminDebugPage />} />
               <Route path="/admin/database" element={<DatabaseAdminPage />} />
-              <Route path="/admin/tokens" element={<TokenAdmin />} />
 
               {/* NEW: Demo page => /demo */}
               <Route path="/demo" element={<DemoPage />} />

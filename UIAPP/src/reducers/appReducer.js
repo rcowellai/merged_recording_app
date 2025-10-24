@@ -10,6 +10,8 @@ export const APP_ACTIONS = {
   // Navigation actions
   SET_SHOW_WELCOME: 'SET_SHOW_WELCOME',
   SET_HAS_READ_PROMPT: 'SET_HAS_READ_PROMPT',
+  SET_AUDIO_TEST_COMPLETED: 'SET_AUDIO_TEST_COMPLETED',
+  SET_VIDEO_TEST_COMPLETED: 'SET_VIDEO_TEST_COMPLETED',
   SET_SUBMIT_STAGE: 'SET_SUBMIT_STAGE',
   SET_SHOW_START_OVER_CONFIRM: 'SET_SHOW_START_OVER_CONFIRM',
   SET_SHOW_CONFETTI: 'SET_SHOW_CONFETTI',
@@ -38,6 +40,8 @@ export const initialAppState = {
   // Navigation states (from App.js lines 62-65)
   showWelcome: true, // Start with welcome screen visible
   hasReadPrompt: false, // Track if user has read the prompt
+  audioTestCompleted: false, // Track if user completed audio test screen
+  videoTestCompleted: false, // Track if user completed video test screen
   submitStage: false,
   showStartOverConfirm: false,
   showConfetti: false,
@@ -65,6 +69,12 @@ export const appReducer = (state, action) => {
 
     case APP_ACTIONS.SET_HAS_READ_PROMPT:
       return { ...state, hasReadPrompt: action.payload };
+
+    case APP_ACTIONS.SET_AUDIO_TEST_COMPLETED:
+      return { ...state, audioTestCompleted: action.payload };
+
+    case APP_ACTIONS.SET_VIDEO_TEST_COMPLETED:
+      return { ...state, videoTestCompleted: action.payload };
 
     case APP_ACTIONS.SET_SUBMIT_STAGE:
       return { ...state, submitStage: action.payload };

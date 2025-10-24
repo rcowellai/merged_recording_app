@@ -12,13 +12,13 @@
 .page-container {
   display: flex;
   flex-direction: column;
-  background-color: #F5F4F0;
+  background-color: var(--color-neutral-default);
   min-height: 100vh;  /* Fallback for legacy browsers */
   min-height: 100dvh; /* Dynamic viewport height - excludes browser UI */
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  border: 3px solid red; /* DEBUG: Page container */
+  border: 3px solid red; /* DEBUG: Page container (MASTER CONTAINER - RED) */
 }
 
 /* Flexbox layout => responsive vertical distribution */
@@ -27,61 +27,48 @@
   flex-direction: column;
   flex: 1; /* Fill remaining space after banner */
   width: 100%;
-  max-width: 480px;
+  max-width: var(--layout-max-width-md);
   margin: 0 auto; /* Desktop centering */
   box-sizing: border-box;
-  border: 3px solid blue; /* DEBUG: App layout container */
+  border: 3px solid blue; /* DEBUG: App layout container (CONTENT CONTAINER - DARK BLUE) */
 }
 
 /* Flexbox section configurations */
 .timer-bar-section {
   flex: 0 0 60px; /* Fixed 60px height - 30px for spacing + 30px for timer */
   width: 100%;
-  padding: var(--prompt-top-margin) 16px 0 16px; /* 30px top + side padding */
+  padding: var(--prompt-top-margin) var(--spacing-4) 0 var(--spacing-4); /* 30px top + side padding */
   box-sizing: border-box;
   display: flex;
   align-items: flex-end; /* Align timer to bottom of section */
   justify-content: center;
-  border: 3px solid lime; /* DEBUG: Timer bar section */
+  border: 3px solid lime; /* DEBUG: Timer bar section (SECTION A - LIME GREEN) */
 }
 
 .prompt-section {
+  position: relative; /* Positioning context for absolutely positioned children */
+  display: flex; /* Enable flex container for vertical centering control */
+  flex-direction: column; /* Stack children vertically */
   flex: 1 1 auto; /* Grows naturally to fit content */
   min-height: 270px; /* Reduced by 30px - top spacing moved to timer-bar-section */
   overflow: hidden; /* Contain card within boundaries */
   width: 100%;
-  padding: 0 16px; /* Side padding only - top spacing now in timer-bar-section */
+  padding: 0 var(--spacing-4); /* Side padding only - top spacing now in timer-bar-section */
   box-sizing: border-box;
-  border: 3px solid green; /* DEBUG: Prompt section */
-}
-
-.spacing-section {
-  flex: 1 1 auto; /* Allow growth to fill space and push actions to bottom */
-  min-height: 20px; /* Minimum breathing room */
-  max-height: 200px; /* Don't waste too much space */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #666;
-  font-size: 1rem;
-  margin: 0;
-  padding: 0 16px;
-  box-sizing: border-box;
-  border: 3px solid orange; /* DEBUG: Spacing section */
+  border: 3px solid green; /* DEBUG: Prompt section (SECTION B - DARK GREEN) */
 }
 
 .actions-section {
   flex: 0 0 100px;
   /* Fixed height - 80px buttons + 20px bottom gap */
   width: 100%;
-  padding: 0 16px 20px 16px;
+  padding: 0 var(--spacing-4) var(--spacing-5) var(--spacing-4);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
   box-sizing: border-box;
-  border: 3px solid purple; /* DEBUG: Actions section */
+  border: 3px solid purple; /* DEBUG: Actions section (SECTION C - PURPLE) */
 }
 
 /* ============= RESPONSIVE FLEXBOX ============= */
@@ -89,13 +76,10 @@
 @media (max-height: 600px) {
   .timer-bar-section {
     flex: 0 0 48px; /* 20px top spacing + 28px timer on tight screens */
-    padding-top: 20px; /* Reduce top spacing */
+    padding-top: var(--spacing-5); /* Reduce top spacing */
   }
   .prompt-section {
     min-height: 220px; /* Reduced by 20px for tight screens */
-  }
-  .spacing-section {
-    min-height: 16px; /* Tighter spacing */
   }
 }
 
@@ -103,17 +87,14 @@
 @media (max-height: 520px) {
   .timer-bar-section {
     flex: 0 0 40px; /* 16px top spacing + 24px timer on very tight screens */
-    padding-top: 16px; /* Minimal top spacing */
+    padding-top: var(--spacing-4); /* Minimal top spacing */
   }
   .prompt-section {
     min-height: 184px; /* Reduced by 16px for very tight screens */
   }
-  .spacing-section {
-    min-height: 12px;
-  }
   .actions-section {
     flex: 0 0 92px; /* 80px buttons + 12px gap */
-    padding-bottom: 12px; /* Reduce bottom gap */
+    padding-bottom: var(--spacing-3); /* Reduce bottom gap */
   }
 }
 
@@ -127,9 +108,5 @@
   .prompt-section {
     max-height: 400px; /* Limit green section height on larger screens */
     padding: 0; /* Remove side padding - card edges align with green border */
-  }
-
-  .spacing-section {
-    max-height: 150px; /* Limit orange spacing on larger screens */
   }
 }

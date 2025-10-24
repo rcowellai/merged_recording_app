@@ -5,8 +5,7 @@
  * Renders when a valid session is found and validated
  */
 
-import React, { useReducer, useState, useCallback, useEffect } from 'react';
-import { FaUndo, FaCloudUploadAlt, FaMicrophoneAlt, FaVideo } from 'react-icons/fa';
+import React, { useReducer, useState, useCallback, useEffect, useRef } from 'react';
 import debugLogger from '../utils/debugLogger.js';
 
 // Configuration
@@ -24,23 +23,26 @@ import { createSubmissionHandler } from '../utils/submissionHandlers';
 import { createNavigationHandlers } from '../utils/navigationHandlers';
 
 // Existing components
-import PromptCard from './PromptCard';
 import RecordingBar from './RecordingBar';
 import CountdownOverlay from './CountdownOverlay';
 import ProgressOverlay from './ProgressOverlay';
 import RadixStartOverDialog from './RadixStartOverDialog';
 import ConfettiScreen from './confettiScreen';
 import ErrorScreen from './ErrorScreen';
-import AppBanner from './AppBanner';
+
+// Layout components
+import MasterLayout from './MasterLayout';
 
 // Screen components (Phase 2: Screen-based architecture)
 import WelcomeScreen from './screens/WelcomeScreen';
 import PromptReadScreen from './screens/PromptReadScreen';
 import ChooseModeScreen from './screens/ChooseModeScreen';
+import AudioTest from './screens/AudioTest';
+import VideoTest from './screens/VideoTest';
 import ReadyToRecordScreen from './screens/ReadyToRecordScreen';
 import ActiveRecordingScreen from './screens/ActiveRecordingScreen';
 import PausedRecordingScreen from './screens/PausedRecordingScreen';
-import ReviewRecordingContent from './screens/ReviewRecordingContent';
+import ReviewRecordingScreen from './screens/ReviewRecordingScreen';
 
 // Modular CSS imports (split from App.css for maintainability)
 import '../styles/variables.css';
@@ -69,6 +71,25 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
   // Player ready state for loading handling
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
+  // Audio permission state tracking
+  const [audioPermissionState, setAudioPermissionState] = useState('idle');
+  const audioRequestInProgressRef = useRef(false);
+
+  // Video permission state tracking
+  const [videoPermissionState, setVideoPermissionState] = useState('idle');
+  const videoRequestInProgressRef = useRef(false);
+
+  // Video element ref for connecting mediaStream
+  const videoRef = useRef(null);
+
+  // Track recording flow state values for hooks that need them
+  const [recordingFlowStateSnapshot, setRecordingFlowStateSnapshot] = useState({
+    captureMode: null,
+    mediaStream: null,
+    handleAudioClick: null,
+    handleVideoClick: null
+  });
+
   // Reset player ready state when entering review mode
   useEffect(() => {
     if (appState.submitStage) {
@@ -76,11 +97,140 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     }
   }, [appState.submitStage]);
 
+  // Auto-request microphone permission when AudioTest screen is shown
+  useEffect(() => {
+    const { captureMode, mediaStream, handleAudioClick } = recordingFlowStateSnapshot;
+
+    // Guard: Only request if not already requesting and conditions met
+    if (
+      captureMode === 'audio' &&
+      !appState.audioTestCompleted &&
+      !mediaStream &&
+      audioPermissionState === 'idle' &&
+      !audioRequestInProgressRef.current &&
+      handleAudioClick
+    ) {
+      audioRequestInProgressRef.current = true;
+      setAudioPermissionState('requesting');
+
+      debugLogger.log('info', 'AppContent', 'Auto-requesting microphone permission');
+
+      // Call handleAudioClick and watch for mediaStream changes
+      handleAudioClick().catch((error) => {
+        debugLogger.log('error', 'AppContent', 'Microphone permission denied', { error });
+        setAudioPermissionState('denied');
+        audioRequestInProgressRef.current = false;
+      });
+    }
+  }, [recordingFlowStateSnapshot, appState.audioTestCompleted, audioPermissionState]);
+
+  // Watch mediaStream to detect successful permission grant
+  useEffect(() => {
+    const { captureMode, mediaStream } = recordingFlowStateSnapshot;
+
+    if (captureMode === 'audio' && mediaStream && audioPermissionState === 'requesting') {
+      debugLogger.log('info', 'AppContent', 'Microphone permission granted');
+      setAudioPermissionState('granted');
+      audioRequestInProgressRef.current = false;
+    }
+  }, [recordingFlowStateSnapshot, audioPermissionState]);
+
+  // Reset permission state when navigating away from audio mode
+  useEffect(() => {
+    const { captureMode } = recordingFlowStateSnapshot;
+
+    if (captureMode !== 'audio') {
+      setAudioPermissionState('idle');
+      audioRequestInProgressRef.current = false;
+    }
+  }, [recordingFlowStateSnapshot]);
+
+  // Auto-request camera permission when VideoTest screen is shown
+  useEffect(() => {
+    const { captureMode, mediaStream, handleVideoClick } = recordingFlowStateSnapshot;
+
+    // Guard: Only request if not already requesting and conditions met
+    if (
+      captureMode === 'video' &&
+      !appState.videoTestCompleted &&
+      !mediaStream &&
+      videoPermissionState === 'idle' &&
+      !videoRequestInProgressRef.current &&
+      handleVideoClick
+    ) {
+      videoRequestInProgressRef.current = true;
+      setVideoPermissionState('requesting');
+
+      debugLogger.log('info', 'AppContent', 'Auto-requesting camera permission');
+
+      // Call handleVideoClick and watch for mediaStream changes
+      handleVideoClick().catch((error) => {
+        debugLogger.log('error', 'AppContent', 'Camera permission denied', { error });
+        setVideoPermissionState('denied');
+        videoRequestInProgressRef.current = false;
+      });
+    }
+  }, [recordingFlowStateSnapshot, appState.videoTestCompleted, videoPermissionState]);
+
+  // Watch mediaStream to detect successful video permission grant
+  useEffect(() => {
+    const { captureMode, mediaStream } = recordingFlowStateSnapshot;
+
+    if (captureMode === 'video' && mediaStream && videoPermissionState === 'requesting') {
+      debugLogger.log('info', 'AppContent', 'Camera permission granted');
+      setVideoPermissionState('granted');
+      videoRequestInProgressRef.current = false;
+    }
+  }, [recordingFlowStateSnapshot, videoPermissionState]);
+
+  // Reset video permission state when navigating away from video mode
+  useEffect(() => {
+    const { captureMode } = recordingFlowStateSnapshot;
+
+    if (captureMode !== 'video') {
+      setVideoPermissionState('idle');
+      videoRequestInProgressRef.current = false;
+    }
+  }, [recordingFlowStateSnapshot]);
+
+  // Connect mediaStream to video element when available
+  useEffect(() => {
+    const { mediaStream, captureMode } = recordingFlowStateSnapshot;
+
+    if (videoRef.current && mediaStream && captureMode === 'video') {
+      debugLogger.log('info', 'AppContent', 'Connecting mediaStream to video element');
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [recordingFlowStateSnapshot]);
+
   // Create auto-transition handler that will be passed to RecordingFlow
   const handleAutoTransition = useCallback(() => {
     debugLogger.log('info', 'AppContent', 'Auto-transitioning to submit stage');
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: true });
   }, [dispatch]);
+
+  // Device switching handler - delegates to useRecordingFlow
+  const handleSwitchAudioDevice = useCallback(async (deviceId) => {
+    try {
+      debugLogger.log('info', 'AppContent', 'Switching audio device', { deviceId });
+
+      // Call the hook's switchAudioDevice method
+      await recordingFlowStateSnapshot.switchAudioDevice(deviceId);
+
+      debugLogger.log('info', 'AppContent', 'Audio device switched successfully');
+    } catch (error) {
+      debugLogger.log('error', 'AppContent', 'Failed to switch audio device', { error });
+
+      // Show error to user via existing error system
+      dispatch({
+        type: APP_ACTIONS.SET_ERROR_MESSAGE,
+        payload: `Failed to switch microphone: ${error.message}`
+      });
+      dispatch({ type: APP_ACTIONS.SET_SHOW_ERROR, payload: true });
+
+      // Old stream is preserved by switchAudioDevice - audio continues
+    }
+  }, [recordingFlowStateSnapshot, dispatch]);
 
   debugLogger.log('info', 'AppContent', 'About to render RecordingFlow', {
     sessionId,
@@ -88,10 +238,10 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     hasSessionComponents: !!sessionComponents
   });
 
-  
+
   return (
     <FirebaseErrorBoundary component="Recording App">
-      <RecordingFlow 
+      <RecordingFlow
         onDoneAndSubmitStage={handleAutoTransition}
         sessionId={sessionId}
         sessionData={sessionData}
@@ -107,7 +257,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
             hasMediaStream: !!recordingFlowState.mediaStream
           }
         });
-        
+
         const {
           captureMode,
           countdownActive,
@@ -128,6 +278,34 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           resetRecordingState,
           // Progressive upload removed - using simple upload flow
         } = recordingFlowState;
+
+        // Update state snapshot for useEffect hooks at component level
+        // This allows hooks to react to RecordingFlow state changes
+        if (
+          recordingFlowStateSnapshot.captureMode !== captureMode ||
+          recordingFlowStateSnapshot.mediaStream !== mediaStream ||
+          recordingFlowStateSnapshot.handleAudioClick !== handleAudioClick ||
+          recordingFlowStateSnapshot.handleVideoClick !== handleVideoClick
+        ) {
+          setRecordingFlowStateSnapshot({
+            captureMode,
+            mediaStream,
+            handleAudioClick,
+            handleVideoClick
+          });
+        }
+
+        // Custom audio click handler that navigates to AudioTest first
+        const handleAudioClickWithTest = () => {
+          debugLogger.log('info', 'AppContent', 'Audio selected, navigating to AudioTest');
+          setCaptureMode('audio');
+        };
+
+        // Custom video click handler that navigates to VideoTest first
+        const handleVideoClickWithTest = () => {
+          debugLogger.log('info', 'AppContent', 'Video selected, navigating to VideoTest');
+          setCaptureMode('video');
+        };
 
         // Initialize extracted components and utility functions
         // Creating submission handler (logging disabled for upload analysis focus)
@@ -153,7 +331,12 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           setCaptureMode,
           setShowStartOverDialog,
           setIsPlayerReady,
-          resetRecordingState
+          resetRecordingState,
+          // RecordingFlow state for back navigation
+          isRecording,
+          isPaused,
+          captureMode,
+          mediaStream
         });
 
         // Format Time utility (using constants for maintainability)
@@ -164,92 +347,131 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           return `${m}:${s < TIME_FORMAT.ZERO_PADDING_THRESHOLD ? '0' : ''}${s}`;
         };
 
-        // Screen Router - determines which screen to show in actions-section
-        function renderCurrentActions() {
-          // Review stage: Show Start Over + Upload buttons
+        // Screen Router - returns screen object with {timer, content, actions}
+        function getCurrentScreen() {
+          // Review stage - call as function
           if (appState.submitStage) {
-            return (
-              <div className="two-button-row">
-                <button
-                  type="button"
-                  className="two-button-left"
-                  onClick={navigationHandlers.handleStartOverClick}
-                >
-                  <FaUndo style={{ marginRight: '8px' }} />
-                  Start Over
-                </button>
-                <button
-                  type="button"
-                  className="two-button-right"
-                  onClick={handleSubmit}
-                >
-                  <FaCloudUploadAlt style={{ marginRight: '8px' }} />
-                  Upload
-                </button>
-              </div>
-            );
+            return ReviewRecordingScreen({
+              recordedBlobUrl,
+              captureMode,
+              actualMimeType,
+              isPlayerReady,
+              onPlayerReady: () => setIsPlayerReady(true),
+              onStartOver: navigationHandlers.handleStartOverClick,
+              onUpload: handleSubmit,
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          // Prompt read screen - first screen after welcome
+          // Prompt read screen - call as function, returns {timer, content, actions}
           if (!appState.hasReadPrompt) {
-            return (
-              <PromptReadScreen
-                onContinue={() => {
-                  debugLogger.log('info', 'AppContent', 'Prompt read, proceeding to mode selection');
-                  dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: true });
-                }}
-              />
-            );
+            return PromptReadScreen({
+              sessionData,
+              onContinue: () => {
+                debugLogger.log('info', 'AppContent', 'Prompt read, proceeding to mode selection');
+                dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: true });
+              },
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          // Mode selection - choose audio or video
+          // Mode selection - call as function
           if (appState.hasReadPrompt && !mediaStream && captureMode == null) {
-            return (
-              <ChooseModeScreen
-                onAudioClick={handleAudioClick}
-                onVideoClick={handleVideoClick}
-              />
-            );
+            return ChooseModeScreen({
+              onAudioClick: handleAudioClickWithTest,
+              onVideoClick: handleVideoClickWithTest,
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          // Ready to start recording
-          if (!isRecording && !isPaused && mediaStream) {
-            return (
-              <ReadyToRecordScreen
-                captureMode={captureMode}
-                mediaStream={mediaStream}
-                onStartRecording={handleStartRecording}
-              />
-            );
+          // Audio test screen - shown after audio mode selected
+          // Auto-requests permission on mount, shows visualizer when granted
+          if (captureMode === 'audio' && !appState.audioTestCompleted) {
+            return AudioTest({
+              mediaStream: mediaStream,
+              permissionState: audioPermissionState,
+              onContinue: () => {
+                // Only navigation - permission already granted at this point
+                debugLogger.log('info', 'AppContent', 'Audio test completed, proceeding to ready screen');
+                dispatch({ type: APP_ACTIONS.SET_AUDIO_TEST_COMPLETED, payload: true });
+              },
+              onRetry: () => {
+                // Reset state and retry permission request
+                debugLogger.log('info', 'AppContent', 'Retrying microphone permission request');
+                audioRequestInProgressRef.current = false;
+                setAudioPermissionState('idle');
+                // useEffect will trigger on next render
+              },
+              onSwitchDevice: handleSwitchAudioDevice, // NEW: Device switching handler
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          // Recording in progress
+          // Video test screen - shown after video mode selected
+          // Auto-requests permission on mount, shows video preview when granted
+          if (captureMode === 'video' && !appState.videoTestCompleted) {
+            return VideoTest({
+              mediaStream: mediaStream,
+              permissionState: videoPermissionState,
+              videoRef: videoRef,
+              onContinue: () => {
+                // Only navigation - permission already granted at this point
+                debugLogger.log('info', 'AppContent', 'Video test completed, proceeding to ready screen');
+                dispatch({ type: APP_ACTIONS.SET_VIDEO_TEST_COMPLETED, payload: true });
+              },
+              onRetry: () => {
+                // Reset state and retry permission request
+                debugLogger.log('info', 'AppContent', 'Retrying camera permission request');
+                videoRequestInProgressRef.current = false;
+                setVideoPermissionState('idle');
+                // useEffect will trigger on next render
+              },
+              onBack: navigationHandlers.handleBack
+            });
+          }
+
+          // Ready to start recording - call as function
+          // Only show if appropriate test is completed (audio test for audio, video test for video)
+          const isTestCompleted =
+            (captureMode === 'audio' && appState.audioTestCompleted) ||
+            (captureMode === 'video' && appState.videoTestCompleted);
+
+          if (!isRecording && !isPaused && mediaStream && isTestCompleted) {
+            return ReadyToRecordScreen({
+              captureMode,
+              mediaStream,
+              onStartRecording: handleStartRecording,
+              sessionData,
+              onBack: navigationHandlers.handleBack
+            });
+          }
+
+          // Recording in progress - call as function
           if (isRecording && !isPaused) {
-            return (
-              <ActiveRecordingScreen
-                captureMode={captureMode}
-                mediaStream={mediaStream}
-                onPause={handlePause}
-              />
-            );
+            return ActiveRecordingScreen({
+              captureMode,
+              mediaStream,
+              onPause: handlePause,
+              sessionData,
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          // Paused state
+          // Paused state - call as function
           if (isPaused) {
-            return (
-              <PausedRecordingScreen
-                onResume={handleResume}
-                onDone={navigationHandlers.handleDoneAndSubmitStage}
-              />
-            );
+            return PausedRecordingScreen({
+              onResume: handleResume,
+              onDone: navigationHandlers.handleDoneAndSubmitStage,
+              sessionData,
+              onBack: navigationHandlers.handleBack
+            });
           }
 
-          return null;
+          return { timer: null, content: null, actions: null };
         }
 
         // Welcome Screen - First screen users see
         // Background applied to page-container via welcome-state class
-        // Message in prompt-section (green border), button in actions-section (purple border)
         if (appState.showWelcome) {
           const welcomeScreen = WelcomeScreen({
             sessionData,
@@ -260,29 +482,13 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           });
 
           return (
-            <>
-              <div className="page-container welcome-state">
-                <AppBanner logoSize={30} />
-
-                <div className="app-layout">
-                  {/* Timer bar section - empty for welcome screen */}
-                  <div className="timer-bar-section"></div>
-
-                  {/* Prompt section - contains animated welcome message */}
-                  <div className="prompt-section">
-                    {welcomeScreen.message}
-                  </div>
-
-                  {/* Spacing section - hidden for welcome */}
-                  <div className="spacing-section" style={{ visibility: 'hidden' }}></div>
-
-                  {/* Actions section - contains Continue button */}
-                  <div className="actions-section">
-                    {welcomeScreen.button}
-                  </div>
-                </div>
-              </div>
-            </>
+            <MasterLayout
+              className="welcome-state"
+              timer={welcomeScreen.timer}
+              content={welcomeScreen.content}
+              actions={welcomeScreen.actions}
+              showBanner={true}
+            />
           );
         }
 
@@ -319,7 +525,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           return <ConfettiScreen docId={appState.docId} />;
         }
 
-        // Main UI (preserves exact JSX structure from original App.js:353-489)
+        // Main UI - uses MasterLayout for consistent structure
         debugLogger.log('info', 'AppContent', 'Rendering main recording UI', {
           submitStage: appState.submitStage,
           uploadInProgress: appState.uploadInProgress,
@@ -328,94 +534,41 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           isPaused,
           hasRecordedBlobUrl: !!recordedBlobUrl
         });
-        
-        return (
-          <>
-            <div className="page-container">
-            <AppBanner logoSize={30} />
 
-            <div className="app-layout">
-              {/* Timer bar section - always present, conditionally populated */}
-              <div className="timer-bar-section">
-                {(isRecording || isPaused) ? (
-                  <div className="recording-bar-container">
-                    <RecordingBar
-                      elapsedSeconds={elapsedSeconds}
-                      totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
-                      isRecording={isRecording}
-                      isPaused={isPaused}
-                      formatTime={formatTime}
-                    />
-                  </div>
-                ) : (appState.hasReadPrompt && !mediaStream && captureMode == null) ? (
-                  // ChooseModeScreen: Show "Choose your recording mode" text
-                  <div style={{
-                    fontSize: '0.95rem',
-                    color: '#2C2F48',
-                    fontFamily: 'inherit',
-                    textAlign: 'center',
-                    width: '100%'
-                  }}>
-                    Choose your recording mode
-                  </div>
-                ) : null}
-              </div>
+        // Get current screen object {timer, content, actions}
+        const screen = getCurrentScreen();
 
-              <div
-                className="prompt-section"
-                style={{
-                  padding: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? '0' : undefined,
-                  display: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'flex' : undefined,
-                  alignItems: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'center' : undefined,
-                  justifyContent: (appState.hasReadPrompt && !mediaStream && captureMode == null) ? 'center' : undefined
-                }}
-              >
-                {!appState.submitStage ? (
-                  // Show PromptCard except when on ChooseModeScreen
-                  (appState.hasReadPrompt && !mediaStream && captureMode == null) ? (
-                    // ChooseModeScreen: Show icons only - padding removed from parent for true centering
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      width: '100%',
-                      gap: '30px'
-                    }}>
-                      <FaMicrophoneAlt size={100} color="#2C2F48" />
-                      <FaVideo size={100} color="#2C2F48" />
-                    </div>
-                  ) : (
-                    <PromptCard sessionData={sessionData} />
-                  )
-                ) : (
-                  <ReviewRecordingContent
-                    recordedBlobUrl={recordedBlobUrl}
-                    captureMode={captureMode}
-                    actualMimeType={actualMimeType}
-                    isPlayerReady={isPlayerReady}
-                    onPlayerReady={() => setIsPlayerReady(true)}
-                  />
-                )}
-              </div>
-              <div
-                className="spacing-section"
-                style={{
-                  visibility: (mediaStream || appState.submitStage) ? 'hidden' : 'visible',
-                }}
-              >
-              </div>
-              <div className="actions-section">
-                {renderCurrentActions()}
-              </div>
+        // Calculate timer content - screen timer takes priority, fallback to RecordingBar
+        const timerContent = screen.timer || (
+          (isRecording || isPaused) ? (
+            <div className="recording-bar-container">
+              <RecordingBar
+                elapsedSeconds={elapsedSeconds}
+                totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
+                isRecording={isRecording}
+                isPaused={isPaused}
+                formatTime={formatTime}
+              />
             </div>
+          ) : null
+        );
 
-            {/* Countdown Overlay */}
+        return (
+          <MasterLayout
+            timer={timerContent}
+            content={screen.content}
+            actions={screen.actions}
+            showBanner={true}
+            bannerText={screen.bannerText}
+            onBack={screen.onBack}
+            showBackButton={screen.showBackButton}
+            iconA3={screen.iconA3}
+          >
+            {/* Overlays and dialogs */}
             {countdownActive && (
               <CountdownOverlay countdownValue={countdownValue} />
             )}
 
-            {/* Start Over Dialog */}
             <RadixStartOverDialog
               open={showStartOverDialog}
               onOpenChange={setShowStartOverDialog}
@@ -423,12 +576,10 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               onCancel={() => setShowStartOverDialog(false)}
             />
 
-            {/* Upload Overlay => progress */}
             {appState.uploadInProgress && (
               <ProgressOverlay fraction={appState.uploadFraction} />
             )}
-            </div>
-          </>
+          </MasterLayout>
         );
       }}
     </RecordingFlow>

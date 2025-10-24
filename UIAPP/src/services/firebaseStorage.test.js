@@ -16,6 +16,17 @@ import firebaseStorageService, {
   fetchRecording
 } from './firebaseStorage.js';
 
+// Import mocked dependencies
+import {
+  getDownloadURL,
+  deleteFile
+} from './firebase/storage.js';
+import {
+  getUserRecordingSessions,
+  getRecordingSession,
+  updateRecordingSession
+} from './firebase/firestore.js';
+
 // Mock Firebase dependencies
 jest.mock('./firebase/storage.js', () => ({
   getDownloadURL: jest.fn(),
@@ -30,17 +41,6 @@ jest.mock('./firebase/firestore.js', () => ({
   updateRecordingSession: jest.fn(),
   deleteStory: jest.fn()
 }));
-
-// Import mocked dependencies
-import {
-  getDownloadURL,
-  deleteFile
-} from './firebase/storage.js';
-import {
-  getUserRecordingSessions,
-  getRecordingSession,
-  updateRecordingSession
-} from './firebase/firestore.js';
 
 describe('FirebaseStorageService (C07)', () => {
   beforeEach(() => {

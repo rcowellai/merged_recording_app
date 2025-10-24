@@ -13,9 +13,9 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: 'Open Sans', sans-serif;
-  background-color: #F5F4F0;
-  color: #333333;
+  font-family: var(--font-primary);
+  background-color: var(--color-neutral-default);
+  color: var(--color-neutral-black);
   min-height: 100vh;  /* Fallback for legacy browsers */
   min-height: 100dvh; /* Dynamic viewport height - excludes browser UI */
 }
@@ -30,50 +30,52 @@ html, body {
   margin: 0; /* Parent .prompt-section handles top spacing */
   box-sizing: border-box;
 
-  background-color: #FFFFFF;
+  background-color: var(--color-background-light);
   max-height: 100%; /* Flexible - fits parent container */
   min-height: 200px; /* Minimum readable size */
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-lg);
 
-  padding: 4px;
+  padding: var(--spacing-1);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   overflow: hidden; /* No scroll - content should always fit */
-  border: 3px solid deeppink; /* DEBUG: Card container */
+  /* border: 3px solid deeppink; */ /* DEBUG: Card container - REMOVED */
 }
 .card-content {
-  padding: 15px 15px;
-  border: 2px solid coral; /* DEBUG: Card content */
+  padding: var(--spacing-4) var(--spacing-4);
+  /* border: 2px solid coral; */ /* DEBUG: Card content - REMOVED */
 }
 
 /* Headings for the prompt */
 .heading {
-  font-size: 1.35rem;
-  font-weight: 400;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-normal);
   line-height: 1.4;
   margin: 0;
   padding: 0;
+  color: var(--color-primary-default);
 }
 .subheading {
-  font-size: 1.1rem;
-  font-weight: 400;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
   line-height: 1.2;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-5);
+  color: var(--color-onboarding-font);
 }
 
-/* “Or choose a different prompt” link styling */
+/* "Or choose a different prompt" link styling */
 .prompt-link {
-  margin-top: 2px;
-  font-size: 1rem;
-  color: #666666;
+  margin-top: var(--spacing-1);
+  font-size: var(--font-size-base);
+  color: var(--color-neutral-gray-03);
   text-align: center;
 }
 .prompt-link a {
   text-decoration: underline;
-  color: #333333;
+  color: var(--color-neutral-black);
 }
 
 /* Overlay Buttons (if used for Start Over / Submit) */
@@ -92,21 +94,21 @@ html, body {
   opacity: 1;
 }
 .btn-left-lower {
-  background-color: var(--btn-secondary-bg, #E4E2D8);
-  color: var(--btn-secondary-color, #2C2F48);
-  padding: 8px 20px;
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  padding: var(--spacing-2) var(--spacing-5);
 }
 .btn-right-lower {
-  background-color: var(--btn-primary-bg, #2C2F48);
-  color: var(--btn-primary-color, #F5F4F0);
-  padding: 8px 16px;
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  padding: var(--spacing-2) var(--spacing-4);
 }
 
 /* ============= MOBILE RESPONSIVE ============= */
 /* Mobile font sizing for question text */
 @media (max-width: 767px) {
   .heading {
-    font-size: 1.175rem; /* 18px */
-    font-weight: 600;    /* Medium weight */
+    font-size: var(--font-size-lg); /* 1.125rem = 18px */
+    font-weight: var(--font-weight-regular);
   }
 }
