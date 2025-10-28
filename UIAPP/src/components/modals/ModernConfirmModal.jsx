@@ -191,7 +191,7 @@ const ModernConfirmModal = NiceModal.create(({
             onClick={handleCancel}
             style={{
               padding: '12px 24px',
-              border: `1px solid ${tokens.colors.background.gray}`,
+              border: `1px solid ${tokens.colors.button.leftHandButton}`,
               borderRadius: tokens.borderRadius.lg,
               backgroundColor: 'transparent',
               color: tokens.colors.neutral.gray['03'],
@@ -202,7 +202,7 @@ const ModernConfirmModal = NiceModal.create(({
               minWidth: '90px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = tokens.colors.background.gray;
+              e.target.style.backgroundColor = tokens.colors.button.leftHandButton;
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = 'transparent';

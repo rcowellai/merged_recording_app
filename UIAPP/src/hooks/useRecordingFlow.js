@@ -33,8 +33,8 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Countdown functionality using reusable hook
   const { countdownActive, countdownValue, startCountdown } = useCountdown();
 
-  // Elapsed time (up to 30s)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // NOTE: Elapsed time moved to TimerContext to prevent re-renders
+  // Timer value accessed via useTimer() hook in components that need it
 
   // Track the actual MIME type chosen by MediaRecorder
   const [actualMimeType, setActualMimeType] = useState(null);
@@ -51,24 +51,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // ===========================
   // Effects
   // ===========================
-  // Recording timer: caps at max duration, no auto-stop
-  useEffect(() => {
-    let intervalId;
-    if (isRecording && !isPaused) {
-      intervalId = setInterval(() => {
-        setElapsedSeconds((prev) => {
-          // If we've hit max duration, just cap it.
-          if (prev >= RECORDING_LIMITS.MAX_DURATION_SECONDS) {
-            return RECORDING_LIMITS.MAX_DURATION_SECONDS;
-          }
-          return prev + 1;
-        });
-      }, RECORDING_LIMITS.TIMER_INTERVAL_MS);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isRecording, isPaused]);
+  // NOTE: Recording timer moved to TimerContext (see TimerProvider in AppContent)
 
   // Initialize Firebase authentication (optional)
   useEffect(() => {
@@ -179,7 +162,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     if (!mediaStream) return;
 
     recordedChunksRef.current = [];
-    setElapsedSeconds(0);
+    // Timer reset handled by TimerProvider
     
     // Choose supported MIME type
     let mimeType = null;
@@ -292,7 +275,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     // Reset recording state
     setIsRecording(false);
     setIsPaused(false);
-    setElapsedSeconds(0);
+    // Timer reset handled by TimerProvider
     
     // Clear recorded data
     setRecordedBlobUrl(null);
@@ -315,7 +298,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     mediaStream,
     isRecording,
     isPaused,
-    elapsedSeconds,
+    // elapsedSeconds moved to TimerContext
     recordedBlobUrl,
     actualMimeType,
     countdownActive,

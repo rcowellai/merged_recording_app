@@ -47,7 +47,9 @@
       "Bash(git log:*)",
       "WebFetch(domain:github.com)",
       "Bash(findstr:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(timeout /t 10)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": [],

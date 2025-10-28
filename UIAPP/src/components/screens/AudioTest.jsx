@@ -26,10 +26,15 @@
  */
 
 import React from 'react';
+import { FaArrowRight } from 'react-icons/fa';
 import AudioVisualizer from '../AudioVisualizer';
 import AudioDeviceSettings from './AudioDeviceSettings';
+import { Button } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
 function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissionState, onBack }) {
+  const { tokens } = useTokens();
+
   // Determine what to show based on permission state
   const showVisualizer = mediaStream && permissionState === 'granted';
   const showLoading = permissionState === 'requesting';
@@ -51,58 +56,62 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 'var(--spacing-5)',
+        gap: tokens.spacing[5],
         boxSizing: 'border-box',
         overflow: 'hidden'
       }}>
-        {/* Bordered container - always rendered so AudioVisualizer can mount */}
+        {/* Container - always rendered so AudioVisualizer can mount */}
         <div style={{
           width: '100%',
-          maxWidth: 'var(--layout-max-width-md)',
-          border: showVisualizer ? '1px solid var(--color-onboarding-font)' : 'none',
-          borderRadius: 'var(--border-radius-lg)',
+          maxWidth: tokens.layout.maxWidth.md,
+          minHeight: '55vh',
+          border: `0.5px solid rgba(113, 128, 150, 0.5)`,
+          borderRadius: tokens.borderRadius.lg,
           boxSizing: 'border-box',
-          padding: 'var(--spacing-4)',
-          backgroundColor: '#ffffff',
+          padding: tokens.spacing[4],
+          backgroundColor: tokens.colors.button.leftHandButton,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 'var(--spacing-3)'
+          gap: 0
         }}>
-          {showVisualizer && (
-            <p style={{
-              fontSize: 'var(--font-size-base)',
-              fontWeight: 'var(--font-weight-normal)',
-              color: 'var(--color-onboarding-font)',
-              margin: 0,
-              textAlign: 'center',
-              lineHeight: '1.5'
-            }}>
-              Check that the sound bar moves with your voice.
-            </p>
-          )}
           {/* AudioVisualizer always mounted for proper initialization */}
-          <AudioVisualizer mediaStream={mediaStream} height={200} />
-          {showVisualizer && (
-            <p style={{
-              fontSize: 'var(--font-size-base)',
-              fontWeight: 'var(--font-weight-normal)',
-              color: 'var(--color-onboarding-font)',
-              margin: 0,
-              textAlign: 'center',
-              lineHeight: '1.5'
-            }}>
-              Tap the gear in the right-hand corner to troubleshoot.
-            </p>
-          )}
+          <div style={{ width: '100%' }}>
+            <AudioVisualizer mediaStream={mediaStream} height={100} />
+          </div>
+          <p style={{
+            fontSize: tokens.fontSize.base,
+            fontWeight: tokens.fontWeight.normal,
+            color: tokens.colors.primary.DEFAULT,
+            margin: 0,
+            textAlign: 'center',
+            lineHeight: '1.5',
+            paddingTop: tokens.spacing[2],
+            paddingLeft: tokens.spacing[2],
+            paddingRight: tokens.spacing[2]
+          }}>
+            Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
+          </p>
         </div>
+
+        {/* Instruction text - shown below the visualizer container */}
+        <p style={{
+          fontSize: tokens.fontSize.base,
+          fontWeight: tokens.fontWeight.normal,
+          color: tokens.colors.primary.DEFAULT,
+          margin: 0,
+          textAlign: 'center',
+          lineHeight: '1.5'
+        }}>
+          Check that the microphone bar moves with your voice.
+        </p>
 
         {/* Loading state - shown while requesting permission */}
         {showLoading && (
           <div style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-neutral-gray-03)',
+            fontSize: tokens.fontSize.sm,
+            color: tokens.colors.neutral.gray['03'],
             textAlign: 'center',
             maxWidth: '400px',
             lineHeight: '1.4'
@@ -114,15 +123,15 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
         {/* Error state - shown when permission denied */}
         {showError && (
           <div style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-error, #d32f2f)',
+            fontSize: tokens.fontSize.sm,
+            color: tokens.colors.status.error,
             textAlign: 'center',
             maxWidth: '400px',
             lineHeight: '1.4'
           }}>
             <p style={{
-              margin: '0 0 var(--spacing-2) 0',
-              fontWeight: 'var(--font-weight-medium)'
+              margin: `0 0 ${tokens.spacing[2]} 0`,
+              fontWeight: tokens.fontWeight.medium
             }}>
               Microphone access was denied.
             </p>
@@ -134,22 +143,16 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
       </div>
     ),
     actions: showError ? (
-      <button
-        type="button"
-        className="single-button-full"
-        onClick={onRetry}
-      >
+      <Button onClick={onRetry}>
         Try Again
-      </button>
+      </Button>
     ) : (
-      <button
-        type="button"
-        className="single-button-full"
+      <Button
         onClick={onContinue}
         disabled={!showVisualizer}
       >
-        Continue
-      </button>
+        Next step <FaArrowRight style={{ marginLeft: '12px' }} />
+      </Button>
     ),
     onBack
   };

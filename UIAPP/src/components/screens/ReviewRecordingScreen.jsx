@@ -6,14 +6,17 @@
  * Includes Start Over and Upload action buttons.
  *
  * Returns standard screen format:
+ * - bannerContent: 'Review & submit' (displays in section A2)
  * - timer: null
- * - content: Media player with review title
+ * - content: Media player
  * - actions: Start Over and Upload buttons
  */
 
 import React from 'react';
 import { FaUndo, FaCloudUploadAlt } from 'react-icons/fa';
 import PlyrMediaPlayer from '../PlyrMediaPlayer';
+import { Button, ButtonRow } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
 function ReviewRecordingScreen({
   recordedBlobUrl,
@@ -25,46 +28,71 @@ function ReviewRecordingScreen({
   onUpload,
   onBack
 }) {
+  const { tokens } = useTokens();
+
   const content = !recordedBlobUrl ? (
-    <div className="review-content">
-      <div className="review-title">Review your recording</div>
-      <div className="loading-message">Preparing your recording...</div>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: tokens.spacing[6],
+      flex: 1
+    }}>
+      <div style={{
+        fontSize: tokens.fontSize.base,
+        color: tokens.colors.neutral.gray['01']
+      }}>
+        Preparing your recording...
+      </div>
     </div>
   ) : (
-    <div className="review-content">
-      <div className="review-title">Review your recording</div>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: tokens.spacing[6],
+      flex: 1
+    }}>
       <PlyrMediaPlayer
         src={recordedBlobUrl}
         type={captureMode}
         actualMimeType={actualMimeType}
         onReady={onPlayerReady}
-        className="inline-media-player"
+        style={{ width: '100%' }}
       />
     </div>
   );
 
   return {
+    bannerContent: 'Review & submit',
     timer: null,
     content,
     actions: (
-      <div className="two-button-row">
-        <button
-          type="button"
-          className="two-button-left"
+      <ButtonRow>
+        <Button
+          variant="secondary"
           onClick={onStartOver}
+          style={{
+            width: '48%',
+            backgroundColor: tokens.colors.button.leftHandButton,
+            border: `0.5px solid ${tokens.colors.onboarding.fontColor}`,
+            color: tokens.colors.primary.DEFAULT
+          }}
+          fullWidth={false}
         >
-          <FaUndo style={{ marginRight: '8px' }} />
+          <FaUndo style={{ marginRight: tokens.spacing[2] }} />
           Start Over
-        </button>
-        <button
-          type="button"
-          className="two-button-right"
+        </Button>
+        <Button
           onClick={onUpload}
+          style={{ width: '48%' }}
+          fullWidth={false}
         >
-          <FaCloudUploadAlt style={{ marginRight: '8px' }} />
+          <FaCloudUploadAlt style={{ marginRight: tokens.spacing[2] }} />
           Upload
-        </button>
-      </div>
+        </Button>
+      </ButtonRow>
     ),
     onBack
   };

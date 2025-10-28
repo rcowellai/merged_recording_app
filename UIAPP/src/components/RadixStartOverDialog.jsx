@@ -217,8 +217,8 @@ function RadixStartOverDialog({ open, onOpenChange, onConfirm, onCancel }) {
                 padding: '0 32px',
                 border: 'none',
                 borderRadius: '8px',
-                backgroundColor: '#E4E2D8',
-                color: '#2C2F48',
+                backgroundColor: tokens.colors.background.promptCard,
+                color: tokens.colors.primary.DEFAULT,
                 fontSize: '16px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -228,10 +228,10 @@ function RadixStartOverDialog({ open, onOpenChange, onConfirm, onCancel }) {
                 width: isMobile ? '100%' : 'auto'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#D4D2C8';
+                e.target.style.backgroundColor = tokens.colors.border.neutral;
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#E4E2D8';
+                e.target.style.backgroundColor = tokens.colors.background.promptCard;
               }}
               autoFocus
             >

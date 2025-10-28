@@ -13,8 +13,12 @@
 
 import React from 'react';
 import { FaMicrophoneAlt, FaVideo } from 'react-icons/fa';
+import { Button, ButtonRow } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
 function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
+  const { tokens } = useTokens();
+
   return {
     bannerContent: 'Choose recording mode',
     content: (
@@ -28,21 +32,21 @@ function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 'var(--spacing-12)'
+          gap: tokens.spacing[12]
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 'var(--spacing-12)'
+            gap: tokens.spacing[12]
           }}>
             <FaMicrophoneAlt size={85} color="rgba(44, 47, 72, 0.85)" />
             <FaVideo size={85} color="rgba(44, 47, 72, 0.85)" />
           </div>
           <p style={{
-            fontSize: 'var(--font-size-base)',
-            fontWeight: 'var(--font-weight-normal)',
-            color: 'var(--color-onboarding-font)',
+            fontSize: tokens.fontSize.base,
+            fontWeight: tokens.fontWeight.normal,
+            color: tokens.colors.primary.DEFAULT,
             margin: 0,
             textAlign: 'center'
           }}>
@@ -52,24 +56,30 @@ function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
       </div>
     ),
     actions: (
-      <div className="two-button-row">
-        <button
-          type="button"
-          className="two-button-left"
+      <ButtonRow>
+        <Button
+          variant="secondary"
           onClick={onAudioClick}
+          style={{
+            width: '48%',
+            backgroundColor: tokens.colors.button.leftHandButton,
+            border: `0.5px solid ${tokens.colors.onboarding.fontColor}`,
+            color: tokens.colors.primary.DEFAULT
+          }}
+          fullWidth={false}
         >
-          <FaMicrophoneAlt style={{ marginRight: 'var(--spacing-2)' }} />
+          <FaMicrophoneAlt style={{ marginRight: tokens.spacing[2] }} />
           Audio
-        </button>
-        <button
-          type="button"
-          className="two-button-right"
+        </Button>
+        <Button
           onClick={onVideoClick}
+          style={{ width: '48%' }}
+          fullWidth={false}
         >
-          <FaVideo style={{ marginRight: 'var(--spacing-2)' }} />
+          <FaVideo style={{ marginRight: tokens.spacing[2] }} />
           Video
-        </button>
-      </div>
+        </Button>
+      </ButtonRow>
     ),
     onBack
   };

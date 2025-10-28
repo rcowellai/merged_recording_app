@@ -160,7 +160,7 @@ const MediaDeviceModal = NiceModal.create(({
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
-                      e.currentTarget.style.backgroundColor = tokens.colors.background.gray;
+                      e.currentTarget.style.backgroundColor = tokens.colors.button.leftHandButton;
                     }
                   }}
                   onMouseLeave={(e) => {

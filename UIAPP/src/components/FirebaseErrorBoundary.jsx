@@ -232,11 +232,11 @@ export class FirebaseErrorBoundary extends Component {
                 </button>
               )}
               
-              <button 
+              <button
                 onClick={this.handleFallback}
                 style={errorBoundaryStyles.secondaryButton}
               >
-                Continue Offline
+                Next step Offline
               </button>
               
               <button 

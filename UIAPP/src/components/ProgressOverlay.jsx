@@ -9,9 +9,10 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import ProgressBar from 'progressbar.js';
-import { COLORS } from '../config';
+import { useTokens } from '../theme/TokenProvider';
 
 function ProgressOverlay({ fraction }) {
+  const { tokens } = useTokens();
   const containerRef = useRef(null);
   const circleRef = useRef(null);
 
@@ -21,8 +22,8 @@ function ProgressOverlay({ fraction }) {
       circleRef.current = new ProgressBar.Circle(containerRef.current, {
         strokeWidth: 6,
         trailWidth: 6,
-        trailColor: COLORS.BACKGROUND_SECONDARY,
-        color: COLORS.PRIMARY_DARK,
+        trailColor: tokens.colors.background.light,
+        color: tokens.colors.primary.DEFAULT,
         easing: 'easeInOut',
         duration: 200,
       });
@@ -49,7 +50,7 @@ function ProgressOverlay({ fraction }) {
         style={{
           marginBottom: '25px',
           fontSize: '1.25rem',
-          color: COLORS.PRIMARY_DARK,
+          color: tokens.colors.primary.DEFAULT,
         }}
       >
         Memories Uploading

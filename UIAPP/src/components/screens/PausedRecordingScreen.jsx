@@ -6,36 +6,61 @@
  *
  * Returns standard screen format:
  * - timer: null (RecordingBar managed separately in AppContent)
- * - content: PromptCard with session data (Section B - green border)
- * - actions: Resume and Done buttons (Section C - purple border)
+ * - content: PromptCard with session data
+ * - actions: Resume and Done buttons
  */
 
 import React from 'react';
 import { FaPlay } from 'react-icons/fa';
 import PromptCard from '../PromptCard';
+import PausedOverlay from '../PausedOverlay';
+import { Button, ButtonRow } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
-function PausedRecordingScreen({ onResume, onDone, sessionData, onBack }) {
+function PausedRecordingScreen({ onResume, onDone, sessionData, onBack, countdownActive }) {
+  const { tokens } = useTokens();
+
   return {
     timer: null,
-    content: <PromptCard sessionData={sessionData} />,
+    className: 'paused-recording-state',
+    content: (
+      <div style={{ paddingTop: tokens.spacing[12] }}>
+        <PromptCard
+          sessionData={sessionData}
+          customBackgroundColor={tokens.colors.primary.DEFAULT}
+          customQuestionColor="#FFFFFF"
+        />
+      </div>
+    ),
+    overlay: !countdownActive ? <PausedOverlay /> : null,
     actions: (
-      <div className="two-button-row">
-        <button
-          type="button"
-          className="two-button-left"
+      <ButtonRow>
+        <Button
           onClick={onResume}
+          style={{
+            width: '48%',
+            backgroundColor: 'transparent',
+            border: `1px solid ${tokens.colors.neutral.gray['01']}`,
+            color: tokens.colors.primary.foreground
+          }}
+          fullWidth={false}
         >
-          <FaPlay style={{ marginRight: '8px' }} />
+          <FaPlay style={{ marginRight: tokens.spacing[2] }} />
           Resume
-        </button>
-        <button
-          type="button"
-          className="two-button-right"
+        </Button>
+        <Button
           onClick={onDone}
+          style={{
+            width: '48%',
+            backgroundColor: 'transparent',
+            border: `1px solid ${tokens.colors.neutral.gray['01']}`,
+            color: tokens.colors.primary.foreground
+          }}
+          fullWidth={false}
         >
           Done
-        </button>
-      </div>
+        </Button>
+      </ButtonRow>
     ),
     onBack
   };

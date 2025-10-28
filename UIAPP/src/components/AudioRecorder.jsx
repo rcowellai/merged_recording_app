@@ -10,9 +10,11 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaMicrophoneAlt } from 'react-icons/fa';
-import { CANVAS, COLORS, AUDIO_ANALYSIS } from '../config';
+import { CANVAS, AUDIO_ANALYSIS } from '../config';
+import { useTokens } from '../theme/TokenProvider';
 
 function AudioRecorder({ stream, isRecording }) {
+  const { tokens } = useTokens();
   const canvasRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -21,6 +23,12 @@ function AudioRecorder({ stream, isRecording }) {
   useEffect(() => {
     if (!stream || !isRecording) return undefined;
 
+    // TEMPORARY DISABLE: Testing AudioContext conflict with AudioVisualizer
+    console.log('[AudioRecorder] DISABLED - Testing visualizer conflict');
+    return undefined;
+
+    // COMMENTED OUT TO TEST CONFLICT:
+    /*
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
 
@@ -57,11 +65,11 @@ function AudioRecorder({ stream, isRecording }) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Fill the background to match the box color
-      ctx.fillStyle = COLORS.BACKGROUND_SECONDARY;
+      ctx.fillStyle = tokens.colors.background.light;
       ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
       ctx.lineWidth = 2;
-      ctx.strokeStyle = COLORS.RECORDING_RED;
+      ctx.strokeStyle = tokens.colors.status.recording_red;
       ctx.beginPath();
 
       // Normalize and process audio data using constants
@@ -73,7 +81,7 @@ function AudioRecorder({ stream, isRecording }) {
         v = (v - AUDIO_ANALYSIS.CENTERING_OFFSET) * sensitivityFactor;          // -1..+1 => scaled
 
         // Convert that range into a Y offset from center
-        const y = centerY + (v * (waveHeight / 2)); 
+        const y = centerY + (v * (waveHeight / 2));
         if (i === 0) {
           ctx.moveTo(xPos, y);
         } else {
@@ -95,6 +103,7 @@ function AudioRecorder({ stream, isRecording }) {
       analyserRef.current = null;
       dataArrayRef.current = null;
     };
+    */
   }, [stream, isRecording]);
 
   // If not recording, draw diagonal slash
@@ -108,11 +117,11 @@ function AudioRecorder({ stream, isRecording }) {
     ctx.clearRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
     // Fill
-    ctx.fillStyle = COLORS.BACKGROUND_SECONDARY;
+    ctx.fillStyle = tokens.colors.background.light;
     ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
     // slash
-    ctx.strokeStyle = COLORS.INACTIVE_GRAY;
+    ctx.strokeStyle = tokens.colors.neutral.gray['01'];
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(CANVAS.OFFSET_X, CANVAS.OFFSET_X);
@@ -124,7 +133,7 @@ function AudioRecorder({ stream, isRecording }) {
   const containerStyle = {
     width: '100%',
     height: '100%',
-    backgroundColor: COLORS.BACKGROUND_SECONDARY,
+    backgroundColor: tokens.colors.background.light,
     borderRadius: '8px',
     boxSizing: 'border-box',
     padding: '8px',
@@ -147,7 +156,7 @@ function AudioRecorder({ stream, isRecording }) {
   // Mic icon => bigger if recording
   const iconStyle = {
     fontSize: '1.8rem',
-    color: isRecording ? COLORS.RECORDING_RED : COLORS.INACTIVE_GRAY,
+    color: isRecording ? tokens.colors.status.recording_red : tokens.colors.neutral.gray['01'],
     zIndex: 2,
   };
 

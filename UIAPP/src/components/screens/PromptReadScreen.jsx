@@ -11,20 +11,25 @@
  */
 
 import React from 'react';
+import { FaArrowRight } from 'react-icons/fa';
 import PromptCard from '../PromptCard';
+import { Button } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
 function PromptReadScreen({ sessionData, onContinue, onBack }) {
+  const { tokens } = useTokens();
+
   return {
     bannerContent: 'Your prompt',
-    content: <PromptCard sessionData={sessionData} />,
+    content: (
+      <div style={{ paddingTop: tokens.spacing[12] }}>
+        <PromptCard sessionData={sessionData} />
+      </div>
+    ),
     actions: (
-      <button
-        type="button"
-        className="single-button-full"
-        onClick={onContinue}
-      >
-        Continue
-      </button>
+      <Button onClick={onContinue}>
+        Next step <FaArrowRight style={{ marginLeft: '12px' }} />
+      </Button>
     ),
     onBack
   };

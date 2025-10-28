@@ -18,9 +18,12 @@ import React from 'react';
 import { MdSettings } from 'react-icons/md';
 import NiceModal from '@ebay/nice-modal-react';
 import MediaDeviceModal from '../modals/MediaDeviceModal';
+import { useTokens } from '../../theme/TokenProvider';
 import useMediaDevices from '../../hooks/useMediaDevices';
 
 function AudioDeviceSettings({ mediaStream, onSwitchDevice }) {
+  const { tokens } = useTokens();
+
   // Use generic hook for audio devices - SAFE because this is a React component
   const { devices, selectedDeviceId, selectDevice } = useMediaDevices('audioinput', mediaStream);
 
@@ -40,7 +43,7 @@ function AudioDeviceSettings({ mediaStream, onSwitchDevice }) {
   return (
     <MdSettings
       size={32}
-      color="var(--color-primary-default)"
+      color={tokens.colors.primary.DEFAULT}
       style={{ cursor: 'pointer' }}
       onClick={handleCogClick}
     />

@@ -75,7 +75,6 @@ const DEFAULT_TOKENS = {
     primary: {
       DEFAULT: '#2C2F48',    /* ■ #2C2F48 - Primary brand color - Headings, brand elements */
       foreground: '#FFFFFF', /* ■ #FFFFFF - Text on primary - Text over primary backgrounds */
-      dark: '#2a2e45',       /* ■ #2a2e45 - Darker primary - Hover states */
       darker: '#1c1e33'      /* ■ #1c1e33 - Darkest primary - Active states */
     },
 
@@ -89,10 +88,12 @@ const DEFAULT_TOKENS = {
     // Status Colors
     status: {
       error: '#EB5757',      /* ■ #EB5757 - Error states - Error messages, validation */
-      success: '#27AE60',    /* ■ #27AE60 - Success states - Success messages, confirmations */
+      success: '#3A754B',    /* ■ #3A754B - Success states - Success messages, confirmations */
       pending: '#E2B93B',    /* ■ #E2B93B - Pending states - Pending actions, warnings */
       warning: '#f59e0b',    /* ■ #f59e0b - Warning states - Warning messages */
-      danger: '#ef4444'      /* ■ #ef4444 - Danger states - Critical warnings */
+      danger: '#ef4444',     /* ■ #ef4444 - Danger states - Critical warnings */
+      recording_red: '#B72A32',  /* ■ #B72A32 - Recording state - Recording bar background */
+      pause_background: '#6A6D6B'  /* ■ #6A6D6B - Paused state - Recording bar paused background */
     },
 
     // Neutral Colors
@@ -109,8 +110,8 @@ const DEFAULT_TOKENS = {
     // Background Colors
     background: {
       light: '#ffffff',      /* ■ #ffffff - Light background - Main backgrounds */
-      gray: '#f8f9fa',       /* ■ #f8f9fa - Gray background - Alternate sections */
-      promptCard: '#E4E2D8'  /* ■ #E4E2D8 - Prompt cards - Prompt selection cards */
+      promptCard: '#E4E2D8', /* ■ #E4E2D8 - Prompt cards - Prompt selection cards */
+      recording: '#1E1F29'   /* ■ #1E1F29 - Recording background - Dark background for active recording */
     },
 
     // Border Colors
@@ -139,6 +140,10 @@ const DEFAULT_TOKENS = {
 
     icon: {
       light: '#F5F6FA'       /* ■ #F5F6FA - Light icons - Icon fills */
+    },
+
+    button: {
+      leftHandButton: '#F0EFEB'  /* ■ #F0EFEB - Left hand button - Secondary button background */
     }
   },
 
@@ -178,17 +183,12 @@ const DEFAULT_TOKENS = {
       padding: '24px 16px',       // Standard container padding
       paddingSm: '16px 12px',     // Small container padding
       paddingLg: '32px 24px'      // Large container padding
+    },
+    breakpoints: {
+      mobile: '768px',    // < 768px = mobile
+      tablet: '1024px',   // 768px - 1023px = tablet
+      desktop: '1280px'   // >= 1024px = desktop
     }
-  },
-
-  // ============================================================
-  // ===================== NEW TOKENS END =======================
-  // ============================================================
-
-  // Legacy tokens maintained for backward compatibility
-  banner: {
-    height: '64px',
-    enabled: true
   }
 };
 
@@ -373,6 +373,11 @@ export const TokenProvider = ({ children }) => {
       root.style.setProperty('--color-icon-light', tokens.colors.icon.light);
     }
 
+    // Specialized colors - button
+    if (tokens.colors?.button?.leftHandButton) {
+      root.style.setProperty('--color-button-left-hand', tokens.colors.button.leftHandButton);
+    }
+
     // === Shadows ===
     if (tokens.shadows) {
       Object.entries(tokens.shadows).forEach(([key, value]) => {
@@ -402,59 +407,6 @@ export const TokenProvider = ({ children }) => {
       });
     }
 
-    // === Legacy Compatibility Mappings ===
-    // Map old button variables to new tokens
-    if (tokens.colors?.primary?.DEFAULT) {
-      root.style.setProperty('--btn-primary-bg', tokens.colors.primary.DEFAULT);
-    }
-    if (tokens.colors?.primary?.foreground) {
-      root.style.setProperty('--btn-primary-color', tokens.colors.primary.foreground);
-    }
-    if (tokens.colors?.background?.promptCard) {
-      root.style.setProperty('--btn-secondary-bg', tokens.colors.background.promptCard);
-    }
-    if (tokens.colors?.primary?.DEFAULT) {
-      root.style.setProperty('--btn-secondary-color', tokens.colors.primary.DEFAULT);
-    }
-
-    // Map old border radius
-    if (tokens.borderRadius?.lg) {
-      root.style.setProperty('--border-radius', tokens.borderRadius.lg);
-    }
-    if (tokens.borderRadius?.xl) {
-      root.style.setProperty('--border-radius-card', tokens.borderRadius.xl);
-    }
-
-    // Map old layout variables to new tokens
-    if (tokens.layout?.maxWidth?.md) {  
-      root.style.setProperty('--layout-max-width', tokens.layout.maxWidth.md);
-    }
-    if (tokens.layout?.container?.padding) {
-      root.style.setProperty('--layout-container-padding', tokens.layout.container.padding);
-    }
-
-    // Map old shadow variables to new tokens
-    if (tokens.shadows?.lg) {
-      root.style.setProperty('--shadow-card', tokens.shadows.lg);
-    }
-    if (tokens.shadows?.['2xl']) {
-      root.style.setProperty('--shadow-overlay', tokens.shadows['2xl']);
-    }
-
-    // === Banner System ===
-    if (tokens.banner?.height) {
-      root.style.setProperty('--banner-height', tokens.banner.height);
-    }
-    if (tokens.zIndex?.modal) {
-      root.style.setProperty('--banner-z-index', tokens.zIndex.modal); // Banner uses modal z-index
-    }
-    if (tokens.colors?.primary?.DEFAULT) {
-      root.style.setProperty('--banner-bg', tokens.colors.primary.DEFAULT);
-    }
-    if (tokens.colors?.primary?.foreground) {
-      root.style.setProperty('--banner-text', tokens.colors.primary.foreground);
-    }
-
     // === Update Body Styles ===
     if (tokens.fonts?.primary) {
       document.body.style.fontFamily = tokens.fonts.primary;
@@ -464,13 +416,6 @@ export const TokenProvider = ({ children }) => {
     }
     if (tokens.colors?.neutral?.black) {
       document.body.style.color = tokens.colors.neutral.black;
-    }
-
-    // Toggle banner-active class based on enabled state
-    if (tokens.banner?.enabled) {
-      document.body.classList.add('banner-active');
-    } else {
-      document.body.classList.remove('banner-active');
     }
   }, [tokens]);
 

@@ -27,10 +27,14 @@
  */
 
 import React from 'react';
+import { FaArrowRight } from 'react-icons/fa';
 import { MdSettings } from 'react-icons/md';
 import AudioVisualizer from '../AudioVisualizer';
+import { Button } from '../ui';
+import { useTokens } from '../../theme/TokenProvider';
 
 function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, videoRef }) {
+  const { tokens } = useTokens();
 
   // Determine what to show based on permission state
   const showPreview = mediaStream && permissionState === 'granted';
@@ -42,7 +46,7 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
     iconA3: (
       <MdSettings
         size={32}
-        color="var(--color-primary-default)"
+        color={tokens.colors.primary.DEFAULT}
         style={{ cursor: 'pointer' }}
         onClick={() => {
           console.log('Settings icon clicked - troubleshooting functionality to be implemented');
@@ -58,35 +62,38 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 'var(--spacing-5)',
         boxSizing: 'border-box',
         overflow: 'hidden'
       }}>
         {/* Audio visualizer */}
-        <AudioVisualizer mediaStream={mediaStream} height={20} width={80}/>
+        <div style={{ marginBottom: '10px' }}>
+          <AudioVisualizer mediaStream={mediaStream} height={20} width={80}/>
+        </div>
 
         {/* Video preview element */}
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          style={{
-            width: '100%',
-            maxWidth: '320px',
-            height: '280px',
-            borderRadius: '20px',
-            backgroundColor: '#000000',
-            objectFit: 'cover',
-            display: showPreview ? 'block' : 'none'
-          }}
-        />
+        <div style={{ marginBottom: tokens.spacing[12] }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              maxWidth: '320px',
+              height: '280px',
+              borderRadius: '20px',
+              backgroundColor: '#000000',
+              objectFit: 'cover',
+              display: showPreview ? 'block' : 'none'
+            }}
+          />
+        </div>
 
         {showPreview && (
           <p style={{
-            fontSize: 'var(--font-size-base)',
-            fontWeight: 'var(--font-weight-normal)',
-            color: 'var(--color-onboarding-font)',
+            fontSize: tokens.fontSize.base,
+            fontWeight: tokens.fontWeight.normal,
+            color: tokens.colors.primary.DEFAULT,
             margin: 0,
             textAlign: 'center',
             lineHeight: '1.5'
@@ -98,8 +105,8 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
         {/* Loading state - shown while requesting permission */}
         {showLoading && (
           <div style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-neutral-gray-03)',
+            fontSize: tokens.fontSize.sm,
+            color: tokens.colors.neutral.gray['03'],
             textAlign: 'center',
             maxWidth: '400px',
             lineHeight: '1.4'
@@ -111,15 +118,15 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
         {/* Error state - shown when permission denied */}
         {showError && (
           <div style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-error, #d32f2f)',
+            fontSize: tokens.fontSize.sm,
+            color: tokens.colors.status.error,
             textAlign: 'center',
             maxWidth: '400px',
             lineHeight: '1.4'
           }}>
             <p style={{
-              margin: '0 0 var(--spacing-2) 0',
-              fontWeight: 'var(--font-weight-medium)'
+              margin: `0 0 ${tokens.spacing[2]} 0`,
+              fontWeight: tokens.fontWeight.medium
             }}>
               Camera access was denied.
             </p>
@@ -131,22 +138,16 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
       </div>
     ),
     actions: showError ? (
-      <button
-        type="button"
-        className="single-button-full"
-        onClick={onRetry}
-      >
+      <Button onClick={onRetry}>
         Try Again
-      </button>
+      </Button>
     ) : (
-      <button
-        type="button"
-        className="single-button-full"
+      <Button
         onClick={onContinue}
         disabled={!showPreview}
       >
-        Continue
-      </button>
+        Next step <FaArrowRight style={{ marginLeft: '12px' }} />
+      </Button>
     ),
     onBack
   };

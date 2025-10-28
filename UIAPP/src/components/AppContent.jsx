@@ -5,7 +5,7 @@
  * Renders when a valid session is found and validated
  */
 
-import React, { useReducer, useState, useCallback, useEffect, useRef } from 'react';
+import React, { useReducer, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import debugLogger from '../utils/debugLogger.js';
 
 // Configuration
@@ -17,6 +17,9 @@ import { appReducer, initialAppState, APP_ACTIONS } from '../reducers/appReducer
 // Extracted components
 import RecordingFlow from './RecordingFlow';
 import FirebaseErrorBoundary from './FirebaseErrorBoundary';
+
+// Timer context
+import { TimerProvider } from '../contexts/TimerContext';
 
 // Utility functions
 import { createSubmissionHandler } from '../utils/submissionHandlers';
@@ -44,15 +47,8 @@ import ActiveRecordingScreen from './screens/ActiveRecordingScreen';
 import PausedRecordingScreen from './screens/PausedRecordingScreen';
 import ReviewRecordingScreen from './screens/ReviewRecordingScreen';
 
-// Modular CSS imports (split from App.css for maintainability)
-import '../styles/variables.css';
-import '../styles/layout.css';
-import '../styles/buttons.css';
-import '../styles/banner.css';
-import '../styles/overlays.css';
-import '../styles/components.css';
-import '../styles/focus-overrides.css';
-import '../styles/welcome-screen.css';
+// Token provider for inline styling
+import { useTokens } from '../theme/TokenProvider';
 
 /**
  * formatBannerContent
@@ -60,6 +56,7 @@ import '../styles/welcome-screen.css';
  * Formats banner content based on type for consistent header display.
  *
  * @param {*} content - Banner content (string, React node, or null)
+ * @param {Object} tokens - Design tokens from TokenProvider
  * @returns {React.Node|null} Formatted content for banner A2 section
  *
  * Behavior:
@@ -67,16 +64,16 @@ import '../styles/welcome-screen.css';
  * - React node: Renders as-is (e.g., RecordingBar component)
  * - null/undefined: Returns null (shows default logo)
  */
-function formatBannerContent(content) {
+function formatBannerContent(content, tokens) {
   if (!content) return null;
 
   // String content: Apply text styling for consistency
   if (typeof content === 'string') {
     return (
       <div style={{
-        fontSize: 'var(--font-size-2xl)',
-        color: 'var(--color-primary-default)',
-        fontWeight: 'var(--font-weight-normal)',
+        fontSize: tokens.fontSize['2xl'],
+        color: tokens.colors.primary.DEFAULT,
+        fontWeight: tokens.fontWeight.normal,
         fontFamily: 'inherit',
         textAlign: 'center'
       }}>
@@ -90,13 +87,15 @@ function formatBannerContent(content) {
 }
 
 function AppContent({ sessionId, sessionData, sessionComponents }) {
+  const { tokens } = useTokens();
+
   debugLogger.componentMounted('AppContent', {
     sessionId,
     hasSessionData: !!sessionData,
     hasSessionComponents: !!sessionComponents,
     sessionComponents
   });
-  
+
   // Replace multiple useState with useReducer
   const [appState, dispatch] = useReducer(appReducer, initialAppState);
   
@@ -124,6 +123,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     handleAudioClick: null,
     handleVideoClick: null
   });
+
+  // Ref to store current recording flow state for timer callbacks
+  const recordingFlowStateRef = useRef(null);
 
   // Reset player ready state when entering review mode
   useEffect(() => {
@@ -244,6 +246,22 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: true });
   }, [dispatch]);
 
+  // Timer warning callback (14 minutes)
+  const handleTimerWarning = useCallback(() => {
+    debugLogger.log('info', 'AppContent', 'Showing 14-minute warning notification');
+    alert('Recording will automatically stop in 1 minute (15-minute limit).');
+  }, []);
+
+  // Timer max duration callback (15 minutes)
+  const handleTimerMaxDuration = useCallback(() => {
+    debugLogger.log('info', 'AppContent', 'Auto-transitioning at 15-minute limit');
+    alert('Recording has reached the 15-minute limit and will now stop automatically.');
+    if (recordingFlowStateRef.current?.handleDone) {
+      recordingFlowStateRef.current.handleDone();
+    }
+    handleAutoTransition();
+  }, [handleAutoTransition]);
+
   // Device switching handler - delegates to useRecordingFlow
   const handleSwitchAudioDevice = useCallback(async (deviceId) => {
     try {
@@ -278,6 +296,8 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     <FirebaseErrorBoundary component="Recording App">
       <RecordingFlow
         onDoneAndSubmitStage={handleAutoTransition}
+        onTimerWarning={handleTimerWarning}
+        onTimerMaxDuration={handleTimerMaxDuration}
         sessionId={sessionId}
         sessionData={sessionData}
         sessionComponents={sessionComponents}
@@ -293,13 +313,15 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           }
         });
 
+        // Store current state in ref for timer callbacks
+        recordingFlowStateRef.current = recordingFlowState;
+
         const {
           captureMode,
           countdownActive,
           countdownValue,
           isRecording,
           isPaused,
-          elapsedSeconds,
           recordedBlobUrl,
           mediaStream,
           handleVideoClick,
@@ -498,7 +520,8 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               onResume: handleResume,
               onDone: navigationHandlers.handleDoneAndSubmitStage,
               sessionData,
-              onBack: navigationHandlers.handleBack
+              onBack: navigationHandlers.handleBack,
+              countdownActive
             });
           }
 
@@ -523,6 +546,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               content={welcomeScreen.content}
               actions={welcomeScreen.actions}
               showBanner={true}
+              bannerStyle={{ backgroundColor: 'transparent' }}
             />
           );
         }
@@ -574,47 +598,63 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         const screen = getCurrentScreen();
 
         // RecordingBar content for active/paused states (displayed in header A2)
+        // Wrapped in TimerProvider to prevent re-renders
+        // Use white visualizer color when on ActiveRecordingScreen or PausedRecordingScreen
+        const isActiveRecordingScreen = screen.className === 'active-recording-state';
+        const isPausedRecordingScreen = screen.className === 'paused-recording-state';
+        const visualizerColor = (isActiveRecordingScreen || isPausedRecordingScreen) ? '#FFFFFF' : '#2C2F48';
+
         const recordingBarContent = (isRecording || isPaused) ? (
-          <div className="recording-bar-container">
+          <TimerProvider
+            isActive={isRecording && !isPaused}
+            onWarning={handleTimerWarning}
+            onMaxDuration={handleTimerMaxDuration}
+          >
             <RecordingBar
-              elapsedSeconds={elapsedSeconds}
               totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
               isRecording={isRecording}
               isPaused={isPaused}
               formatTime={formatTime}
+              mediaStream={mediaStream}
+              visualizerColor={visualizerColor}
             />
-          </div>
+          </TimerProvider>
         ) : null;
 
         // Prioritize screen-specific banner content, fallback to RecordingBar
         const bannerContent = screen.bannerContent || recordingBarContent;
 
         return (
-          <MasterLayout
-            bannerContent={formatBannerContent(bannerContent)}
-            content={screen.content}
-            actions={screen.actions}
-            showBanner={true}
-            onBack={screen.onBack}
-            showBackButton={screen.showBackButton}
-            iconA3={screen.iconA3}
-          >
-            {/* Overlays and dialogs */}
+          <>
+            <MasterLayout
+              className={screen.className || ''}
+              bannerContent={formatBannerContent(bannerContent, tokens)}
+              content={screen.content}
+              actions={screen.actions}
+              overlay={screen.overlay || null}
+              showBanner={true}
+              onBack={screen.onBack}
+              showBackButton={screen.showBackButton}
+              iconA3={screen.iconA3}
+            >
+              {/* Dialogs within layout */}
+              <RadixStartOverDialog
+                open={showStartOverDialog}
+                onOpenChange={setShowStartOverDialog}
+                onConfirm={navigationHandlers.handleStartOverConfirm}
+                onCancel={() => setShowStartOverDialog(false)}
+              />
+
+              {appState.uploadInProgress && (
+                <ProgressOverlay fraction={appState.uploadFraction} />
+              )}
+            </MasterLayout>
+
+            {/* Full-app overlays (outside MasterLayout for full viewport coverage) */}
             {countdownActive && (
               <CountdownOverlay countdownValue={countdownValue} />
             )}
-
-            <RadixStartOverDialog
-              open={showStartOverDialog}
-              onOpenChange={setShowStartOverDialog}
-              onConfirm={navigationHandlers.handleStartOverConfirm}
-              onCancel={() => setShowStartOverDialog(false)}
-            />
-
-            {appState.uploadInProgress && (
-              <ProgressOverlay fraction={appState.uploadFraction} />
-            )}
-          </MasterLayout>
+          </>
         );
       }}
     </RecordingFlow>

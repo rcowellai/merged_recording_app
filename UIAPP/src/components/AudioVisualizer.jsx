@@ -14,35 +14,80 @@ import React, { useEffect, useRef } from 'react';
 import AudioMotionAnalyzer from 'audiomotion-analyzer';
 import PropTypes from 'prop-types';
 
-function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
+function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGradientColor = '#2C2F48' }) {
   const containerRef = useRef(null);
   const analyzerRef = useRef(null);
   const audioContextRef = useRef(null);
   const sourceNodeRef = useRef(null);
 
+  // DIAGNOSTIC: Log component mount
+  console.log('[AudioVisualizer] 🔷 Component mounted/rendered', {
+    hasMediaStream: !!mediaStream,
+    mediaStreamId: mediaStream?.id,
+    height,
+    width,
+    containerExists: !!containerRef.current
+  });
+
   useEffect(() => {
+    console.log('[AudioVisualizer] 🔶 useEffect triggered', {
+      hasContainer: !!containerRef.current,
+      hasMediaStream: !!mediaStream,
+      mediaStreamId: mediaStream?.id
+    });
+
     // Only initialize if we have both container and mediaStream
-    if (!containerRef.current || !mediaStream) {
+    if (!containerRef.current) {
+      console.log('[AudioVisualizer] ❌ No container ref - aborting');
+      return;
+    }
+
+    if (!mediaStream) {
+      console.log('[AudioVisualizer] ❌ No mediaStream - aborting');
+      return;
+    }
+
+    // Check mediaStream tracks
+    const audioTracks = mediaStream.getAudioTracks();
+    const videoTracks = mediaStream.getVideoTracks();
+    console.log('[AudioVisualizer] 📊 MediaStream tracks:', {
+      audioTracks: audioTracks.length,
+      videoTracks: videoTracks.length,
+      audioTrackEnabled: audioTracks[0]?.enabled,
+      audioTrackReadyState: audioTracks[0]?.readyState,
+      audioTrackLabel: audioTracks[0]?.label
+    });
+
+    if (audioTracks.length === 0) {
+      console.error('[AudioVisualizer] ❌ NO AUDIO TRACKS in mediaStream!');
       return;
     }
 
     try {
+      console.log('[AudioVisualizer] 🔧 Creating AudioContext...');
+
       // Create AudioContext
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('[AudioVisualizer] ✅ AudioContext created:', {
+        state: audioContextRef.current.state,
+        sampleRate: audioContextRef.current.sampleRate
+      });
 
       // Create MediaStreamSource node from MediaStream
+      console.log('[AudioVisualizer] 🔧 Creating MediaStreamSource...');
       sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(mediaStream);
+      console.log('[AudioVisualizer] ✅ MediaStreamSource created');
 
-      console.log('[AudioVisualizer] Created AudioContext and MediaStreamSource');
+      console.log('[AudioVisualizer] 🔧 Creating AudioMotionAnalyzer...');
 
       // Create AudioMotionAnalyzer instance with AudioNode
       analyzerRef.current = new AudioMotionAnalyzer(containerRef.current, {
         source: sourceNodeRef.current,
         // Mode & Display
-        mode: 6,                    // 1/4th octave bands (fewer, thicker bars)
-        gradient: 'steelblue',          // Prism gradient
+        mode: 4,                    // 1/4th octave bands (fewer, thicker bars)
+        gradient: 'steelblue',      // Initial gradient (will be replaced)
         colorMode: 'gradient',     // Color each bar based on its level
-        barSpace: 0.5,              // Spacing between bars
+        barSpace: 0.6,              // Spacing between bars
         roundBars: true,            // Rounded bar tops
         channelLayout: 'single',    // Single channel display
 
@@ -62,7 +107,7 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
 
         // Linear Amplitude
         linearAmplitude: false,     // Use decibel scale
-        linearBoost: 1.6,           // Linear boost
+        linearBoost: 1.2,           // Linear boost
 
         // Overlay Mode
         overlay: true,              // Allow overlay
@@ -115,20 +160,54 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
         height: height              // Container height
       });
 
-      console.log('[AudioVisualizer] Analyzer initialized successfully');
+      // Register custom solid color gradient using custom or primary brand color
+      analyzerRef.current.registerGradient('primarySolid', {
+        colorStops: [
+          { pos: 0, color: customGradientColor },
+          { pos: 1, color: customGradientColor }
+        ]
+      });
+
+      // Apply the custom gradient
+      analyzerRef.current.gradient = 'primarySolid';
+
+      console.log('[AudioVisualizer] ✅ AudioMotionAnalyzer created successfully!');
+      console.log('[AudioVisualizer] 📊 Analyzer details:', {
+        mode: analyzerRef.current.mode,
+        gradient: analyzerRef.current.gradient,
+        canvas: analyzerRef.current.canvas,
+        canvasWidth: analyzerRef.current.canvas?.width,
+        canvasHeight: analyzerRef.current.canvas?.height,
+        isOn: analyzerRef.current.isOn
+      });
+
+      // Check if canvas was actually added to DOM
+      setTimeout(() => {
+        const canvasInDom = containerRef.current?.querySelector('canvas');
+        console.log('[AudioVisualizer] 🔍 Canvas in DOM check:', {
+          canvasExists: !!canvasInDom,
+          canvasWidth: canvasInDom?.width,
+          canvasHeight: canvasInDom?.height,
+          canvasStyle: canvasInDom ? window.getComputedStyle(canvasInDom).display : 'N/A'
+        });
+      }, 100);
+
     } catch (error) {
-      console.error('[AudioVisualizer] Failed to initialize analyzer:', error);
+      console.error('[AudioVisualizer] ❌ Failed to initialize analyzer:', error);
+      console.error('[AudioVisualizer] Error stack:', error.stack);
     }
 
     // Cleanup on unmount or when mediaStream changes
     return () => {
+      console.log('[AudioVisualizer] 🧹 Cleanup triggered');
+
       if (analyzerRef.current) {
         try {
           analyzerRef.current.disconnectInput();
           analyzerRef.current = null;
-          console.log('[AudioVisualizer] Analyzer destroyed');
+          console.log('[AudioVisualizer] ✅ Analyzer destroyed');
         } catch (error) {
-          console.error('[AudioVisualizer] Error destroying analyzer:', error);
+          console.error('[AudioVisualizer] ❌ Error destroying analyzer:', error);
         }
       }
 
@@ -137,9 +216,9 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
         try {
           sourceNodeRef.current.disconnect();
           sourceNodeRef.current = null;
-          console.log('[AudioVisualizer] Source node disconnected');
+          console.log('[AudioVisualizer] ✅ Source node disconnected');
         } catch (error) {
-          console.error('[AudioVisualizer] Error disconnecting source:', error);
+          console.error('[AudioVisualizer] ❌ Error disconnecting source:', error);
         }
       }
 
@@ -148,13 +227,15 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
         try {
           audioContextRef.current.close();
           audioContextRef.current = null;
-          console.log('[AudioVisualizer] AudioContext closed');
+          console.log('[AudioVisualizer] ✅ AudioContext closed');
         } catch (error) {
-          console.error('[AudioVisualizer] Error closing AudioContext:', error);
+          console.error('[AudioVisualizer] ❌ Error closing AudioContext:', error);
         }
       }
     };
-  }, [mediaStream, height, width]);
+    // PERFORMANCE FIX: height/width are constants from RecordingBar, don't need to trigger re-initialization
+    // Only mediaStream or customGradientColor changes should recreate AudioContext/AudioMotionAnalyzer
+  }, [mediaStream, customGradientColor]);
 
   // Normalize width to string with units if it's a number
   const widthValue = typeof width === 'number' ? `${width}px` : width;
@@ -211,7 +292,8 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%' }) {
 AudioVisualizer.propTypes = {
   mediaStream: PropTypes.object,
   height: PropTypes.number,
-  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  customGradientColor: PropTypes.string
 };
 
 export default AudioVisualizer;
