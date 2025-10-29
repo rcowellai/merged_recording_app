@@ -79,8 +79,8 @@ function App() {
         <div className="nav-section">
           <h3>Recording</h3>
           <p>To record a memory, you need a valid recording link from Love Retold.</p>
-          <a 
-            href="https://loveretold.com" 
+          <a
+            href="https://loveretold.com"
             className="btn btn-primary"
             target="_blank"
             rel="noopener noreferrer"
@@ -88,15 +88,26 @@ function App() {
             Visit Love Retold
           </a>
         </div>
-        
+
         <div className="nav-section">
           <h3>Test Recording</h3>
           <p>Test the recording interface with a sample session.</p>
-          <a 
-            href="/?sessionId=test-session-123" 
+          <a
+            href="/?sessionId=test-session-123"
             className="btn btn-secondary"
           >
             Test Recording
+          </a>
+        </div>
+
+        <div className="nav-section">
+          <h3>Error Screen Demo</h3>
+          <p>Preview the error screen UI for testing and design purposes.</p>
+          <a
+            href="/demo/error"
+            className="btn btn-secondary"
+          >
+            View Error Screen
           </a>
         </div>
       </div>
