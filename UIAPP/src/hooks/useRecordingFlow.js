@@ -92,12 +92,30 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     }
   }, [mediaStream]);
 
-  // Clean up media on unmount
+  // Clean up media on unmount only
+  // Keep ref to latest mediaStream for cleanup without triggering effect on changes
+  const mediaStreamRef = useRef(mediaStream);
+  useEffect(() => {
+    mediaStreamRef.current = mediaStream;
+  }, [mediaStream]);
+
   useEffect(() => {
     return () => {
-      stopMediaStream();
+      // Use ref to get latest stream value at cleanup time
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [stopMediaStream]);
+  }, []); // Empty deps - only cleanup on unmount
+
+  // Clean up mediaStream when captureMode is cleared
+  // This ensures proper state cleanup when navigating back from test screens
+  // Fixes bug: AudioTest/VideoTest → ChooseModeScreen navigation causing blank screen
+  useEffect(() => {
+    if (captureMode === null && mediaStream) {
+      stopMediaStream();
+    }
+  }, [captureMode, mediaStream, stopMediaStream]);
 
   // ===========================
   // Recording Handlers
@@ -149,11 +167,42 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
 
       // Update state with new stream
       setMediaStream(newStream);
-      console.log('✅ Audio device switched successfully:', deviceId);
       return newStream;
     } catch (error) {
       // oldStream is untouched - audio continues working
-      console.error('Failed to switch audio device:', error);
+      console.error('❌ [HOOK] Failed to switch audio device:', error);
+      throw error; // Propagate to AppContent for user feedback
+    }
+  }, [mediaStream]);
+
+  // Device switching handler for video mode (camera + audio)
+  // Properly updates mediaStream state and preserves old stream on failure
+  const switchVideoDevice = useCallback(async (deviceId) => {
+    const oldStream = mediaStream; // Preserve old stream reference
+
+    try {
+      // Get new stream with specific video device
+      // Note: Audio uses default device (could be enhanced to allow audio device selection)
+      const constraints = {
+        video: deviceId === 'default'
+          ? true
+          : { deviceId: { exact: deviceId } },
+        audio: true  // Use default audio device
+      };
+
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Only stop old stream AFTER new one succeeds
+      if (oldStream) {
+        oldStream.getTracks().forEach(track => track.stop());
+      }
+
+      // Update state with new stream
+      setMediaStream(newStream);
+      return newStream;
+    } catch (error) {
+      // oldStream is untouched - video/audio continues working
+      console.error('❌ [HOOK] Failed to switch video device:', error);
       throw error; // Propagate to AppContent for user feedback
     }
   }, [mediaStream]);
@@ -281,11 +330,9 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     setRecordedBlobUrl(null);
     setActualMimeType(null);
     recordedChunksRef.current = [];
-    
+
     // Reset capture mode
     setCaptureMode(null);
-    
-    console.log('🔄 Recording state completely reset for start over');
   }, [mediaRecorder, isRecording, isPaused, stopMediaStream]);
 
   // ===========================
@@ -322,6 +369,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     handleDone,
     stopMediaStream,
     resetRecordingState,
-    switchAudioDevice  // NEW: Device switching handler
+    switchAudioDevice,  // Audio device switching handler
+    switchVideoDevice   // Video device switching handler
   };
 }

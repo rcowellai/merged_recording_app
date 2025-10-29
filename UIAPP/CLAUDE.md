@@ -106,8 +106,10 @@ All constants centralized in `src/config/index.js`:
 - Format detection via `MediaRecorder.isTypeSupported()`
 
 **Media Player:**
-- Uses Plyr.js for consistent playback experience
-- Handles both audio and video with same component (`PlyrMediaPlayer`)
+- Uses Plyr (v3.7.8) for blob URL playback
+- Handles both audio and video with `PlyrMediaPlayer` component
+- Custom styling via CSS custom properties
+- Supports MediaRecorder blob output with proper MIME type handling
 - Preserves actual MIME type from MediaRecorder for proper playback
 
 ### Development Notes

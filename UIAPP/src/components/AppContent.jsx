@@ -5,7 +5,7 @@
  * Renders when a valid session is found and validated
  */
 
-import React, { useReducer, useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useReducer, useState, useCallback, useEffect, useRef } from 'react';
 import debugLogger from '../utils/debugLogger.js';
 
 // Configuration
@@ -29,7 +29,9 @@ import { createNavigationHandlers } from '../utils/navigationHandlers';
 import RecordingBar from './RecordingBar';
 import CountdownOverlay from './CountdownOverlay';
 import ProgressOverlay from './ProgressOverlay';
-import RadixStartOverDialog from './RadixStartOverDialog';
+// import RadixStartOverDialog from './RadixStartOverDialog'; // Replaced with VaulStartOverDrawer
+import VaulStartOverDrawer from './VaulStartOverDrawer';
+import VaulDeviceSettingsDrawer from './VaulDeviceSettingsDrawer';
 import ConfettiScreen from './confettiScreen';
 import ErrorScreen from './ErrorScreen';
 
@@ -98,10 +100,12 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
 
   // Replace multiple useState with useReducer
   const [appState, dispatch] = useReducer(appReducer, initialAppState);
-  
-  // Radix Dialog state for Start Over confirmation
+
+  // Vaul Drawer states
   const [showStartOverDialog, setShowStartOverDialog] = useState(false);
-  
+  const [showDeviceSettingsDrawer, setShowDeviceSettingsDrawer] = useState(false);
+  const [deviceSettingsProps, setDeviceSettingsProps] = useState(null);
+
   // Player ready state for loading handling
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
@@ -161,14 +165,20 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     }
   }, [recordingFlowStateSnapshot, appState.audioTestCompleted, audioPermissionState]);
 
-  // Watch mediaStream to detect successful permission grant
+  // Watch mediaStream to detect successful permission grant OR device switch completion
   useEffect(() => {
     const { captureMode, mediaStream } = recordingFlowStateSnapshot;
 
+    // Handle initial permission grant
     if (captureMode === 'audio' && mediaStream && audioPermissionState === 'requesting') {
       debugLogger.log('info', 'AppContent', 'Microphone permission granted');
       setAudioPermissionState('granted');
       audioRequestInProgressRef.current = false;
+    }
+
+    // Handle device switch - ensure permission stays granted when mediaStream updates
+    if (captureMode === 'audio' && mediaStream && audioPermissionState === 'granted') {
+      // Permission state is already correct, but this ensures UI updates
     }
   }, [recordingFlowStateSnapshot, audioPermissionState]);
 
@@ -209,14 +219,21 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     }
   }, [recordingFlowStateSnapshot, appState.videoTestCompleted, videoPermissionState]);
 
-  // Watch mediaStream to detect successful video permission grant
+  // Watch mediaStream to detect successful video permission grant OR device switch completion
   useEffect(() => {
     const { captureMode, mediaStream } = recordingFlowStateSnapshot;
 
+    // Handle initial permission grant
     if (captureMode === 'video' && mediaStream && videoPermissionState === 'requesting') {
       debugLogger.log('info', 'AppContent', 'Camera permission granted');
       setVideoPermissionState('granted');
       videoRequestInProgressRef.current = false;
+    }
+
+    // Handle device switch - log state transition for debugging
+    // Permission state remains 'granted' - UI updates via recordingFlowStateSnapshot dependency
+    if (captureMode === 'video' && mediaStream && videoPermissionState === 'granted') {
+      // Permission state is already correct, UI updates via recordingFlowStateSnapshot dependency
     }
   }, [recordingFlowStateSnapshot, videoPermissionState]);
 
@@ -231,14 +248,21 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
   }, [recordingFlowStateSnapshot]);
 
   // Connect mediaStream to video element when available
+  // Also triggers when navigating back to VideoTest to restart video playback
   useEffect(() => {
     const { mediaStream, captureMode } = recordingFlowStateSnapshot;
 
     if (videoRef.current && mediaStream && captureMode === 'video') {
       debugLogger.log('info', 'AppContent', 'Connecting mediaStream to video element');
       videoRef.current.srcObject = mediaStream;
+
+      // Ensure playback starts - handles returning to VideoTest from ReadyToRecordScreen
+      // Fixes bug: Black square appears when navigating back because video is paused
+      videoRef.current.play().catch(err => {
+        console.warn('Video play failed:', err);
+      });
     }
-  }, [recordingFlowStateSnapshot]);
+  }, [recordingFlowStateSnapshot, appState.videoTestCompleted]);
 
   // Create auto-transition handler that will be passed to RecordingFlow
   const handleAutoTransition = useCallback(() => {
@@ -265,10 +289,12 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
   // Device switching handler - delegates to useRecordingFlow
   const handleSwitchAudioDevice = useCallback(async (deviceId) => {
     try {
-      debugLogger.log('info', 'AppContent', 'Switching audio device', { deviceId });
+      // Call the hook's switchAudioDevice method from ref (not snapshot)
+      if (!recordingFlowStateRef.current?.switchAudioDevice) {
+        throw new Error('switchAudioDevice is not available in recording flow state');
+      }
 
-      // Call the hook's switchAudioDevice method
-      await recordingFlowStateSnapshot.switchAudioDevice(deviceId);
+      await recordingFlowStateRef.current.switchAudioDevice(deviceId);
 
       debugLogger.log('info', 'AppContent', 'Audio device switched successfully');
     } catch (error) {
@@ -282,8 +308,68 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       dispatch({ type: APP_ACTIONS.SET_SHOW_ERROR, payload: true });
 
       // Old stream is preserved by switchAudioDevice - audio continues
+      throw error; // Re-throw so drawer knows about the error
     }
-  }, [recordingFlowStateSnapshot, dispatch]);
+  }, [dispatch, audioPermissionState, recordingFlowStateSnapshot.mediaStream]);
+
+  // Video device switching handler - delegates to useRecordingFlow
+  const handleSwitchVideoDevice = useCallback(async (deviceId) => {
+    try {
+      // Call the hook's switchVideoDevice method from ref (not snapshot)
+      if (!recordingFlowStateRef.current?.switchVideoDevice) {
+        throw new Error('switchVideoDevice is not available in recording flow state');
+      }
+
+      await recordingFlowStateRef.current.switchVideoDevice(deviceId);
+
+      debugLogger.log('info', 'AppContent', 'Video device switched successfully');
+    } catch (error) {
+      debugLogger.log('error', 'AppContent', 'Failed to switch video device', { error });
+
+      // Show error to user via existing error system
+      dispatch({
+        type: APP_ACTIONS.SET_ERROR_MESSAGE,
+        payload: `Failed to switch camera: ${error.message}`
+      });
+      dispatch({ type: APP_ACTIONS.SET_SHOW_ERROR, payload: true });
+
+      // Old stream is preserved by switchVideoDevice - video/audio continues
+      throw error; // Re-throw so drawer knows about the error
+    }
+  }, [dispatch, videoPermissionState, recordingFlowStateSnapshot.mediaStream]);
+
+  // Device settings drawer handler - stores props and opens drawer
+  const handleOpenDeviceSettings = useCallback((props) => {
+    debugLogger.log('info', 'AppContent', 'Opening device settings drawer', { deviceType: props?.deviceType });
+    setDeviceSettingsProps(props);
+    setShowDeviceSettingsDrawer(true);
+  }, []);
+
+  // RecordingFlow state change handler
+  // FIXED: Moved state synchronization from render to callback to prevent setState-during-render warning
+  const handleRecordingFlowStateChange = useCallback((newState) => {
+    const { captureMode, mediaStream, handleAudioClick, handleVideoClick } = newState;
+
+    // Only update if values actually changed (prevents unnecessary re-renders)
+    setRecordingFlowStateSnapshot(prev => {
+      const hasChanged =
+        prev.captureMode !== captureMode ||
+        prev.mediaStream !== mediaStream ||
+        prev.handleAudioClick !== handleAudioClick ||
+        prev.handleVideoClick !== handleVideoClick;
+
+      if (!hasChanged) {
+        return prev; // No change, prevent re-render
+      }
+
+      return {
+        captureMode,
+        mediaStream,
+        handleAudioClick,
+        handleVideoClick
+      };
+    });
+  }, [audioPermissionState]);
 
   debugLogger.log('info', 'AppContent', 'About to render RecordingFlow', {
     sessionId,
@@ -301,6 +387,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         sessionId={sessionId}
         sessionData={sessionData}
         sessionComponents={sessionComponents}
+        onStateChange={handleRecordingFlowStateChange}
       >
       {(recordingFlowState) => {
         debugLogger.log('info', 'AppContent', 'RecordingFlow render prop called', {
@@ -336,21 +423,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           // Progressive upload removed - using simple upload flow
         } = recordingFlowState;
 
-        // Update state snapshot for useEffect hooks at component level
-        // This allows hooks to react to RecordingFlow state changes
-        if (
-          recordingFlowStateSnapshot.captureMode !== captureMode ||
-          recordingFlowStateSnapshot.mediaStream !== mediaStream ||
-          recordingFlowStateSnapshot.handleAudioClick !== handleAudioClick ||
-          recordingFlowStateSnapshot.handleVideoClick !== handleVideoClick
-        ) {
-          setRecordingFlowStateSnapshot({
-            captureMode,
-            mediaStream,
-            handleAudioClick,
-            handleVideoClick
-          });
-        }
+        // FIXED: Removed setState block that was causing "setState during render" warning
+        // State synchronization now happens via onStateChange callback in RecordingFlow's useEffect
+        // See handleRecordingFlowStateChange above (line 306)
 
         // Custom audio click handler that navigates to AudioTest first
         const handleAudioClickWithTest = () => {
@@ -459,7 +534,8 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
                 setAudioPermissionState('idle');
                 // useEffect will trigger on next render
               },
-              onSwitchDevice: handleSwitchAudioDevice, // NEW: Device switching handler
+              onSwitchDevice: handleSwitchAudioDevice,
+              onOpenSettings: handleOpenDeviceSettings,
               onBack: navigationHandlers.handleBack
             });
           }
@@ -483,6 +559,8 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
                 setVideoPermissionState('idle');
                 // useEffect will trigger on next render
               },
+              onSwitchDevice: handleSwitchVideoDevice, // Video device (camera) switching handler
+              onOpenSettings: handleOpenDeviceSettings,
               onBack: navigationHandlers.handleBack
             });
           }
@@ -637,12 +715,29 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               showBackButton={screen.showBackButton}
               iconA3={screen.iconA3}
             >
-              {/* Dialogs within layout */}
-              <RadixStartOverDialog
+              {/* Drawers within layout */}
+              <VaulStartOverDrawer
                 open={showStartOverDialog}
                 onOpenChange={setShowStartOverDialog}
                 onConfirm={navigationHandlers.handleStartOverConfirm}
                 onCancel={() => setShowStartOverDialog(false)}
+              />
+
+              <VaulDeviceSettingsDrawer
+                open={showDeviceSettingsDrawer}
+                onOpenChange={setShowDeviceSettingsDrawer}
+                devices={deviceSettingsProps?.devices || []}
+                selectedDeviceId={deviceSettingsProps?.selectedDeviceId}
+                onSelectDevice={async (deviceId) => {
+                  try {
+                    await deviceSettingsProps?.onSelectDevice?.(deviceId);
+                    setShowDeviceSettingsDrawer(false); // Auto-close on success
+                  } catch (error) {
+                    console.error('Device switch failed:', error);
+                    // Keep drawer open on error
+                  }
+                }}
+                deviceType={deviceSettingsProps?.deviceType || 'audioinput'}
               />
 
               {appState.uploadInProgress && (

@@ -50,13 +50,7 @@ function WelcomeMessage({ sessionData }) {
       const isAfterLine1 = currentWordIndex === line1Length;
       const delay = isAfterLine1 ? 1000 : 200; // 1000ms pause after line 1, otherwise 200ms
 
-      // Debug logging to verify pause
-      if (isAfterLine1) {
-        console.log(`[WelcomeMessage] Pausing for ${delay}ms after line 1`);
-      }
-
       const timer = setTimeout(() => {
-        console.log(`[WelcomeMessage] Showing word ${currentWordIndex}: "${allWords[currentWordIndex]}"`);
         setDisplayedWords(prev => [...prev, allWords[currentWordIndex]]);
         setCurrentWordIndex(prev => prev + 1);
       }, delay);

@@ -74,14 +74,6 @@ function RecordingBar({
 }) {
   const { tokens } = useTokens();
 
-  // DIAGNOSTIC: Log RecordingBar render (should only happen on state changes, NOT timer ticks)
-  console.log('[RecordingBar] 🟦 Component rendered', {
-    hasMediaStream: !!mediaStream,
-    mediaStreamId: mediaStream?.id,
-    isRecording,
-    isPaused
-  });
-
   // Container and visualizer dimensions
   const containerHeight = 30; // Fixed height for both visualizer and red container
   const visualizerWidth = 100;
@@ -93,7 +85,6 @@ function RecordingBar({
   // Only re-create if mediaStream changes
   const memoizedVisualizer = useMemo(() => {
     if (!mediaStream) return null;
-    console.log('[RecordingBar] 🎨 Creating memoized AudioVisualizer');
     return (
       <AudioVisualizer
         mediaStream={mediaStream}
@@ -107,11 +98,8 @@ function RecordingBar({
 
   // If no mediaStream, don't render anything
   if (!mediaStream) {
-    console.log('[RecordingBar] ❌ No mediaStream - returning null');
     return null;
   }
-
-  console.log('[RecordingBar] ✅ MediaStream present, will render AudioVisualizer');
 
   // Format time with leading zeros: "00:15 / 30:00"
   const formatTimeWithLeadingZeros = (sec) => {

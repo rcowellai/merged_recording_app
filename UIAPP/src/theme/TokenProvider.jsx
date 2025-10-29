@@ -87,7 +87,7 @@ const DEFAULT_TOKENS = {
 
     // Status Colors
     status: {
-      error: '#EB5757',      /* ■ #EB5757 - Error states - Error messages, validation */
+      error: '#72181F',      /* ■ #72181F - Error states - Error messages, validation, destructive actions */
       success: '#3A754B',    /* ■ #3A754B - Success states - Success messages, confirmations */
       pending: '#E2B93B',    /* ■ #E2B93B - Pending states - Pending actions, warnings */
       warning: '#f59e0b',    /* ■ #f59e0b - Warning states - Warning messages */

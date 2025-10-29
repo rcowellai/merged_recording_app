@@ -20,43 +20,18 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
   const audioContextRef = useRef(null);
   const sourceNodeRef = useRef(null);
 
-  // DIAGNOSTIC: Log component mount
-  console.log('[AudioVisualizer] 🔷 Component mounted/rendered', {
-    hasMediaStream: !!mediaStream,
-    mediaStreamId: mediaStream?.id,
-    height,
-    width,
-    containerExists: !!containerRef.current
-  });
-
   useEffect(() => {
-    console.log('[AudioVisualizer] 🔶 useEffect triggered', {
-      hasContainer: !!containerRef.current,
-      hasMediaStream: !!mediaStream,
-      mediaStreamId: mediaStream?.id
-    });
-
     // Only initialize if we have both container and mediaStream
     if (!containerRef.current) {
-      console.log('[AudioVisualizer] ❌ No container ref - aborting');
       return;
     }
 
     if (!mediaStream) {
-      console.log('[AudioVisualizer] ❌ No mediaStream - aborting');
       return;
     }
 
     // Check mediaStream tracks
     const audioTracks = mediaStream.getAudioTracks();
-    const videoTracks = mediaStream.getVideoTracks();
-    console.log('[AudioVisualizer] 📊 MediaStream tracks:', {
-      audioTracks: audioTracks.length,
-      videoTracks: videoTracks.length,
-      audioTrackEnabled: audioTracks[0]?.enabled,
-      audioTrackReadyState: audioTracks[0]?.readyState,
-      audioTrackLabel: audioTracks[0]?.label
-    });
 
     if (audioTracks.length === 0) {
       console.error('[AudioVisualizer] ❌ NO AUDIO TRACKS in mediaStream!');
@@ -64,21 +39,11 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
     }
 
     try {
-      console.log('[AudioVisualizer] 🔧 Creating AudioContext...');
-
       // Create AudioContext
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      console.log('[AudioVisualizer] ✅ AudioContext created:', {
-        state: audioContextRef.current.state,
-        sampleRate: audioContextRef.current.sampleRate
-      });
 
       // Create MediaStreamSource node from MediaStream
-      console.log('[AudioVisualizer] 🔧 Creating MediaStreamSource...');
       sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(mediaStream);
-      console.log('[AudioVisualizer] ✅ MediaStreamSource created');
-
-      console.log('[AudioVisualizer] 🔧 Creating AudioMotionAnalyzer...');
 
       // Create AudioMotionAnalyzer instance with AudioNode
       analyzerRef.current = new AudioMotionAnalyzer(containerRef.current, {
@@ -153,8 +118,8 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
 
         // Audio
         connectSpeakers: false,     // Don't echo to speakers during test
-        stereo: false,              // Mono (microphone is mono)
         volume: 1,                  // Full volume for visualization
+        // Note: channelLayout: 'single' is set above (line 57) - replaces deprecated 'stereo: false'
 
         // Container
         height: height              // Container height
@@ -171,27 +136,6 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
       // Apply the custom gradient
       analyzerRef.current.gradient = 'primarySolid';
 
-      console.log('[AudioVisualizer] ✅ AudioMotionAnalyzer created successfully!');
-      console.log('[AudioVisualizer] 📊 Analyzer details:', {
-        mode: analyzerRef.current.mode,
-        gradient: analyzerRef.current.gradient,
-        canvas: analyzerRef.current.canvas,
-        canvasWidth: analyzerRef.current.canvas?.width,
-        canvasHeight: analyzerRef.current.canvas?.height,
-        isOn: analyzerRef.current.isOn
-      });
-
-      // Check if canvas was actually added to DOM
-      setTimeout(() => {
-        const canvasInDom = containerRef.current?.querySelector('canvas');
-        console.log('[AudioVisualizer] 🔍 Canvas in DOM check:', {
-          canvasExists: !!canvasInDom,
-          canvasWidth: canvasInDom?.width,
-          canvasHeight: canvasInDom?.height,
-          canvasStyle: canvasInDom ? window.getComputedStyle(canvasInDom).display : 'N/A'
-        });
-      }, 100);
-
     } catch (error) {
       console.error('[AudioVisualizer] ❌ Failed to initialize analyzer:', error);
       console.error('[AudioVisualizer] Error stack:', error.stack);
@@ -199,13 +143,10 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
 
     // Cleanup on unmount or when mediaStream changes
     return () => {
-      console.log('[AudioVisualizer] 🧹 Cleanup triggered');
-
       if (analyzerRef.current) {
         try {
           analyzerRef.current.disconnectInput();
           analyzerRef.current = null;
-          console.log('[AudioVisualizer] ✅ Analyzer destroyed');
         } catch (error) {
           console.error('[AudioVisualizer] ❌ Error destroying analyzer:', error);
         }
@@ -216,7 +157,6 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
         try {
           sourceNodeRef.current.disconnect();
           sourceNodeRef.current = null;
-          console.log('[AudioVisualizer] ✅ Source node disconnected');
         } catch (error) {
           console.error('[AudioVisualizer] ❌ Error disconnecting source:', error);
         }
@@ -227,7 +167,6 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
         try {
           audioContextRef.current.close();
           audioContextRef.current = null;
-          console.log('[AudioVisualizer] ✅ AudioContext closed');
         } catch (error) {
           console.error('[AudioVisualizer] ❌ Error closing AudioContext:', error);
         }

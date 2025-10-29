@@ -10,10 +10,10 @@ import AppLogger from '../utils/AppLogger';
  * - Maintains UIAPP patterns and interfaces compatible with existing admin/playback
  * - Provides download URLs, listing, deletion, and cleanup functionality
  * 
- * SLICE OBJECTIVE: 
+ * SLICE OBJECTIVE:
  * - Create download service using C06 recording session data structure
  * - Recording listing via Firestore queries to recordingSessions collection
- * - Playback integration with existing Plyr media player via download URLs
+ * - Playback integration with Plyr media player via download URLs
  * - Storage cleanup for failed/cancelled uploads with Firestore metadata
  * - Admin page integration for listing and filtering recordings
  * - Basic quota monitoring and user-facing error mapping

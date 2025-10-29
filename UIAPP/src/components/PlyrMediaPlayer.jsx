@@ -10,9 +10,9 @@ import PropTypes from 'prop-types';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 
-function PlyrMediaPlayer({ 
-  src, 
-  type = 'video', 
+function PlyrMediaPlayer({
+  src,
+  type = 'video',
   title = 'Recording Review',
   actualMimeType,
   onReady,
@@ -21,7 +21,8 @@ function PlyrMediaPlayer({
   onTimeUpdate,
   onEnded,
   onError,
-  className = ''
+  className = '',
+  style = {}
 }) {
   const playerRef = useRef(null);
   const plyrInstanceRef = useRef(null);
@@ -107,17 +108,18 @@ function PlyrMediaPlayer({
       '--plyr-video-control-color-hover': '#ffffff',
       '--plyr-video-control-background-hover': 'transparent',
       '--plyr-audio-control-color': '#ffffff',
-      '--plyr-audio-control-color-hover': '#ffffff', 
+      '--plyr-audio-control-color-hover': '#ffffff',
       '--plyr-audio-control-background-hover': 'transparent',
       '--plyr-range-thumb-background': '#ffffff',
       '--plyr-range-track-background': 'rgba(255, 255, 255, 0.2)',
       '--plyr-range-fill-background': '#ffffff',
       '--plyr-range-thumb-active-shadow-width': '0',
       '--plyr-control-icon-size': '18px',
-      '--plyr-control-spacing': '10px'
+      '--plyr-control-spacing': '10px',
+      ...style
     }}>
       {type === 'video' ? (
-        <video 
+        <video
           ref={playerRef}
           controls
           playsInline
@@ -128,7 +130,7 @@ function PlyrMediaPlayer({
           Your browser does not support the video element.
         </video>
       ) : (
-        <audio 
+        <audio
           ref={playerRef}
           controls
           preload="metadata"
@@ -138,7 +140,7 @@ function PlyrMediaPlayer({
           Your browser does not support the audio element.
         </audio>
       )}
-      
+
       {/* Component-specific styles for enhanced focus removal */}
       <style>{`
         /* Hide overlay during playback with component-specific targeting */
@@ -149,7 +151,7 @@ function PlyrMediaPlayer({
           visibility: hidden !important;
           pointer-events: none !important;
         }
-        
+
         /* Component-specific focus removal (supplements global CSS) */
         .plyr-media-player .plyr__control--overlaid:focus,
         .plyr-media-player .plyr__control--overlaid:focus-visible,
@@ -174,7 +176,8 @@ PlyrMediaPlayer.propTypes = {
   onTimeUpdate: PropTypes.func,
   onEnded: PropTypes.func,
   onError: PropTypes.func,
-  className: PropTypes.string
+  className: PropTypes.string,
+  style: PropTypes.object
 };
 
 export default PlyrMediaPlayer;

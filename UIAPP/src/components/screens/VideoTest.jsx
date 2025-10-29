@@ -17,6 +17,8 @@
  * - permissionState: 'idle' | 'requesting' | 'granted' | 'denied'
  * - onContinue: Handler when user clicks Continue (permission already granted)
  * - onRetry: Handler when user clicks Try Again after denial
+ * - onSwitchDevice: Handler for device switching
+ * - onOpenSettings: Handler to open device settings drawer
  * - onBack: Handler for back navigation
  * - videoRef: React ref for video element (managed by parent)
  *
@@ -28,12 +30,12 @@
 
 import React from 'react';
 import { FaArrowRight } from 'react-icons/fa';
-import { MdSettings } from 'react-icons/md';
 import AudioVisualizer from '../AudioVisualizer';
+import VideoDeviceSettings from './VideoDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
 
-function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, videoRef }) {
+function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack, videoRef }) {
   const { tokens } = useTokens();
 
   // Determine what to show based on permission state
@@ -44,14 +46,10 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
   return {
     bannerContent: 'Video test',
     iconA3: (
-      <MdSettings
-        size={32}
-        color={tokens.colors.primary.DEFAULT}
-        style={{ cursor: 'pointer' }}
-        onClick={() => {
-          console.log('Settings icon clicked - troubleshooting functionality to be implemented');
-          // TODO: Implement troubleshooting/settings modal or navigation
-        }}
+      <VideoDeviceSettings
+        mediaStream={mediaStream}
+        onSwitchDevice={onSwitchDevice}
+        onOpenSettings={onOpenSettings}
       />
     ),
     content: (
@@ -65,9 +63,14 @@ function VideoTest({ onContinue, onRetry, mediaStream, permissionState, onBack, 
         boxSizing: 'border-box',
         overflow: 'hidden'
       }}>
-        {/* Audio visualizer */}
+        {/* Audio visualizer with key-based remounting for clean device switching */}
         <div style={{ marginBottom: '10px' }}>
-          <AudioVisualizer mediaStream={mediaStream} height={20} width={80}/>
+          <AudioVisualizer
+            key={mediaStream?.id || 'no-stream'}
+            mediaStream={mediaStream}
+            height={20}
+            width={80}
+          />
         </div>
 
         {/* Video preview element */}

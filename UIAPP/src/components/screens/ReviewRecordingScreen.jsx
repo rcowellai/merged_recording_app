@@ -48,19 +48,49 @@ function ReviewRecordingScreen({
     </div>
   ) : (
     <div style={{
+      width: '100%',
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: tokens.spacing[6],
-      flex: 1
+      justifyContent: 'center',
+      gap: tokens.spacing[5],
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     }}>
-      <PlyrMediaPlayer
-        src={recordedBlobUrl}
-        type={captureMode}
-        actualMimeType={actualMimeType}
-        onReady={onPlayerReady}
-        style={{ width: '100%' }}
-      />
+      {/* Container for audio mode - matches AudioTest styling */}
+      {captureMode === 'audio' ? (
+        <div style={{
+          width: '100%',
+          maxWidth: tokens.layout.maxWidth.md,
+          minHeight: '55vh',
+          border: `0.5px solid rgba(113, 128, 150, 0.5)`,
+          borderRadius: tokens.borderRadius.lg,
+          boxSizing: 'border-box',
+          padding: tokens.spacing[4],
+          backgroundColor: tokens.colors.button.leftHandButton,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <PlyrMediaPlayer
+            src={recordedBlobUrl}
+            type={captureMode}
+            actualMimeType={actualMimeType}
+            onReady={onPlayerReady}
+            style={{ width: '100%' }}
+          />
+        </div>
+      ) : (
+        <PlyrMediaPlayer
+          src={recordedBlobUrl}
+          type={captureMode}
+          actualMimeType={actualMimeType}
+          onReady={onPlayerReady}
+          style={{ width: '100%', maxHeight: '60vh' }}
+        />
+      )}
     </div>
   );
 

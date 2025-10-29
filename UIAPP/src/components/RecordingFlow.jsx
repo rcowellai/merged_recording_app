@@ -3,8 +3,10 @@
  * -----------------
  * Manages the recording state and auto-transition logic.
  * NOTE: Timer state moved to TimerContext - this component now receives callbacks.
+ * FIXED: Added onStateChange callback to notify parent of state changes (prevents setState during render)
  */
 
+import { useEffect } from 'react';
 import useRecordingFlow from '../hooks/useRecordingFlow';
 import debugLogger from '../utils/debugLogger.js';
 
@@ -15,6 +17,7 @@ function RecordingFlow({
   sessionId,
   sessionData,
   sessionComponents,
+  onStateChange,
   children
 }) {
   debugLogger.componentMounted('RecordingFlow', {
@@ -30,6 +33,21 @@ function RecordingFlow({
     sessionComponents,
     onDoneAndSubmitStage
   });
+
+  // Notify parent component of state changes via callback
+  // This allows AppContent to update its state in response to RecordingFlow changes
+  // without causing setState-during-render warnings
+  useEffect(() => {
+    if (onStateChange && recordingFlowState) {
+      onStateChange(recordingFlowState);
+    }
+  }, [
+    recordingFlowState?.captureMode,
+    recordingFlowState?.mediaStream,
+    recordingFlowState?.handleAudioClick,
+    recordingFlowState?.handleVideoClick,
+    onStateChange
+  ]);
 
   debugLogger.log('info', 'RecordingFlow', 'useRecordingFlow hook returned', {
     hasRecordingFlowState: !!recordingFlowState,

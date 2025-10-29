@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { FaPlay } from 'react-icons/fa';
+import { FaPlay, FaStop } from 'react-icons/fa';
 import PromptCard from '../PromptCard';
 import PausedOverlay from '../PausedOverlay';
 import { Button, ButtonRow } from '../ui';
@@ -58,6 +58,7 @@ function PausedRecordingScreen({ onResume, onDone, sessionData, onBack, countdow
           }}
           fullWidth={false}
         >
+          <FaStop style={{ marginRight: tokens.spacing[2], color: tokens.colors.status.recording_red }} />
           Done
         </Button>
       </ButtonRow>

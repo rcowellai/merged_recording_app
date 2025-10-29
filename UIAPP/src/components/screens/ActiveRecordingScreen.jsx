@@ -22,15 +22,6 @@ import { useTokens } from '../../theme/TokenProvider';
 function ActiveRecordingScreen({ captureMode, mediaStream, onPause, sessionData, onBack }) {
   const { tokens } = useTokens();
 
-  // DIAGNOSTIC: Log ActiveRecordingScreen render
-  console.log('[ActiveRecordingScreen] 🟩 Component rendered', {
-    captureMode,
-    hasMediaStream: !!mediaStream,
-    mediaStreamId: mediaStream?.id,
-    audioTracks: mediaStream?.getAudioTracks().length,
-    videoTracks: mediaStream?.getVideoTracks().length
-  });
-
   const previewElement =
     captureMode === 'audio'
       ? <AudioRecorder stream={mediaStream} isRecording={true} />

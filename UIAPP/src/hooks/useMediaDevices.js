@@ -18,6 +18,47 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+/**
+ * Filter out Windows virtual device aliases to prevent duplicates in UI.
+ * Windows creates "Default" and "Communications" aliases that map to physical devices.
+ *
+ * @param {MediaDeviceInfo[]} devices - Array of devices from enumerateDevices()
+ * @returns {MediaDeviceInfo[]} - Filtered array with only physical devices
+ */
+function filterVirtualDevices(devices) {
+  return devices.filter(device => {
+    const label = device.label.toLowerCase();
+
+    // Remove Windows virtual aliases
+    // These start with "default -" or "communications -"
+    if (label.startsWith('default -') || label.startsWith('communications -')) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Clean device labels by removing technical identifiers.
+ * Removes USB vendor/product IDs like "(047f:02ee)" and other technical suffixes.
+ *
+ * @param {string} label - Original device label from MediaDeviceInfo
+ * @returns {string} - Cleaned label with only human-friendly name
+ */
+function cleanDeviceLabel(label) {
+  // Remove USB vendor/product IDs like "(047f:02ee)"
+  // Pattern: parentheses containing 4 hex digits, colon, 4 hex digits
+  let cleaned = label.replace(/\s*\([0-9a-fA-F]{4}:[0-9a-fA-F]{4}\)\s*$/, '');
+
+  // Remove other common technical suffixes in parentheses at the end
+  // But preserve meaningful info like "Built-in" or manufacturer names
+  // Only remove if it looks like a technical ID (numbers, short codes)
+  cleaned = cleaned.replace(/\s*\([0-9a-fA-F-]+\)\s*$/, '');
+
+  return cleaned.trim();
+}
+
 function useMediaDevices(deviceType, mediaStream) {
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
@@ -31,7 +72,22 @@ function useMediaDevices(deviceType, mediaStream) {
     try {
       setIsEnumerating(true);
       const allDevices = await navigator.mediaDevices.enumerateDevices();
-      const filtered = allDevices.filter(d => d.kind === deviceType);
+
+      // Filter by device type (audioinput, videoinput, audiooutput)
+      const typeFiltered = allDevices.filter(d => d.kind === deviceType);
+
+      // Filter out Windows virtual aliases (Default/Communications)
+      const virtualFiltered = filterVirtualDevices(typeFiltered);
+
+      // Clean device labels (remove technical IDs while preserving original deviceId)
+      const filtered = virtualFiltered.map(device => ({
+        ...device,
+        label: cleanDeviceLabel(device.label),
+        // Preserve original properties
+        deviceId: device.deviceId,
+        kind: device.kind,
+        groupId: device.groupId
+      }));
 
       setDevices(filtered);
 
@@ -74,7 +130,6 @@ function useMediaDevices(deviceType, mediaStream) {
   // Listen for device changes (plug/unplug)
   useEffect(() => {
     const handleDeviceChange = () => {
-      console.log('Device change detected, re-enumerating...');
       enumerateDevices();
     };
 

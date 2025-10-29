@@ -17,6 +17,8 @@
  * - permissionState: 'idle' | 'requesting' | 'granted' | 'denied'
  * - onContinue: Handler when user clicks Continue (permission already granted)
  * - onRetry: Handler when user clicks Try Again after denial
+ * - onSwitchDevice: Handler for device switching
+ * - onOpenSettings: Handler to open device settings drawer
  * - onBack: Handler for back navigation
  *
  * Returns standard screen format:
@@ -32,7 +34,7 @@ import AudioDeviceSettings from './AudioDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
 
-function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissionState, onBack }) {
+function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack }) {
   const { tokens } = useTokens();
 
   // Determine what to show based on permission state
@@ -46,6 +48,7 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
       <AudioDeviceSettings
         mediaStream={mediaStream}
         onSwitchDevice={onSwitchDevice}
+        onOpenSettings={onOpenSettings}
       />
     ),
     content: (
@@ -76,9 +79,13 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, mediaStream, permissio
           justifyContent: 'center',
           gap: 0
         }}>
-          {/* AudioVisualizer always mounted for proper initialization */}
+          {/* AudioVisualizer with key-based remounting for clean device switching */}
           <div style={{ width: '100%' }}>
-            <AudioVisualizer mediaStream={mediaStream} height={100} />
+            <AudioVisualizer
+              key={mediaStream?.id || 'no-stream'}
+              mediaStream={mediaStream}
+              height={100}
+            />
           </div>
           <p style={{
             fontSize: tokens.fontSize.base,
