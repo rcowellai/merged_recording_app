@@ -55,7 +55,8 @@
       "WebFetch(domain:bundlephobia.com)",
       "WebFetch(domain:vaul.emilkowal.ski)",
       "Bash(npm view:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": [],
