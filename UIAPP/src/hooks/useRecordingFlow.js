@@ -121,27 +121,54 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Recording Handlers
   // ===========================
   const handleVideoClick = useCallback(async () => {
+    console.log('[useRecordingFlow] handleVideoClick called');
     try {
+      console.log('[useRecordingFlow] Requesting camera+microphone permission...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       });
+      console.log('[useRecordingFlow] Camera permission GRANTED', {
+        streamId: stream.id,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length
+      });
       setCaptureMode('video');
       setMediaStream(stream);
     } catch (error) {
-      console.error('Video permission denied:', error);
+      console.error('[useRecordingFlow] ❌ Camera permission DENIED or ERROR');
+      console.error('[useRecordingFlow] Error details:', {
+        name: error.name,
+        message: error.message,
+        constraint: error.constraint
+      });
+      // RE-THROW error so AppContent can handle it and show drawer
+      throw error;
     }
   }, []);
 
   const handleAudioClick = useCallback(async () => {
+    console.log('[useRecordingFlow] handleAudioClick called');
     try {
+      console.log('[useRecordingFlow] Requesting microphone permission...');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true
+      });
+      console.log('[useRecordingFlow] Microphone permission GRANTED', {
+        streamId: stream.id,
+        audioTracks: stream.getAudioTracks().length
       });
       setCaptureMode('audio');
       setMediaStream(stream);
     } catch (error) {
-      console.error('Audio permission denied:', error);
+      console.error('[useRecordingFlow] ❌ Microphone permission DENIED or ERROR');
+      console.error('[useRecordingFlow] Error details:', {
+        name: error.name,
+        message: error.message,
+        constraint: error.constraint
+      });
+      // RE-THROW error so AppContent can handle it and show drawer
+      throw error;
     }
   }, []);
 

@@ -34,7 +34,7 @@ function MasterLayout({
   overlay = null
 }) {
   const { tokens } = useTokens();
-  const { isMobile } = useBreakpoint();
+  const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   // Determine if this is the welcome screen for special styling
   const isWelcomeScreen = className.includes('welcome-state');
@@ -115,7 +115,7 @@ function MasterLayout({
         boxSizing: 'border-box',
         position: 'relative',
         // DEBUG: PAGE-CONTAINER border
-        // border: '3px solid red'
+        border: '3px solid red'
       }}>
 
       {/* ========================================
@@ -150,7 +150,7 @@ function MasterLayout({
           fontWeight: tokens.fontWeight.medium,
           fontSize: tokens.fontSize.base,
           // DEBUG: SECTION-A border
-          // border: '3px solid cyan',
+          border: '3px solid cyan',
           ...(bannerStyle || {})
         }}>
           {/* A1 - Back Button (45px) */}
@@ -162,7 +162,7 @@ function MasterLayout({
             justifyContent: 'center',
             boxSizing: 'border-box',
             // DEBUG: SECTION-A1 border
-            // border: '2px solid orange'
+            border: '2px solid orange'
           }}>
             {showBackButton && onBack && (
               <MdChevronLeft
@@ -184,7 +184,7 @@ function MasterLayout({
             textAlign: 'center',
             boxSizing: 'border-box',
             // DEBUG: SECTION-A2 border
-            // border: '2px solid yellow'
+            border: '2px solid yellow'
           }}>
             {renderA2Content()}
           </div>
@@ -198,7 +198,7 @@ function MasterLayout({
             justifyContent: 'center',
             boxSizing: 'border-box',
             // DEBUG: SECTION-A3 border
-            // border: '2px solid magenta'
+            border: '2px solid magenta'
           }}>
             {iconA3}
           </div>
@@ -222,7 +222,7 @@ function MasterLayout({
         // Make transparent on mobile welcome screen to show background image
         backgroundColor: (isMobile && isWelcomeScreen) ? 'transparent' : undefined,
         // DEBUG: APP-LAYOUT border
-        // border: '3px solid blue'
+        border: '3px solid blue'
       }}>
 
         {/* ========================================
@@ -239,10 +239,12 @@ function MasterLayout({
           minHeight: '270px',
           overflow: 'hidden',
           width: '100%',
+          maxWidth: (isTablet || isDesktop) ? '768px' : '100%',
+          margin: (isTablet || isDesktop) ? '0 auto' : '0',
           padding: tokens.spacing[4],
           boxSizing: 'border-box',
           // DEBUG: SECTION-B border
-          // border: '3px solid green'
+          border: '3px solid green'
         }}>
           {content}
           {overlay}
@@ -257,6 +259,8 @@ function MasterLayout({
         <div style={{
           flex: '0 0 100px',
           width: '100%',
+          maxWidth: (isTablet || isDesktop) ? '768px' : '100%',
+          margin: (isTablet || isDesktop) ? '0 auto' : '0',
           padding: `0 ${tokens.spacing[4]} ${tokens.spacing[5]} ${tokens.spacing[4]}`,
           display: 'flex',
           flexDirection: 'column',
@@ -264,7 +268,7 @@ function MasterLayout({
           justifyContent: 'flex-end',
           boxSizing: 'border-box',
           // DEBUG: SECTION-C border
-          // border: '3px solid purple'
+          border: '3px solid purple'
         }}>
           {actions}
         </div>

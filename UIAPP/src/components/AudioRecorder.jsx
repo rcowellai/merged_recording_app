@@ -1,9 +1,45 @@
 /**
  * AudioRecorder.jsx
  * -----------------
- * Visual component showing a live waveform/mic icon
- * while recording audio. Connects to the user's
- * microphone input stream and draws levels in real time.
+ * Live Audio Waveform Visualizer
+ *
+ * PURPOSE:
+ * Visual component that displays a live animated waveform during audio recording,
+ * providing real-time feedback of microphone input levels.
+ *
+ * RESPONSIBILITIES:
+ * - Connect to user's microphone MediaStream via Web Audio API
+ * - Create AudioContext and AnalyserNode for frequency analysis
+ * - Render animated waveform on HTML5 canvas with real-time updates
+ * - Visualize audio amplitude with configurable sensitivity
+ * - Clean up audio resources on component unmount
+ *
+ * USED BY:
+ * - ActiveRecordingScreen.jsx (during audio recording sessions)
+ *
+ * CURRENT STATUS:
+ * ⚠️ TEMPORARILY DISABLED (line 27-28)
+ * - Testing for AudioContext conflict with AudioVisualizer component
+ * - Returns early to prevent dual AudioContext creation
+ * - Audio recording still works, visualization is disabled
+ *
+ * TECHNICAL DETAILS:
+ * - Web Audio API: AudioContext, MediaStreamSourceNode, AnalyserNode
+ * - FFT analysis: Uses frequency bin data for waveform generation
+ * - Canvas rendering: 2D context with configurable stroke width and color
+ * - Configuration: Uses CANVAS and AUDIO_ANALYSIS constants from config
+ * - Styling: Design tokens from TokenProvider for colors
+ *
+ * PROPS:
+ * - stream (MediaStream): User's microphone audio stream
+ * - isRecording (boolean): Whether recording is active
+ *
+ * VISUALIZATION:
+ * - Waveform drawn from left to right across canvas
+ * - Amplitude mapped to vertical displacement from center
+ * - Sensitivity factor applied for visual enhancement
+ * - Background matches token-based light background color
+ * - Stroke color uses recording red status color
  */
 
 

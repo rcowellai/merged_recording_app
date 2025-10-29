@@ -41,6 +41,8 @@ export function createNavigationHandlers({
 
     // Reset app state (UI-related state)
     dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: false });
+    dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
+    dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_AUDIO_TEST_COMPLETED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_VIDEO_TEST_COMPLETED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: false });
@@ -61,6 +63,8 @@ export function createNavigationHandlers({
     // Reset app state (UI-related state)
     dispatch({ type: APP_ACTIONS.SET_SHOW_START_OVER_CONFIRM, payload: false });
     dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: false });
+    dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
+    dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_AUDIO_TEST_COMPLETED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_VIDEO_TEST_COMPLETED, payload: false });
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: false });
@@ -104,8 +108,8 @@ export function createNavigationHandlers({
       return;
     }
 
-    // PRIORITY 4: ReadyToRecordScreen → AudioTest OR VideoTest OR ChooseModeScreen
-    // Condition: !isRecording && !isPaused && mediaStream
+    // PRIORITY 4: ReadyToRecordScreen → AudioTest OR VideoTest
+    // Condition: !isRecording && !isPaused && mediaStream && testCompleted
     if (!isRecording && !isPaused && mediaStream) {
       // If came from AudioTest (audio mode and test was completed)
       if (captureMode === 'audio' && appState.audioTestCompleted) {
@@ -117,12 +121,26 @@ export function createNavigationHandlers({
         dispatch({ type: APP_ACTIONS.SET_VIDEO_TEST_COMPLETED, payload: false });
         return;
       }
-      // If came from ChooseModeScreen (no test completed)
-      setCaptureMode(null); // Clears captureMode, RecordingFlow will clean mediaStream
+    }
+
+    // PRIORITY 5: AudioAccess → ChooseModeScreen
+    // Condition: captureMode === 'audio' && !audioPermissionGranted
+    if (captureMode === 'audio' && !appState.audioPermissionGranted) {
+      setCaptureMode(null); // Clears captureMode, shows ChooseModeScreen
+      // mediaStream cleanup handled by useRecordingFlow useEffect
       return;
     }
 
-    // PRIORITY 5: AudioTest OR VideoTest → ChooseModeScreen
+    // PRIORITY 6: VideoAccess → ChooseModeScreen
+    // Condition: captureMode === 'video' && !videoPermissionGranted
+    if (captureMode === 'video' && !appState.videoPermissionGranted) {
+      setCaptureMode(null); // Clears captureMode, shows ChooseModeScreen
+      // mediaStream cleanup handled by useRecordingFlow useEffect
+      return;
+    }
+
+    // PRIORITY 7: AudioTest OR VideoTest → ChooseModeScreen
+    // Handles back navigation from test screens to mode selection
     // Condition: (captureMode === 'audio' && !audioTestCompleted) OR (captureMode === 'video' && !videoTestCompleted)
     if (captureMode === 'audio' && !appState.audioTestCompleted) {
       setCaptureMode(null); // Clears captureMode, shows ChooseModeScreen
@@ -133,14 +151,14 @@ export function createNavigationHandlers({
       return;
     }
 
-    // PRIORITY 6: ChooseModeScreen → PromptReadScreen
+    // PRIORITY 8: ChooseModeScreen → PromptReadScreen
     // Condition: hasReadPrompt && !mediaStream && captureMode == null
     if (appState.hasReadPrompt && !mediaStream && captureMode == null) {
       dispatch({ type: APP_ACTIONS.SET_HAS_READ_PROMPT, payload: false });
       return;
     }
 
-    // PRIORITY 7: PromptReadScreen → WelcomeScreen
+    // PRIORITY 9: PromptReadScreen → WelcomeScreen
     // Condition: !hasReadPrompt && !showWelcome
     if (!appState.hasReadPrompt && !appState.showWelcome) {
       dispatch({ type: APP_ACTIONS.SET_SHOW_WELCOME, payload: true });

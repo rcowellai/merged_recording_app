@@ -1,31 +1,31 @@
 /**
  * VideoTest.jsx
  * --------------
- * Video test screen shown after user selects video mode.
+ * Video test screen shown after user grants camera permission.
  * Displays live video preview to test camera input.
- * Auto-requests camera permission on mount.
  *
  * Flow:
- * 1. Screen loads - auto-requests camera permission
- * 2. Shows "Waiting for camera access..." while requesting
- * 3. Once permission granted, video preview activates automatically
+ * 1. User grants permission on VideoAccess screen
+ * 2. VideoTest screen loads with mediaStream already provided
+ * 3. Video preview activates automatically with live camera feed
  * 4. User clicks Continue to proceed to ReadyToRecordScreen
- * 5. If permission denied, shows error with "Try Again" button
+ * 5. If issues occur, user can click gear icon for device settings
  *
  * Props:
- * - mediaStream: MediaStream object when permission granted
- * - permissionState: 'idle' | 'requesting' | 'granted' | 'denied'
- * - onContinue: Handler when user clicks Continue (permission already granted)
- * - onRetry: Handler when user clicks Try Again after denial
+ * - mediaStream: MediaStream object (always provided, permission already granted)
+ * - permissionState: 'granted' | 'requesting' (always granted in normal flow)
+ * - videoRef: React ref for video element (managed by parent)
+ * - onContinue: Handler when user clicks Continue
+ * - onRetry: Handler to return to VideoAccess screen
  * - onSwitchDevice: Handler for device switching
  * - onOpenSettings: Handler to open device settings drawer
  * - onBack: Handler for back navigation
- * - videoRef: React ref for video element (managed by parent)
  *
  * Returns standard screen format:
- * - timer: null
- * - content: Video preview with state-based UI
- * - actions: Continue button (or Try Again if denied)
+ * - bannerContent: "Video test" header
+ * - iconA3: VideoDeviceSettings gear icon
+ * - content: Video preview with audio visualizer and instructions
+ * - actions: Continue button
  */
 
 import React from 'react';
@@ -40,7 +40,6 @@ function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
 
   // Determine what to show based on permission state
   const showPreview = mediaStream && permissionState === 'granted';
-  const showLoading = permissionState === 'requesting';
   const showError = permissionState === 'denied';
 
   return {
@@ -103,19 +102,6 @@ function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
           }}>
             Check that you can see yourself and that the microphone bar moves with your voice.
           </p>
-        )}
-
-        {/* Loading state - shown while requesting permission */}
-        {showLoading && (
-          <div style={{
-            fontSize: tokens.fontSize.sm,
-            color: tokens.colors.neutral.gray['03'],
-            textAlign: 'center',
-            maxWidth: '400px',
-            lineHeight: '1.4'
-          }}>
-            Waiting for camera access...
-          </div>
         )}
 
         {/* Error state - shown when permission denied */}

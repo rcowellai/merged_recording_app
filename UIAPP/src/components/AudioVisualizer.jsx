@@ -5,9 +5,9 @@
  * Visualizes audio input from MediaStream in real-time.
  *
  * Usage:
- * - Displays placeholder when no MediaStream available
  * - Automatically initializes visualizer when MediaStream provided
  * - Cleans up resources on unmount
+ * - Used in AudioTest, VideoTest, and RecordingBar after permission granted
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -208,21 +208,6 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
           position: 'relative'
         }}
       >
-        {!mediaStream && (
-          <div style={{
-            color: '#666',
-            fontSize: '14px',
-            textAlign: 'center',
-            padding: '20px',
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 1
-          }}>
-            Waiting for microphone access...
-          </div>
-        )}
       </div>
     </>
   );

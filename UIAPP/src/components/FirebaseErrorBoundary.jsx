@@ -1,28 +1,63 @@
 /**
- * 🛡️ Firebase Error Boundary for UIAPP (C08)
- * =============================================
- * 
- * CONSOLIDATION OBJECTIVE:
- * React Error Boundary that catches Firebase service failures and prevents
- * application crashes, providing graceful fallback UI and automatic recovery.
- * 
- * KEY FEATURES:
- * - Catches Firebase service errors and JavaScript exceptions
- * - Prevents app crashes from Firebase integration failures  
- * - Provides user-friendly error UI with retry options
- * - Automatically falls back to localStorage on persistent failures
- * - Integrates with C08 error handler and logging system
- * - Maintains UIAPP UI patterns and styling
- * 
- * INTEGRATION POINTS:
- * - Wraps Firebase-dependent components (RecordingFlow, AdminPage, etc.)
- * - Uses C08 firebaseErrorHandler for error mapping and logging
- * - Integrates with existing UIAPP error display patterns
- * - Respects Firebase feature flags for fallback behavior
+ * FirebaseErrorBoundary.jsx
+ * -------------------------
+ * Firebase-Specific Error Boundary with Automatic Fallback
+ *
+ * PURPOSE:
+ * React Error Boundary specialized for Firebase service failures, providing
+ * graceful degradation to localStorage when Firebase becomes unavailable.
+ *
+ * RESPONSIBILITIES:
+ * - Catch Firebase-specific errors (Firestore, Storage, Functions, Auth)
+ * - Prevent Firebase failures from crashing the application
+ * - Provide 3-tier error recovery system:
+ *   1. Retry (up to 3 attempts) for transient errors
+ *   2. Fallback mode → Switch to localStorage when Firebase unavailable
+ *   3. Reset → Clear error state and retry connection
+ * - Map and log errors via C08 firebaseErrorHandler
+ * - Display user-friendly error UI with action buttons
+ * - Auto-activate fallback mode after max retries
+ *
+ * USED BY:
+ * - AppContent.jsx (wraps Firebase-dependent recording components)
+ * - Demo page: /demo/error/firebase (for testing)
+ *
+ * ERROR RECOVERY FLOW:
+ * 1. Firebase Error Occurs
+ * 2. FirebaseErrorBoundary catches it
+ * 3. Maps error via firebaseErrorHandler (type, retryable, message)
+ * 4. If retryable → Show "Try Again" button (max 3 attempts)
+ * 5. If max retries exceeded → Enable fallback mode (localStorage)
+ * 6. Render children with fallbackMode=true prop
+ *
+ * FALLBACK MODE:
+ * - Automatically enabled after 3 failed retry attempts
+ * - Manually activated via "Continue Offline" button
+ * - Switches storage from Firebase to localStorage
+ * - Children components receive fallbackMode and firebaseDisabled props
+ *
+ * EXPORTS:
+ * - FirebaseErrorBoundary (component): Error boundary wrapper
+ * - withFirebaseErrorBoundary (HOC): Higher-order component wrapper
+ * - useFirebaseFallback (hook): Hook to check/control fallback mode
+ *
+ * DEVELOPMENT FEATURES:
+ * - Detailed error diagnostics in development mode
+ * - Error type and retryable status display
+ * - Original error message and stack trace
+ * - Component name tracking for debugging
+ *
+ * INTEGRATION:
+ * - C08 firebaseErrorHandler for error mapping and logging
+ * - Inline styles (no CSS dependencies) for portability
+ * - Focus regain detection for reconnection attempts
  */
 
 import React, { Component } from 'react';
 import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
+import ProductionErrorScreen from './ProductionErrorScreen';
+import DevelopmentErrorScreen from './DevelopmentErrorScreen';
+import { generateErrorId, logErrorToBackend, buildErrorPayload, getSessionId } from '../utils/errorUtils';
 
 /**
  * Firebase Error Boundary Component
@@ -31,15 +66,16 @@ import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
 export class FirebaseErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    
+
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
+      errorId: null,
       retryCount: 0,
       fallbackMode: false
     };
-    
+
     this.maxRetries = 3;
   }
   
@@ -58,23 +94,52 @@ export class FirebaseErrorBoundary extends Component {
    * Log error details and update state with error info
    */
   componentDidCatch(error, errorInfo) {
+    // Generate unique error ID
+    const errorId = generateErrorId('FB');
+
     // Map and log the error using C08 error handler
     const mappedError = firebaseErrorHandler.mapError(error, 'error-boundary');
-    
+
     firebaseErrorHandler.log('error', 'Error boundary caught Firebase error', {
       error: mappedError,
       errorInfo,
+      errorId,
       component: this.props.component || 'unknown'
     }, {
       service: 'firebase-error-boundary',
       operation: 'error-catch'
     });
-    
+
+    // Log to console with error ID
+    console.error(`[${errorId}] FirebaseErrorBoundary caught error:`, mappedError);
+
+    // Build error payload for logging
+    const errorPayload = buildErrorPayload({
+      errorId,
+      error: mappedError,
+      errorInfo,
+      errorBoundary: 'FirebaseErrorBoundary',
+      sessionId: getSessionId()
+    });
+
+    // Add Firebase-specific context
+    errorPayload.firebaseError = {
+      type: mappedError.type,
+      retryable: mappedError.retryable,
+      originalCode: mappedError.originalError?.code
+    };
+
+    // Log to backend (async, non-blocking)
+    logErrorToBackend(errorPayload).catch(e => {
+      console.error('Failed to log error to backend:', e);
+    });
+
     this.setState({
       error: mappedError,
-      errorInfo: errorInfo
+      errorInfo: errorInfo,
+      errorId
     });
-    
+
     // Check if we should enable fallback mode
     this.checkFallbackMode(mappedError);
   }
@@ -191,92 +256,45 @@ export class FirebaseErrorBoundary extends Component {
    * Render error UI or children
    */
   render() {
-    const { hasError, error, retryCount, fallbackMode } = this.state;
-    const { children, component = 'Firebase Service' } = this.props;
-    
+    const { hasError, error, retryCount, fallbackMode, errorId } = this.state;
+    const { children } = this.props;
+
     // Pass fallback mode to children via context or props
     if (fallbackMode && !hasError) {
-      return React.cloneElement(children, { 
+      return React.cloneElement(children, {
         fallbackMode: true,
-        firebaseDisabled: true 
+        firebaseDisabled: true
       });
     }
-    
+
     // Show error UI if there's an error
     if (hasError) {
       const canRetry = retryCount < this.maxRetries && error?.retryable !== false;
-      
+
+      // Development: Show detailed error screen
+      if (process.env.NODE_ENV === 'development') {
+        return (
+          <DevelopmentErrorScreen
+            error={error}
+            errorInfo={this.state.errorInfo}
+            errorId={errorId}
+            errorType="Firebase"
+            onRetry={canRetry ? this.handleRetry : null}
+          />
+        );
+      }
+
+      // Production: Show generic user-friendly error screen
       return (
-        <div className="firebase-error-boundary" style={errorBoundaryStyles.container}>
-          <div style={errorBoundaryStyles.content}>
-            {/* Error Icon */}
-            <div style={errorBoundaryStyles.icon}>⚠️</div>
-            
-            {/* Error Message */}
-            <h3 style={errorBoundaryStyles.title}>
-              {component} Temporarily Unavailable
-            </h3>
-            
-            <p style={errorBoundaryStyles.message}>
-              {error?.message || 'An unexpected error occurred while connecting to our servers.'}
-            </p>
-            
-            {/* Action Buttons */}
-            <div style={errorBoundaryStyles.actions}>
-              {canRetry && (
-                <button 
-                  onClick={this.handleRetry}
-                  style={errorBoundaryStyles.primaryButton}
-                >
-                  Try Again ({retryCount + 1}/{this.maxRetries})
-                </button>
-              )}
-              
-              <button
-                onClick={this.handleFallback}
-                style={errorBoundaryStyles.secondaryButton}
-              >
-                Next step Offline
-              </button>
-              
-              <button 
-                onClick={this.handleReset}
-                style={errorBoundaryStyles.tertiaryButton}
-              >
-                Reset
-              </button>
-            </div>
-            
-            {/* Help Text */}
-            <p style={errorBoundaryStyles.helpText}>
-              {canRetry ? (
-                'We\'re experiencing connection issues. You can try again or continue working offline with limited functionality.'
-              ) : (
-                'You can continue working offline with limited functionality, or reset to try connecting again.'
-              )}
-            </p>
-            
-            {/* Developer Info (development only) */}
-            {process.env.NODE_ENV === 'development' && error && (
-              <details style={errorBoundaryStyles.details}>
-                <summary style={errorBoundaryStyles.summary}>Developer Info</summary>
-                <div style={errorBoundaryStyles.errorDetails}>
-                  <p><strong>Error Type:</strong> {error.type}</p>
-                  <p><strong>Retryable:</strong> {error.retryable ? 'Yes' : 'No'}</p>
-                  <p><strong>Original Message:</strong> {error.originalError?.message}</p>
-                  {error.originalError?.stack && (
-                    <pre style={errorBoundaryStyles.stack}>
-                      {error.originalError.stack}
-                    </pre>
-                  )}
-                </div>
-              </details>
-            )}
-          </div>
-        </div>
+        <ProductionErrorScreen
+          errorId={errorId}
+          onRetry={canRetry ? this.handleRetry : null}
+          onGoHome={() => window.location.href = '/'}
+          showRetry={canRetry}
+        />
       );
     }
-    
+
     // Render children normally
     return children;
   }

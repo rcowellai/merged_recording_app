@@ -56,7 +56,10 @@
       "WebFetch(domain:vaul.emilkowal.ski)",
       "Bash(npm view:*)",
       "Bash(git merge:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "SlashCommand(/sc:analyze \"On the demo screen we are showing app error boundary and firebase error - these are 2 different error screens that will be shown to the end user under different circumstances, correct?\" --think --persona-analyzer)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [],
     "ask": [],

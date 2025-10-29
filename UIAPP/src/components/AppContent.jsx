@@ -1,8 +1,35 @@
 /**
  * AppContent.jsx
  * --------------
- * The main recording interface component extracted from App.js
- * Renders when a valid session is found and validated
+ * Main Recording Interface Orchestrator
+ *
+ * PURPOSE:
+ * Primary UI container that manages the complete recording workflow state machine.
+ * Coordinates all recording screens, handles uploads, errors, and success states.
+ *
+ * RESPONSIBILITIES:
+ * - State management via useReducer (appReducer) for recording flow
+ * - Screen routing: welcome → choose mode → test → record → review → upload
+ * - Upload coordination with real-time progress tracking
+ * - Error handling with retry logic and user-friendly error screens
+ * - Success state with confetti celebration
+ * - Dialog management (start over, device settings)
+ * - Firebase error boundary integration for graceful failure handling
+ *
+ * USED BY:
+ * - SessionValidator.jsx (renders AppContent after successful session validation)
+ *
+ * FLOW:
+ * App.js → SessionValidator → AppContent (main recording UI)
+ *
+ * KEY FEATURES:
+ * - 10+ screen components orchestrated (WelcomeScreen, ChooseModeScreen, AudioTest,
+ *   VideoTest, ReadyToRecordScreen, ActiveRecordingScreen, PausedRecordingScreen,
+ *   ReviewRecordingScreen, etc.)
+ * - Conditional overlays: ProgressOverlay (upload), ErrorScreen (failures),
+ *   ConfettiScreen (success)
+ * - Vaul drawers: VaulStartOverDrawer (confirmation), VaulDeviceSettingsDrawer (settings)
+ * - MasterLayout integration for consistent UI structure
  */
 
 import React, { useReducer, useState, useCallback, useEffect, useRef } from 'react';
@@ -13,6 +40,9 @@ import { RECORDING_LIMITS, TIME_FORMAT } from '../config';
 
 // State management
 import { appReducer, initialAppState, APP_ACTIONS } from '../reducers/appReducer';
+
+// Permission utilities
+import { hasMediaPermission, hasVideoPermissions } from '../utils/permissionUtils';
 
 // Extracted components
 import RecordingFlow from './RecordingFlow';
@@ -29,7 +59,6 @@ import { createNavigationHandlers } from '../utils/navigationHandlers';
 import RecordingBar from './RecordingBar';
 import CountdownOverlay from './CountdownOverlay';
 import ProgressOverlay from './ProgressOverlay';
-// import RadixStartOverDialog from './RadixStartOverDialog'; // Replaced with VaulStartOverDrawer
 import VaulStartOverDrawer from './VaulStartOverDrawer';
 import VaulDeviceSettingsDrawer from './VaulDeviceSettingsDrawer';
 import ConfettiScreen from './confettiScreen';
@@ -42,6 +71,8 @@ import MasterLayout from './MasterLayout';
 import WelcomeScreen from './screens/WelcomeScreen';
 import PromptReadScreen from './screens/PromptReadScreen';
 import ChooseModeScreen from './screens/ChooseModeScreen';
+import AudioAccess from './screens/AudioAccess';
+import VideoAccess from './screens/VideoAccess';
 import AudioTest from './screens/AudioTest';
 import VideoTest from './screens/VideoTest';
 import ReadyToRecordScreen from './screens/ReadyToRecordScreen';
@@ -109,13 +140,11 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
   // Player ready state for loading handling
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
-  // Audio permission state tracking
-  const [audioPermissionState, setAudioPermissionState] = useState('idle');
-  const audioRequestInProgressRef = useRef(false);
-
-  // Video permission state tracking
-  const [videoPermissionState, setVideoPermissionState] = useState('idle');
-  const videoRequestInProgressRef = useRef(false);
+  // Permission screen state (for AudioAccess/VideoAccess)
+  const [audioPermissionError, setAudioPermissionError] = useState(null);
+  const [audioPermissionRequesting, setAudioPermissionRequesting] = useState(false);
+  const [videoPermissionError, setVideoPermissionError] = useState(null);
+  const [videoPermissionRequesting, setVideoPermissionRequesting] = useState(false);
 
   // Video element ref for connecting mediaStream
   const videoRef = useRef(null);
@@ -137,115 +166,6 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       setIsPlayerReady(false);
     }
   }, [appState.submitStage]);
-
-  // Auto-request microphone permission when AudioTest screen is shown
-  useEffect(() => {
-    const { captureMode, mediaStream, handleAudioClick } = recordingFlowStateSnapshot;
-
-    // Guard: Only request if not already requesting and conditions met
-    if (
-      captureMode === 'audio' &&
-      !appState.audioTestCompleted &&
-      !mediaStream &&
-      audioPermissionState === 'idle' &&
-      !audioRequestInProgressRef.current &&
-      handleAudioClick
-    ) {
-      audioRequestInProgressRef.current = true;
-      setAudioPermissionState('requesting');
-
-      debugLogger.log('info', 'AppContent', 'Auto-requesting microphone permission');
-
-      // Call handleAudioClick and watch for mediaStream changes
-      handleAudioClick().catch((error) => {
-        debugLogger.log('error', 'AppContent', 'Microphone permission denied', { error });
-        setAudioPermissionState('denied');
-        audioRequestInProgressRef.current = false;
-      });
-    }
-  }, [recordingFlowStateSnapshot, appState.audioTestCompleted, audioPermissionState]);
-
-  // Watch mediaStream to detect successful permission grant OR device switch completion
-  useEffect(() => {
-    const { captureMode, mediaStream } = recordingFlowStateSnapshot;
-
-    // Handle initial permission grant
-    if (captureMode === 'audio' && mediaStream && audioPermissionState === 'requesting') {
-      debugLogger.log('info', 'AppContent', 'Microphone permission granted');
-      setAudioPermissionState('granted');
-      audioRequestInProgressRef.current = false;
-    }
-
-    // Handle device switch - ensure permission stays granted when mediaStream updates
-    if (captureMode === 'audio' && mediaStream && audioPermissionState === 'granted') {
-      // Permission state is already correct, but this ensures UI updates
-    }
-  }, [recordingFlowStateSnapshot, audioPermissionState]);
-
-  // Reset permission state when navigating away from audio mode
-  useEffect(() => {
-    const { captureMode } = recordingFlowStateSnapshot;
-
-    if (captureMode !== 'audio') {
-      setAudioPermissionState('idle');
-      audioRequestInProgressRef.current = false;
-    }
-  }, [recordingFlowStateSnapshot]);
-
-  // Auto-request camera permission when VideoTest screen is shown
-  useEffect(() => {
-    const { captureMode, mediaStream, handleVideoClick } = recordingFlowStateSnapshot;
-
-    // Guard: Only request if not already requesting and conditions met
-    if (
-      captureMode === 'video' &&
-      !appState.videoTestCompleted &&
-      !mediaStream &&
-      videoPermissionState === 'idle' &&
-      !videoRequestInProgressRef.current &&
-      handleVideoClick
-    ) {
-      videoRequestInProgressRef.current = true;
-      setVideoPermissionState('requesting');
-
-      debugLogger.log('info', 'AppContent', 'Auto-requesting camera permission');
-
-      // Call handleVideoClick and watch for mediaStream changes
-      handleVideoClick().catch((error) => {
-        debugLogger.log('error', 'AppContent', 'Camera permission denied', { error });
-        setVideoPermissionState('denied');
-        videoRequestInProgressRef.current = false;
-      });
-    }
-  }, [recordingFlowStateSnapshot, appState.videoTestCompleted, videoPermissionState]);
-
-  // Watch mediaStream to detect successful video permission grant OR device switch completion
-  useEffect(() => {
-    const { captureMode, mediaStream } = recordingFlowStateSnapshot;
-
-    // Handle initial permission grant
-    if (captureMode === 'video' && mediaStream && videoPermissionState === 'requesting') {
-      debugLogger.log('info', 'AppContent', 'Camera permission granted');
-      setVideoPermissionState('granted');
-      videoRequestInProgressRef.current = false;
-    }
-
-    // Handle device switch - log state transition for debugging
-    // Permission state remains 'granted' - UI updates via recordingFlowStateSnapshot dependency
-    if (captureMode === 'video' && mediaStream && videoPermissionState === 'granted') {
-      // Permission state is already correct, UI updates via recordingFlowStateSnapshot dependency
-    }
-  }, [recordingFlowStateSnapshot, videoPermissionState]);
-
-  // Reset video permission state when navigating away from video mode
-  useEffect(() => {
-    const { captureMode } = recordingFlowStateSnapshot;
-
-    if (captureMode !== 'video') {
-      setVideoPermissionState('idle');
-      videoRequestInProgressRef.current = false;
-    }
-  }, [recordingFlowStateSnapshot]);
 
   // Connect mediaStream to video element when available
   // Also triggers when navigating back to VideoTest to restart video playback
@@ -310,7 +230,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       // Old stream is preserved by switchAudioDevice - audio continues
       throw error; // Re-throw so drawer knows about the error
     }
-  }, [dispatch, audioPermissionState, recordingFlowStateSnapshot.mediaStream]);
+  }, [dispatch, recordingFlowStateSnapshot.mediaStream]);
 
   // Video device switching handler - delegates to useRecordingFlow
   const handleSwitchVideoDevice = useCallback(async (deviceId) => {
@@ -336,7 +256,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       // Old stream is preserved by switchVideoDevice - video/audio continues
       throw error; // Re-throw so drawer knows about the error
     }
-  }, [dispatch, videoPermissionState, recordingFlowStateSnapshot.mediaStream]);
+  }, [dispatch, recordingFlowStateSnapshot.mediaStream]);
 
   // Device settings drawer handler - stores props and opens drawer
   const handleOpenDeviceSettings = useCallback((props) => {
@@ -344,6 +264,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     setDeviceSettingsProps(props);
     setShowDeviceSettingsDrawer(true);
   }, []);
+
 
   // RecordingFlow state change handler
   // FIXED: Moved state synchronization from render to callback to prevent setState-during-render warning
@@ -369,7 +290,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         handleVideoClick
       };
     });
-  }, [audioPermissionState]);
+  }, []);
 
   debugLogger.log('info', 'AppContent', 'About to render RecordingFlow', {
     sessionId,
@@ -420,24 +341,13 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           setCaptureMode,
           actualMimeType,
           resetRecordingState,
+          stopMediaStream,
           // Progressive upload removed - using simple upload flow
         } = recordingFlowState;
 
         // FIXED: Removed setState block that was causing "setState during render" warning
         // State synchronization now happens via onStateChange callback in RecordingFlow's useEffect
         // See handleRecordingFlowStateChange above (line 306)
-
-        // Custom audio click handler that navigates to AudioTest first
-        const handleAudioClickWithTest = () => {
-          debugLogger.log('info', 'AppContent', 'Audio selected, navigating to AudioTest');
-          setCaptureMode('audio');
-        };
-
-        // Custom video click handler that navigates to VideoTest first
-        const handleVideoClickWithTest = () => {
-          debugLogger.log('info', 'AppContent', 'Video selected, navigating to VideoTest');
-          setCaptureMode('video');
-        };
 
         // Initialize extracted components and utility functions
         // Creating submission handler (logging disabled for upload analysis focus)
@@ -510,29 +420,113 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           // Mode selection - call as function
           if (appState.hasReadPrompt && !mediaStream && captureMode == null) {
             return ChooseModeScreen({
-              onAudioClick: handleAudioClickWithTest,
-              onVideoClick: handleVideoClickWithTest,
+              onAudioClick: async () => {
+                debugLogger.log('info', 'AppContent', 'Audio mode selected, checking permission');
+
+                // Check if microphone permission already granted
+                const hasPermission = await hasMediaPermission('microphone');
+
+                if (hasPermission) {
+                  // Permission already granted - set flag and skip AudioAccess screen
+                  console.log('[AppContent] Microphone permission already granted, setting flag');
+                  dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: true });
+                } else {
+                  console.log('[AppContent] Microphone permission not granted');
+                  dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
+                }
+
+                // ALWAYS set captureMode to trigger flow
+                setCaptureMode('audio');
+              },
+              onVideoClick: async () => {
+                debugLogger.log('info', 'AppContent', 'Video mode selected, checking permissions');
+
+                // Check if camera AND microphone permissions already granted
+                const hasPermissions = await hasVideoPermissions();
+
+                if (hasPermissions) {
+                  // Permissions already granted - set flag and skip VideoAccess screen
+                  console.log('[AppContent] Camera permissions already granted, setting flag');
+                  dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: true });
+                } else {
+                  console.log('[AppContent] Camera permissions not granted');
+                  dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
+                }
+
+                // ALWAYS set captureMode to trigger flow
+                setCaptureMode('video');
+              },
               onBack: navigationHandlers.handleBack
             });
           }
 
-          // Audio test screen - shown after audio mode selected
-          // Auto-requests permission on mount, shows visualizer when granted
-          if (captureMode === 'audio' && !appState.audioTestCompleted) {
+          // AudioAccess screen - shown when audio mode selected but permission not yet granted
+          // Only shows if audioPermissionGranted is false
+          if (captureMode === 'audio' && !appState.audioPermissionGranted) {
+            return AudioAccess({
+              onPermissionGranted: async (stream) => {
+                debugLogger.log('info', 'AppContent', 'Microphone permission granted on AudioAccess');
+
+                setAudioPermissionRequesting(true);
+                setAudioPermissionError(null);
+
+                // Stop the stream from AudioAccess - we'll request a fresh one
+                stream.getTracks().forEach(track => track.stop());
+
+                // Mark permission as granted
+                dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: true });
+
+                // Request stream via handleAudioClick to properly integrate with RecordingFlow
+                try {
+                  await handleAudioClick();
+                  setAudioPermissionRequesting(false);
+                } catch (error) {
+                  debugLogger.log('error', 'AppContent', 'Failed to get audio stream after permission granted', { error });
+                  // Reset permission flag so user goes back to AudioAccess
+                  dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
+                  setAudioPermissionRequesting(false);
+                  setAudioPermissionError('Failed to access microphone. Please try again.');
+                }
+
+                // User will now see AudioTest screen on next render with mediaStream
+              },
+              onPermissionDenied: (error, message) => {
+                debugLogger.log('error', 'AppContent', 'Microphone permission denied on AudioAccess', { error });
+
+                // Set error message for inline display
+                setAudioPermissionError(message);
+                setAudioPermissionRequesting(false);
+              },
+              onBack: navigationHandlers.handleBack,
+              errorMessage: audioPermissionError,
+              isRequesting: audioPermissionRequesting
+            });
+          }
+
+          // AudioTest screen - shown after audio mode selected AND permission granted
+          // Shows device test UI with visualizer
+          if (captureMode === 'audio' && appState.audioPermissionGranted && !appState.audioTestCompleted) {
+            // If no stream yet, request it now (for detected-but-not-requested case)
+            if (!mediaStream) {
+              // Call handleAudioClick to request stream
+              handleAudioClick().catch((error) => {
+                debugLogger.log('error', 'AppContent', 'Failed to get audio stream on AudioTest', { error });
+                // Reset permission flag so user goes back to AudioAccess
+                dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
+              });
+            }
+
             return AudioTest({
               mediaStream: mediaStream,
-              permissionState: audioPermissionState,
+              permissionState: mediaStream ? 'granted' : 'requesting',
               onContinue: () => {
-                // Only navigation - permission already granted at this point
                 debugLogger.log('info', 'AppContent', 'Audio test completed, proceeding to ready screen');
                 dispatch({ type: APP_ACTIONS.SET_AUDIO_TEST_COMPLETED, payload: true });
               },
               onRetry: () => {
-                // Reset state and retry permission request
-                debugLogger.log('info', 'AppContent', 'Retrying microphone permission request');
-                audioRequestInProgressRef.current = false;
-                setAudioPermissionState('idle');
-                // useEffect will trigger on next render
+                // If retry needed, go back to AudioAccess
+                debugLogger.log('info', 'AppContent', 'Retrying audio permission from AudioTest');
+                dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
               },
               onSwitchDevice: handleSwitchAudioDevice,
               onOpenSettings: handleOpenDeviceSettings,
@@ -540,26 +534,76 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
             });
           }
 
-          // Video test screen - shown after video mode selected
-          // Auto-requests permission on mount, shows video preview when granted
-          if (captureMode === 'video' && !appState.videoTestCompleted) {
+          // VideoAccess screen - shown when video mode selected but permission not yet granted
+          // Only shows if videoPermissionGranted is false
+          if (captureMode === 'video' && !appState.videoPermissionGranted) {
+            return VideoAccess({
+              onPermissionGranted: async (stream) => {
+                debugLogger.log('info', 'AppContent', 'Camera permission granted on VideoAccess');
+
+                setVideoPermissionRequesting(true);
+                setVideoPermissionError(null);
+
+                // Stop the stream from VideoAccess - we'll request a fresh one
+                stream.getTracks().forEach(track => track.stop());
+
+                // Mark permission as granted
+                dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: true });
+
+                // Request stream via handleVideoClick to properly integrate with RecordingFlow
+                try {
+                  await handleVideoClick();
+                  setVideoPermissionRequesting(false);
+                } catch (error) {
+                  debugLogger.log('error', 'AppContent', 'Failed to get video stream after permission granted', { error });
+                  // Reset permission flag so user goes back to VideoAccess
+                  dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
+                  setVideoPermissionRequesting(false);
+                  setVideoPermissionError('Failed to access camera. Please try again.');
+                }
+
+                // User will now see VideoTest screen on next render with mediaStream
+              },
+              onPermissionDenied: (error, message) => {
+                debugLogger.log('error', 'AppContent', 'Camera permission denied on VideoAccess', { error });
+
+                // Set error message for inline display
+                setVideoPermissionError(message);
+                setVideoPermissionRequesting(false);
+              },
+              onBack: navigationHandlers.handleBack,
+              errorMessage: videoPermissionError,
+              isRequesting: videoPermissionRequesting
+            });
+          }
+
+          // VideoTest screen - shown after video mode selected AND permission granted
+          // Shows device test UI with video preview
+          if (captureMode === 'video' && appState.videoPermissionGranted && !appState.videoTestCompleted) {
+            // If no stream yet, request it now (for detected-but-not-requested case)
+            if (!mediaStream) {
+              // Call handleVideoClick to request stream
+              handleVideoClick().catch((error) => {
+                debugLogger.log('error', 'AppContent', 'Failed to get video stream on VideoTest', { error });
+                // Reset permission flag so user goes back to VideoAccess
+                dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
+              });
+            }
+
             return VideoTest({
               mediaStream: mediaStream,
-              permissionState: videoPermissionState,
+              permissionState: mediaStream ? 'granted' : 'requesting',
               videoRef: videoRef,
               onContinue: () => {
-                // Only navigation - permission already granted at this point
                 debugLogger.log('info', 'AppContent', 'Video test completed, proceeding to ready screen');
                 dispatch({ type: APP_ACTIONS.SET_VIDEO_TEST_COMPLETED, payload: true });
               },
               onRetry: () => {
-                // Reset state and retry permission request
-                debugLogger.log('info', 'AppContent', 'Retrying camera permission request');
-                videoRequestInProgressRef.current = false;
-                setVideoPermissionState('idle');
-                // useEffect will trigger on next render
+                // If retry needed, go back to VideoAccess
+                debugLogger.log('info', 'AppContent', 'Retrying camera permission from VideoTest');
+                dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
               },
-              onSwitchDevice: handleSwitchVideoDevice, // Video device (camera) switching handler
+              onSwitchDevice: handleSwitchVideoDevice,
               onOpenSettings: handleOpenDeviceSettings,
               onBack: navigationHandlers.handleBack
             });
@@ -636,9 +680,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           });
 
           const handleRetry = () => {
-            debugLogger.log('info', 'AppContent', 'Error retry clicked');
+            debugLogger.log('info', 'AppContent', 'Error retry clicked - triggering upload');
             dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
-            // Stay in submit stage so user can retry upload
+            handleSubmit(); // Re-trigger upload with preserved recording blob
           };
 
           const handleCancel = () => {

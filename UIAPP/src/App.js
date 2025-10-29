@@ -101,14 +101,28 @@ function App() {
         </div>
 
         <div className="nav-section">
-          <h3>Error Screen Demo</h3>
-          <p>Preview the error screen UI for testing and design purposes.</p>
-          <a
-            href="/demo/error"
-            className="btn btn-secondary"
-          >
-            View Error Screen
-          </a>
+          <h3>Error Screen Demos</h3>
+          <p>Preview all error screens for testing and design purposes.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a href="/demo/error/upload" className="btn btn-secondary">
+              1. Upload Failure Modal
+            </a>
+            <a href="/demo/error/session" className="btn btn-secondary">
+              2. Session Validation Error
+            </a>
+            <a href="/demo/error/camera" className="btn btn-secondary">
+              3. Camera Permission Denied
+            </a>
+            <a href="/demo/error/microphone" className="btn btn-secondary">
+              4. Microphone Permission Denied
+            </a>
+            <a href="/demo/error/app-crash" className="btn btn-secondary">
+              5. App Error Boundary
+            </a>
+            <a href="/demo/error/firebase" className="btn btn-secondary">
+              6. Firebase Service Error
+            </a>
+          </div>
         </div>
       </div>
     </div>

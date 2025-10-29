@@ -1,30 +1,30 @@
 /**
  * AudioTest.jsx
  * --------------
- * Audio test screen shown after user selects audio mode.
+ * Audio test screen shown after user grants microphone permission.
  * Displays audio visualizer to test microphone input.
- * Auto-requests microphone permission on mount.
  *
  * Flow:
- * 1. Screen loads - auto-requests microphone permission
- * 2. Shows "Waiting for microphone access..." while requesting
- * 3. Once permission granted, visualizer activates automatically
- * 4. User clicks Continue once to proceed to ReadyToRecordScreen
- * 5. If permission denied, shows error with "Try Again" button
+ * 1. User grants permission on AudioAccess screen
+ * 2. AudioTest screen loads with mediaStream already provided
+ * 3. Visualizer activates automatically with live microphone input
+ * 4. User clicks Continue to proceed to ReadyToRecordScreen
+ * 5. If issues occur, user can click gear icon for device settings
  *
  * Props:
- * - mediaStream: MediaStream object when permission granted
- * - permissionState: 'idle' | 'requesting' | 'granted' | 'denied'
- * - onContinue: Handler when user clicks Continue (permission already granted)
- * - onRetry: Handler when user clicks Try Again after denial
+ * - mediaStream: MediaStream object (always provided, permission already granted)
+ * - permissionState: 'granted' | 'requesting' (always granted in normal flow)
+ * - onContinue: Handler when user clicks Continue
+ * - onRetry: Handler to return to AudioAccess screen
  * - onSwitchDevice: Handler for device switching
  * - onOpenSettings: Handler to open device settings drawer
  * - onBack: Handler for back navigation
  *
  * Returns standard screen format:
- * - timer: null
- * - content: AudioVisualizer component with state-based UI
- * - actions: Continue button (or Try Again if denied)
+ * - bannerContent: "Sound test" header
+ * - iconA3: AudioDeviceSettings gear icon
+ * - content: AudioVisualizer component with instructions
+ * - actions: Continue button
  */
 
 import React from 'react';
@@ -39,7 +39,6 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
 
   // Determine what to show based on permission state
   const showVisualizer = mediaStream && permissionState === 'granted';
-  const showLoading = permissionState === 'requesting';
   const showError = permissionState === 'denied';
 
   return {
@@ -113,19 +112,6 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
         }}>
           Check that the microphone bar moves with your voice.
         </p>
-
-        {/* Loading state - shown while requesting permission */}
-        {showLoading && (
-          <div style={{
-            fontSize: tokens.fontSize.sm,
-            color: tokens.colors.neutral.gray['03'],
-            textAlign: 'center',
-            maxWidth: '400px',
-            lineHeight: '1.4'
-          }}>
-            Waiting for microphone access...
-          </div>
-        )}
 
         {/* Error state - shown when permission denied */}
         {showError && (

@@ -1,9 +1,55 @@
 /**
  * ProgressOverlay.jsx
  * -------------------
- * Shows a circular progress bar ("Memories Uploading")
- * during an upload. Uses progressbar.js for the animated
- * circle. Rendered on top of the page while uploading.
+ * Upload Progress Overlay with Circular Progress Bar
+ *
+ * PURPOSE:
+ * Full-screen overlay that displays upload progress during recording submission,
+ * preventing user interaction until upload completes or fails.
+ *
+ * RESPONSIBILITIES:
+ * - Display "Memories Uploading" message with animated circular progress
+ * - Render smooth progress animation from 0% to 100%
+ * - Block user interaction during upload (z-index: 9999)
+ * - Cover entire viewport with semi-transparent backdrop
+ * - Update progress in real-time based on upload fraction
+ *
+ * USED BY:
+ * - AppContent.jsx (conditionally rendered when appState.uploadInProgress === true)
+ *
+ * RENDER CONDITION:
+ * {appState.uploadInProgress && (
+ *   <ProgressOverlay fraction={appState.uploadFraction} />
+ * )}
+ *
+ * PROPS:
+ * - fraction (number, required): Upload progress from 0.0 to 1.0
+ *   - 0.0 = 0% (upload start)
+ *   - 0.5 = 50% (halfway)
+ *   - 1.0 = 100% (upload complete)
+ *
+ * TECHNICAL DETAILS:
+ * - progressbar.js library: Circular progress animation
+ * - Animation config:
+ *   - strokeWidth: 6px (progress ring thickness)
+ *   - trailWidth: 6px (background ring thickness)
+ *   - easing: 'easeInOut' (smooth acceleration/deceleration)
+ *   - duration: 200ms (animation speed)
+ * - Progress circle: 120px × 120px
+ * - Styling: Design tokens from TokenProvider
+ *
+ * VISUAL DESIGN:
+ * - Fixed position overlay (covers entire viewport)
+ * - Semi-transparent beige background: rgba(228,226,216,0.93)
+ * - Centered content (vertically and horizontally)
+ * - Primary color for progress bar stroke
+ * - Light background for progress trail
+ *
+ * USER EXPERIENCE:
+ * - Prevents accidental navigation during critical upload
+ * - Shows real-time progress feedback
+ * - Smooth animations for professional feel
+ * - Non-dismissible until upload completes (no close button)
  */
 
 import React, { useEffect, useRef } from 'react';

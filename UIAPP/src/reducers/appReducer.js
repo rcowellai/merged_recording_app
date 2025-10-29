@@ -10,6 +10,8 @@ export const APP_ACTIONS = {
   // Navigation actions
   SET_SHOW_WELCOME: 'SET_SHOW_WELCOME',
   SET_HAS_READ_PROMPT: 'SET_HAS_READ_PROMPT',
+  SET_AUDIO_PERMISSION_GRANTED: 'SET_AUDIO_PERMISSION_GRANTED',
+  SET_VIDEO_PERMISSION_GRANTED: 'SET_VIDEO_PERMISSION_GRANTED',
   SET_AUDIO_TEST_COMPLETED: 'SET_AUDIO_TEST_COMPLETED',
   SET_VIDEO_TEST_COMPLETED: 'SET_VIDEO_TEST_COMPLETED',
   SET_SUBMIT_STAGE: 'SET_SUBMIT_STAGE',
@@ -40,6 +42,8 @@ export const initialAppState = {
   // Navigation states (from App.js lines 62-65)
   showWelcome: true, // Start with welcome screen visible
   hasReadPrompt: false, // Track if user has read the prompt
+  audioPermissionGranted: false, // Track if microphone permission granted
+  videoPermissionGranted: false, // Track if camera permission granted
   audioTestCompleted: false, // Track if user completed audio test screen
   videoTestCompleted: false, // Track if user completed video test screen
   submitStage: false,
@@ -69,6 +73,12 @@ export const appReducer = (state, action) => {
 
     case APP_ACTIONS.SET_HAS_READ_PROMPT:
       return { ...state, hasReadPrompt: action.payload };
+
+    case APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED:
+      return { ...state, audioPermissionGranted: action.payload };
+
+    case APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED:
+      return { ...state, videoPermissionGranted: action.payload };
 
     case APP_ACTIONS.SET_AUDIO_TEST_COMPLETED:
       return { ...state, audioTestCompleted: action.payload };
