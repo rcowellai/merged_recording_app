@@ -53,11 +53,11 @@ function AudioTestContent({ mediaStream, permissionState }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      gap: tokens.spacing[5],
+      gap: tokens.spacing[12],
       boxSizing: 'border-box',
       overflow: 'hidden',
       // DEBUG: AudioTestContent wrapper
-      border: '3px solid blue'
+      // border: '3px solid blue'
     }}>
       {/* Container - always rendered so AudioVisualizer can mount */}
       <div style={{
@@ -66,7 +66,7 @@ function AudioTestContent({ mediaStream, permissionState }) {
         flex: isMobile ? 'none' : '1 1 auto',
         maxHeight: isMobile ? 'none' : '350px',
         minHeight: isMobile ? '55vh' : undefined,
-        border: '5px solid red',
+        // border: '5px solid red',
         borderRadius: tokens.borderRadius.lg,
         boxSizing: 'border-box',
         padding: `0 ${tokens.spacing[4]}`,
@@ -89,7 +89,7 @@ function AudioTestContent({ mediaStream, permissionState }) {
           <div style={{
             width: '100%',
             // DEBUG: AudioVisualizer wrapper
-            border: '3px solid orange',
+            // border: '3px solid orange',
             margin: 0,
             padding: 0
           }}>
@@ -109,8 +109,8 @@ function AudioTestContent({ mediaStream, permissionState }) {
             paddingLeft: tokens.spacing[2],
             paddingRight: tokens.spacing[2],
             // DEBUG: Instruction text inside visualizer
-            border: '2px solid purple',
-            backgroundColor: 'rgba(128, 0, 128, 0.1)'
+            // border: '2px solid purple',
+            // backgroundColor: 'rgba(128, 0, 128, 0.1)'
           }}>
             Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
           </p>
@@ -122,13 +122,14 @@ function AudioTestContent({ mediaStream, permissionState }) {
         marginTop: 'auto',
         width: '100%',
         // DEBUG: Bottom instruction container
-        border: '3px solid green'
+        // border: '3px solid green'
       }}>
         <p style={{
           fontSize: tokens.fontSize.base,
           fontWeight: tokens.fontWeight.normal,
           color: tokens.colors.primary.DEFAULT,
           margin: 0,
+          marginBottom: tokens.spacing[12],
           textAlign: 'center',
           lineHeight: '1.5'
         }}>

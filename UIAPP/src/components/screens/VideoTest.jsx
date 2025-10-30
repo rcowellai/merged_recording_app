@@ -55,11 +55,11 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: isMobile ? 'center' : 'flex-start',
-      gap: isMobile ? 0 : tokens.spacing[5],
+      gap: isMobile ? 0 : tokens.spacing[12],
       boxSizing: 'border-box',
       overflow: 'hidden',
       // DEBUG: VideoTestContent wrapper
-      border: '3px solid blue'
+      // border: '3px solid blue'
     }}>
       {/* Centering container for video content */}
       <div style={{
@@ -73,16 +73,16 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         boxSizing: 'border-box',
         // DEBUG: Centering container
-        border: '5px solid red'
+        // border: '5px solid red'
       }}>
         {/* Audio visualizer with key-based remounting for clean device switching */}
         <div style={{
           marginBottom: '10px',
           // DEBUG: AudioVisualizer wrapper
-          border: '3px solid orange'
+          // border: '3px solid orange'
         }}>
           <AudioVisualizer
             key={mediaStream?.id || 'no-stream'}
@@ -103,7 +103,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
           borderRadius: '20px',
           backgroundColor: '#000',
           // DEBUG: Video wrapper
-          border: '3px solid purple'
+          // border: '3px solid purple'
         }}>
           <video
             ref={videoRef}
@@ -125,7 +125,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
       <div style={{
         width: '100%',
         // DEBUG: Bottom container
-        border: '3px solid green'
+        // border: '3px solid green'
       }}>
         {showPreview && (
           <p style={{
@@ -133,6 +133,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
             fontWeight: tokens.fontWeight.normal,
             color: tokens.colors.primary.DEFAULT,
             margin: 0,
+            marginBottom: tokens.spacing[12],
             textAlign: 'center',
             lineHeight: '1.5'
           }}>
