@@ -1,17 +1,17 @@
 /**
- * SessionValidationErrorDemo.jsx
- * -------------------------------
- * Demo: Session Validation Error (full-screen error page)
- * Shows SessionErrorScreen with 'invalid' error type
+ * SessionValidationErrorNetworkDemo.jsx
+ * --------------------------------------
+ * Demo: Session Validation Error - Network Issue
+ * Shows SessionErrorScreen with 'network' error type
  */
 
 import React from 'react';
 import SessionErrorScreen from '../components/SessionErrorScreen';
 
-const SessionValidationErrorDemo = () => {
+const SessionValidationErrorNetworkDemo = () => {
   return (
     <SessionErrorScreen
-      errorType="invalid"
+      errorType="network"
       onRetry={() => {
         console.log('Demo: Try Again clicked');
         alert('In production, this would reload the page');
@@ -24,4 +24,4 @@ const SessionValidationErrorDemo = () => {
   );
 };
 
-export default SessionValidationErrorDemo;
+export default SessionValidationErrorNetworkDemo;

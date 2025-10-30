@@ -34,63 +34,99 @@ import AudioVisualizer from '../AudioVisualizer';
 import VideoDeviceSettings from './VideoDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
-function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack, videoRef }) {
+/**
+ * VideoTestContent - Inner component that safely uses hooks
+ */
+function VideoTestContent({ mediaStream, permissionState, videoRef }) {
   const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
 
-  // Determine what to show based on permission state
   const showPreview = mediaStream && permissionState === 'granted';
   const showError = permissionState === 'denied';
 
-  return {
-    bannerContent: 'Video test',
-    iconA3: (
-      <VideoDeviceSettings
-        mediaStream={mediaStream}
-        onSwitchDevice={onSwitchDevice}
-        onOpenSettings={onOpenSettings}
-      />
-    ),
-    content: (
+  return (
+    <div style={{
+      width: '100%',
+      flex: isMobile ? 'none' : 1,
+      height: isMobile ? '100%' : undefined,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: isMobile ? 'center' : 'flex-start',
+      gap: isMobile ? 0 : tokens.spacing[5],
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      // DEBUG: VideoTestContent wrapper
+      border: '3px solid blue'
+    }}>
+      {/* Centering container for video content */}
       <div style={{
         width: '100%',
-        height: '100%',
+        maxWidth: tokens.layout.maxWidth.md,
+        flex: '1 1 auto',
+        // Allow this flex child to actually shrink
+        minHeight: 0,
+        // Cap growth to keep all content visible (visualizer ~60px + gap + bottom text)
+        maxHeight: 'calc(100dvh - var(--headerH) - var(--actionsH) - var(--contentPad) * 2 - 140px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         boxSizing: 'border-box',
-        overflow: 'hidden'
+        // DEBUG: Centering container
+        border: '5px solid red'
       }}>
         {/* Audio visualizer with key-based remounting for clean device switching */}
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{
+          marginBottom: '10px',
+          // DEBUG: AudioVisualizer wrapper
+          border: '3px solid orange'
+        }}>
           <AudioVisualizer
             key={mediaStream?.id || 'no-stream'}
             mediaStream={mediaStream}
-            height={20}
-            width={80}
+            height={isMobile ? 20 : 50}
+            width={isMobile ? 80 : 200}
           />
         </div>
 
         {/* Video preview element */}
-        <div style={{ marginBottom: tokens.spacing[12] }}>
+        <div style={{
+          // aspectRatio controls sizing - width will match constrained height
+          maxWidth: '460px',
+          maxHeight: '460px',
+          aspectRatio: '1 / 1',
+          marginBottom: isMobile ? tokens.spacing[12] : 0,
+          overflow: 'hidden',
+          borderRadius: '20px',
+          backgroundColor: '#000',
+          // DEBUG: Video wrapper
+          border: '3px solid purple'
+        }}>
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
             style={{
+              // Fill the square wrapper
               width: '100%',
-              maxWidth: '320px',
-              height: '280px',
-              borderRadius: '20px',
-              backgroundColor: '#000000',
+              height: '100%',
               objectFit: 'cover',
               display: showPreview ? 'block' : 'none'
             }}
           />
         </div>
+      </div>
 
+      {/* Bottom container - pushed to bottom on desktop/tablet */}
+      <div style={{
+        width: '100%',
+        // DEBUG: Bottom container
+        border: '3px solid green'
+      }}>
         {showPreview && (
           <p style={{
             fontSize: tokens.fontSize.base,
@@ -111,6 +147,7 @@ function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
             color: tokens.colors.status.error,
             textAlign: 'center',
             maxWidth: '400px',
+            margin: '0 auto',
             lineHeight: '1.4'
           }}>
             <p style={{
@@ -125,6 +162,30 @@ function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function VideoTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack, videoRef }) {
+  // Determine what to show based on permission state
+  const showPreview = mediaStream && permissionState === 'granted';
+  const showError = permissionState === 'denied';
+
+  return {
+    bannerContent: 'Camera and sound test',
+    iconA3: (
+      <VideoDeviceSettings
+        mediaStream={mediaStream}
+        onSwitchDevice={onSwitchDevice}
+        onOpenSettings={onOpenSettings}
+      />
+    ),
+    content: (
+      <VideoTestContent
+        mediaStream={mediaStream}
+        permissionState={permissionState}
+        videoRef={videoRef}
+      />
     ),
     actions: showError ? (
       <Button onClick={onRetry}>

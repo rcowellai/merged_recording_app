@@ -14,7 +14,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTokens } from '../../theme/TokenProvider';
-import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { Button } from '../ui';
 
 /**
@@ -88,7 +87,7 @@ function WelcomeMessage({ sessionData }) {
       marginTop: tokens.spacing[12]
     }}>
       <div style={{
-        fontSize: tokens.fontSize.xl,
+        fontSize: tokens.fontSize['2xl'],
         fontWeight: tokens.fontWeight.normal,
         lineHeight: 1.4,
         marginBottom: tokens.spacing[4],
@@ -107,7 +106,7 @@ function WelcomeMessage({ sessionData }) {
       </div>
       {line2Display && (
         <div style={{
-          fontSize: tokens.fontSize.xl,
+          fontSize: tokens.fontSize['2xl'],
           fontWeight: tokens.fontWeight.normal,
           lineHeight: 1.4,
           marginBottom: tokens.spacing[2],
@@ -136,7 +135,7 @@ function WelcomeMessage({ sessionData }) {
  * Returns standard screen format:
  * - timer: null (welcome screen has no timer)
  * - content: Animated welcome message
- * - actions: Continue button (transparent with white border for mobile background image)
+ * - actions: Continue button with gradient on desktop/tablet (CSS), transparent on mobile
  */
 function WelcomeScreen({ sessionData, onContinue }) {
   const { tokens } = useTokens();
@@ -147,6 +146,7 @@ function WelcomeScreen({ sessionData, onContinue }) {
     actions: (
       <Button
         onClick={onContinue}
+        className="welcome-button"
         style={{
           backgroundColor: 'transparent',
           border: `0.5px solid ${tokens.colors.neutral.gray['01']}`,

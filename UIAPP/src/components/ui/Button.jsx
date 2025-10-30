@@ -16,6 +16,7 @@
 
 import React, { useState } from 'react';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 export function Button({
   children,
@@ -29,6 +30,7 @@ export function Button({
   ...props
 }) {
   const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
   const [isHovered, setIsHovered] = useState(false);
 
   // Variant color configurations
@@ -82,7 +84,7 @@ export function Button({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         ...sizeStyle,
-        width: fullWidth ? '100%' : 'auto',
+        width: fullWidth ? (isMobile ? '100%' : '540px') : 'auto',
         backgroundColor: disabled
           ? tokens.colors.neutral.gray['02']
           : isHovered

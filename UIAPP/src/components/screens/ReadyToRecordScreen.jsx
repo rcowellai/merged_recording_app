@@ -15,6 +15,7 @@ import { FaChevronDown } from 'react-icons/fa';
 import PromptCard from '../PromptCard';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 // Record icon from RecordingBar - open ring with filled dot in center
 function RecordIcon({ size = 16, color }) {
@@ -48,30 +49,44 @@ function RecordIcon({ size = 16, color }) {
   );
 }
 
-function ReadyToRecordScreen({ captureMode, mediaStream, onStartRecording, sessionData, onBack }) {
+/**
+ * ReadyToRecordScreenContent - Inner component that safely uses hooks
+ */
+function ReadyToRecordScreenContent({ sessionData }) {
   const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
 
+  return (
+    <div style={{
+      paddingTop: isMobile ? tokens.spacing[12] : 0,
+      display: isMobile ? 'block' : 'flex',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      justifyContent: isMobile ? 'flex-start' : 'center',
+      flex: isMobile ? 'none' : 1
+    }}>
+      <PromptCard sessionData={sessionData} />
+      {/* Bouncing arrow indicator - positioned flush at bottom of SECTION B */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        animation: 'bounce 1.5s ease-in-out infinite'
+      }}>
+        <FaChevronDown
+          size={24}
+          color={tokens.colors.status.success}
+          style={{ margin: 0, padding: 0 }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ReadyToRecordScreen({ captureMode, mediaStream, onStartRecording, sessionData, onBack }) {
   return {
     bannerContent: "You're ready to record",
-    content: (
-      <div style={{ paddingTop: tokens.spacing[12] }}>
-        <PromptCard sessionData={sessionData} />
-        {/* Bouncing arrow indicator - positioned flush at bottom of SECTION B */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          animation: 'bounce 1.5s ease-in-out infinite'
-        }}>
-          <FaChevronDown
-            size={24}
-            color={tokens.colors.status.success}
-            style={{ margin: 0, padding: 0 }}
-          />
-        </div>
-      </div>
-    ),
+    content: <ReadyToRecordScreenContent sessionData={sessionData} />,
     actions: (
       <Button variant="success" onClick={onStartRecording}>
         <RecordIcon size={16} color="#FFFFFF" />

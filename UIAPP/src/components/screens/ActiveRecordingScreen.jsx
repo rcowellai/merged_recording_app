@@ -14,10 +14,34 @@ import React from 'react';
 import { FaPause } from 'react-icons/fa';
 import VideoPreview from '../VideoPreview';
 import AudioRecorder from '../AudioRecorder';
-import AudioVisualizer from '../AudioVisualizer';
 import PromptCard from '../PromptCard';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+
+/**
+ * ActiveRecordingScreenContent - Inner component that safely uses hooks
+ */
+function ActiveRecordingScreenContent({ sessionData }) {
+  const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
+
+  return (
+    <div style={{
+      paddingTop: isMobile ? tokens.spacing[12] : 0,
+      display: isMobile ? 'block' : 'flex',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      justifyContent: isMobile ? 'flex-start' : 'center',
+      flex: isMobile ? 'none' : 1
+    }}>
+      <PromptCard
+        sessionData={sessionData}
+        customBackgroundColor={tokens.colors.primary.DEFAULT}
+        customQuestionColor="#FFFFFF"
+      />
+    </div>
+  );
+}
 
 function ActiveRecordingScreen({ captureMode, mediaStream, onPause, sessionData, onBack }) {
   const { tokens } = useTokens();
@@ -30,15 +54,7 @@ function ActiveRecordingScreen({ captureMode, mediaStream, onPause, sessionData,
   return {
     timer: null,
     className: 'active-recording-state',
-    content: (
-      <div style={{ paddingTop: tokens.spacing[12] }}>
-        <PromptCard
-          sessionData={sessionData}
-          customBackgroundColor={tokens.colors.primary.DEFAULT}
-          customQuestionColor="#FFFFFF"
-        />
-      </div>
-    ),
+    content: <ActiveRecordingScreenContent sessionData={sessionData} />,
     actions: captureMode === 'audio' ? (
       // Audio mode: Single centered Pause button
       <Button

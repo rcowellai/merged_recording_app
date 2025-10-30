@@ -40,7 +40,7 @@ function ReviewRecordingScreen({
       flex: 1
     }}>
       <div style={{
-        fontSize: tokens.fontSize.base,
+        fontSize: tokens.fontSize.lg,
         color: tokens.colors.neutral.gray['01']
       }}>
         Preparing your recording...

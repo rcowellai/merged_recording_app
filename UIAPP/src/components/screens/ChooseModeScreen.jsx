@@ -44,7 +44,7 @@ function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
             <FaVideo size={85} color="rgba(44, 47, 72, 0.85)" />
           </div>
           <p style={{
-            fontSize: tokens.fontSize.base,
+            fontSize: tokens.fontSize.lg,
             fontWeight: tokens.fontWeight.normal,
             color: tokens.colors.primary.DEFAULT,
             margin: 0,

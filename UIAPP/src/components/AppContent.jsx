@@ -86,33 +86,27 @@ import { useTokens } from '../theme/TokenProvider';
 /**
  * formatBannerContent
  * -------------------
- * Formats banner content based on type for consistent header display.
+ * Formats banner content based on type for responsive display.
  *
  * @param {*} content - Banner content (string, React node, or null)
- * @param {Object} tokens - Design tokens from TokenProvider
- * @returns {React.Node|null} Formatted content for banner A2 section
+ * @param {Object} tokens - Design tokens from TokenProvider (unused now, kept for API compatibility)
+ * @returns {React.Node|null} Formatted content for banner section
  *
  * Behavior:
- * - String: Wraps with styling (like old bannerText pattern)
+ * - String: Returns string directly - styling controlled by container (A2 or B1B)
  * - React node: Renders as-is (e.g., RecordingBar component)
  * - null/undefined: Returns null (shows default logo)
+ *
+ * Note: Container-first styling approach allows responsive typography:
+ * - Mobile (A2): Inherits A2 container styles
+ * - Tablet/Desktop (B1B): Inherits B1B container styles
  */
 function formatBannerContent(content, tokens) {
   if (!content) return null;
 
-  // String content: Apply text styling for consistency
+  // String content: Return as-is, let container control styling
   if (typeof content === 'string') {
-    return (
-      <div style={{
-        fontSize: tokens.fontSize['2xl'],
-        color: tokens.colors.primary.DEFAULT,
-        fontWeight: tokens.fontWeight.normal,
-        fontFamily: 'inherit',
-        textAlign: 'center'
-      }}>
-        {content}
-      </div>
-    );
+    return content;
   }
 
   // React component: Render directly (e.g., RecordingBar)
@@ -686,17 +680,25 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           };
 
           const handleCancel = () => {
-            debugLogger.log('info', 'AppContent', 'Error cancel clicked - starting over');
+            debugLogger.log('info', 'AppContent', 'Error cancel clicked - opening start over dialog');
             dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
-            navigationHandlers.handleStartOverConfirm();
+            navigationHandlers.handleStartOverClick();
           };
 
           return (
-            <ErrorScreen
-              errorMessage={appState.errorMessage}
-              onRetry={handleRetry}
-              onCancel={handleCancel}
-            />
+            <>
+              <ErrorScreen
+                errorMessage={appState.errorMessage}
+                onRetry={handleRetry}
+                onCancel={handleCancel}
+              />
+              <VaulStartOverDrawer
+                open={showStartOverDialog}
+                onOpenChange={setShowStartOverDialog}
+                onConfirm={navigationHandlers.handleStartOverConfirm}
+                onCancel={() => setShowStartOverDialog(false)}
+              />
+            </>
           );
         }
 

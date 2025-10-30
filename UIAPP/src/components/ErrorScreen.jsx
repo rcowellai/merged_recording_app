@@ -47,7 +47,7 @@ const ErrorScreen = ({ errorMessage, onRetry, onCancel }) => {
 
         {/* Message - Section B tokens */}
         <p style={{
-          fontSize: tokens.fontSize.base,
+          fontSize: tokens.fontSize.lg,
           fontWeight: tokens.fontWeight.normal,
           color: tokens.colors.primary.DEFAULT,
           marginBottom: '32px',

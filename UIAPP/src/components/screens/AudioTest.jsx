@@ -33,53 +33,66 @@ import AudioVisualizer from '../AudioVisualizer';
 import AudioDeviceSettings from './AudioDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
-function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack }) {
+/**
+ * AudioTestContent - Inner component that safely uses hooks
+ */
+function AudioTestContent({ mediaStream, permissionState }) {
   const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
 
   // Determine what to show based on permission state
-  const showVisualizer = mediaStream && permissionState === 'granted';
   const showError = permissionState === 'denied';
 
-  return {
-    bannerContent: 'Sound test',
-    iconA3: (
-      <AudioDeviceSettings
-        mediaStream={mediaStream}
-        onSwitchDevice={onSwitchDevice}
-        onOpenSettings={onOpenSettings}
-      />
-    ),
-    content: (
+  return (
+    <div style={{
+      width: '100%',
+      flex: isMobile ? 'none' : 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: tokens.spacing[5],
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      // DEBUG: AudioTestContent wrapper
+      border: '3px solid blue'
+    }}>
+      {/* Container - always rendered so AudioVisualizer can mount */}
       <div style={{
         width: '100%',
-        height: '100%',
+        maxWidth: tokens.layout.maxWidth.md,
+        flex: isMobile ? 'none' : '1 1 auto',
+        maxHeight: isMobile ? 'none' : '350px',
+        minHeight: isMobile ? '55vh' : undefined,
+        border: '5px solid red',
+        borderRadius: tokens.borderRadius.lg,
+        boxSizing: 'border-box',
+        padding: `0 ${tokens.spacing[4]}`,
+        backgroundColor: tokens.colors.button.leftHandButton,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: tokens.spacing[5],
-        boxSizing: 'border-box',
-        overflow: 'hidden'
+        gap: 0
       }}>
-        {/* Container - always rendered so AudioVisualizer can mount */}
+        {/* Wrapper for visualizer + text group */}
         <div style={{
           width: '100%',
-          maxWidth: tokens.layout.maxWidth.md,
-          minHeight: '55vh',
-          border: `0.5px solid rgba(113, 128, 150, 0.5)`,
-          borderRadius: tokens.borderRadius.lg,
-          boxSizing: 'border-box',
-          padding: tokens.spacing[4],
-          backgroundColor: tokens.colors.button.leftHandButton,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           gap: 0
         }}>
           {/* AudioVisualizer with key-based remounting for clean device switching */}
-          <div style={{ width: '100%' }}>
+          <div style={{
+            width: '100%',
+            // DEBUG: AudioVisualizer wrapper
+            border: '3px solid orange',
+            margin: 0,
+            padding: 0
+          }}>
             <AudioVisualizer
               key={mediaStream?.id || 'no-stream'}
               mediaStream={mediaStream}
@@ -93,15 +106,24 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
             margin: 0,
             textAlign: 'center',
             lineHeight: '1.5',
-            paddingTop: tokens.spacing[2],
             paddingLeft: tokens.spacing[2],
-            paddingRight: tokens.spacing[2]
+            paddingRight: tokens.spacing[2],
+            // DEBUG: Instruction text inside visualizer
+            border: '2px solid purple',
+            backgroundColor: 'rgba(128, 0, 128, 0.1)'
           }}>
             Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
           </p>
         </div>
+      </div>
 
-        {/* Instruction text - shown below the visualizer container */}
+      {/* Instruction text and error state - pushed to bottom of B2 */}
+      <div style={{
+        marginTop: 'auto',
+        width: '100%',
+        // DEBUG: Bottom instruction container
+        border: '3px solid green'
+      }}>
         <p style={{
           fontSize: tokens.fontSize.base,
           fontWeight: tokens.fontWeight.normal,
@@ -120,6 +142,8 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
             color: tokens.colors.status.error,
             textAlign: 'center',
             maxWidth: '400px',
+            margin: '0 auto',
+            marginTop: tokens.spacing[4],
             lineHeight: '1.4'
           }}>
             <p style={{
@@ -134,6 +158,29 @@ function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaS
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AudioTest({ onContinue, onRetry, onSwitchDevice, onOpenSettings, mediaStream, permissionState, onBack }) {
+  // Determine what to show based on permission state
+  const showVisualizer = mediaStream && permissionState === 'granted';
+  const showError = permissionState === 'denied';
+
+  return {
+    bannerContent: 'Sound test',
+    iconA3: (
+      <AudioDeviceSettings
+        mediaStream={mediaStream}
+        onSwitchDevice={onSwitchDevice}
+        onOpenSettings={onOpenSettings}
+      />
+    ),
+    content: (
+      <AudioTestContent
+        mediaStream={mediaStream}
+        permissionState={permissionState}
+      />
     ),
     actions: showError ? (
       <Button onClick={onRetry}>

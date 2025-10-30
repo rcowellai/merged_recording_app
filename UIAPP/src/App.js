@@ -105,22 +105,28 @@ function App() {
           <p>Preview all error screens for testing and design purposes.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <a href="/demo/error/upload" className="btn btn-secondary">
-              1. Upload Failure Modal
+              1. Upload Failure Error
             </a>
             <a href="/demo/error/session" className="btn btn-secondary">
-              2. Session Validation Error
+              2. Session Error - Invalid Link
+            </a>
+            <a href="/demo/error/session-expired" className="btn btn-secondary">
+              3. Session Error - Expired Link
+            </a>
+            <a href="/demo/error/session-network" className="btn btn-secondary">
+              4. Session Error - Network Issue
             </a>
             <a href="/demo/error/camera" className="btn btn-secondary">
-              3. Camera Permission Denied
+              5. Camera Permission Denied
             </a>
             <a href="/demo/error/microphone" className="btn btn-secondary">
-              4. Microphone Permission Denied
+              6. Microphone Permission Denied
             </a>
             <a href="/demo/error/app-crash" className="btn btn-secondary">
-              5. App Error Boundary
+              7. App Error Boundary
             </a>
             <a href="/demo/error/firebase" className="btn btn-secondary">
-              6. Firebase Service Error
+              8. Firebase Service Error
             </a>
           </div>
         </div>

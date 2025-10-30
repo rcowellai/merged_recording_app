@@ -6,14 +6,17 @@
  */
 
 import React from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 export function ButtonRow({ children, style = {}, ...props }) {
+  const { isMobile } = useBreakpoint();
+
   return (
     <div
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        width: '100%',
+        width: isMobile ? '100%' : '540px',
         gap: '0%',
         ...style
       }}

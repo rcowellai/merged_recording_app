@@ -74,7 +74,9 @@ function MasterLayout({
     };
   }, [isWelcomeScreen]);
 
-  // Determine content for SECTION A2 (mobile-only logo on welcome screen)
+  // Determine content for SECTION A2
+  // Mobile: Show logo (welcome screen) or bannerContent (other screens)
+  // Tablet/Desktop: Empty (content moves to B1B)
   const renderA2Content = () => {
     if (isMobile && isWelcomeScreen) {
       return (
@@ -89,7 +91,20 @@ function MasterLayout({
         />
       );
     }
-    return bannerContent;
+    // Mobile: Show bannerContent in A2
+    // Tablet/Desktop: A2 is empty (content in B1B instead)
+    return isMobile ? bannerContent : null;
+  };
+
+  // Determine content for SECTION B1B (tablet/desktop only)
+  // Shows bannerContent on tablet/desktop, empty on mobile
+  const renderB1BContent = () => {
+    // Welcome screen on tablet/desktop: Don't show banner in B1B
+    if ((isTablet || isDesktop) && isWelcomeScreen) {
+      return null;
+    }
+    // Tablet/Desktop: Show bannerContent in B1B
+    return (isTablet || isDesktop) ? bannerContent : null;
   };
 
   return (
@@ -103,10 +118,10 @@ function MasterLayout({
         display: 'flex',
         flexDirection: 'column',
         // Mobile: transparent to show background image
-        // Desktop: blue background
+        // Desktop: dark recording background
         // Active/Paused recording: dark recording background
         backgroundColor: isWelcomeScreen
-          ? (isMobile ? 'transparent' : tokens.colors.primary.DEFAULT)
+          ? (isMobile ? 'transparent' : tokens.colors.background.recording)
           : (isActiveRecordingScreen || isPausedRecordingScreen)
             ? tokens.colors.background.recording
             : tokens.colors.neutral.default,
@@ -115,7 +130,7 @@ function MasterLayout({
         boxSizing: 'border-box',
         position: 'relative',
         // DEBUG: PAGE-CONTAINER border
-        border: '3px solid red'
+        // border: '3px solid red'
       }}>
 
       {/* ========================================
@@ -132,9 +147,10 @@ function MasterLayout({
           top: 0,
           left: 0,
           width: '100%',
-          height: '70px',
-          minHeight: '70px',
-          maxHeight: '70px',
+          // Responsive height: 70px mobile, 75px tablet/desktop
+          height: isMobile ? '70px' : '75px',
+          minHeight: isMobile ? '70px' : '75px',
+          maxHeight: isMobile ? '70px' : '75px',
           // Mobile welcome screen: transparent header to show background image
           // Other screens: standard header backgrounds
           backgroundColor: (isMobile && isWelcomeScreen)
@@ -144,64 +160,94 @@ function MasterLayout({
           zIndex: tokens.zIndex.header,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: isMobile ? 'space-between' : 'center',
           boxSizing: 'border-box',
           padding: 0,
           fontWeight: tokens.fontWeight.medium,
           fontSize: tokens.fontSize.base,
           // DEBUG: SECTION-A border
-          border: '3px solid cyan',
+          // border: '3px solid cyan',
           ...(bannerStyle || {})
         }}>
-          {/* A1 - Back Button (45px) */}
-          <div style={{
-            flex: '0 0 45px',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-            // DEBUG: SECTION-A1 border
-            border: '2px solid orange'
-          }}>
-            {showBackButton && onBack && (
-              <MdChevronLeft
-                size={32}
-                color={tokens.colors.primary.DEFAULT}
-                onClick={onBack}
-                style={{ cursor: 'pointer' }}
+          {isMobile ? (
+            // Mobile: A1, A2, A3 subdivided structure
+            <>
+              {/* A1 - Back Button (45px) */}
+              <div style={{
+                flex: '0 0 45px',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                // DEBUG: SECTION-A1 border
+                // border: '2px solid orange'
+              }}>
+                {showBackButton && onBack && (
+                  <MdChevronLeft
+                    size={32}
+                    color={tokens.colors.primary.DEFAULT}
+                    onClick={onBack}
+                    style={{ cursor: 'pointer' }}
+                  />
+                )}
+              </div>
+
+              {/* A2 - Flexible Content (flex-grow) */}
+              <div style={{
+                flex: 1,
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                boxSizing: 'border-box',
+                color: tokens.colors.primary.DEFAULT,
+                fontWeight: tokens.fontWeight.normal,
+                fontSize: tokens.fontSize['2xl'], // Mobile: 24px (maintains current size)
+                // DEBUG: SECTION-A2 border
+                // border: '2px solid yellow'
+              }}>
+                {renderA2Content()}
+              </div>
+
+              {/* A3 - Icon Slot (45px) */}
+              <div style={{
+                flex: '0 0 45px',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                // DEBUG: SECTION-A3 border
+                // border: '2px solid magenta'
+              }}>
+                {iconA3}
+              </div>
+            </>
+          ) : (
+            // Tablet/Desktop: Unified Section A with logo (left-aligned)
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              paddingLeft: tokens.spacing[4],
+              boxSizing: 'border-box',
+            }}>
+              <img
+                src={Logo}
+                alt="Love Retold"
+                style={{
+                  height: '30px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                  paddingLeft: tokens.spacing[6]
+                }}
               />
-            )}
-          </div>
-
-          {/* A2 - Flexible Content (flex-grow) */}
-          <div style={{
-            flex: 1,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            boxSizing: 'border-box',
-            // DEBUG: SECTION-A2 border
-            border: '2px solid yellow'
-          }}>
-            {renderA2Content()}
-          </div>
-
-          {/* A3 - Icon Slot (45px) */}
-          <div style={{
-            flex: '0 0 45px',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-            // DEBUG: SECTION-A3 border
-            border: '2px solid magenta'
-          }}>
-            {iconA3}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -221,8 +267,12 @@ function MasterLayout({
         boxSizing: 'border-box',
         // Make transparent on mobile welcome screen to show background image
         backgroundColor: (isMobile && isWelcomeScreen) ? 'transparent' : undefined,
+        // Expose layout metrics as CSS variables for inner components
+        '--headerH': isMobile ? '70px' : '75px',
+        '--actionsH': isMobile ? '100px' : '150px',
+        '--contentPad': tokens.spacing[4],
         // DEBUG: APP-LAYOUT border
-        border: '3px solid blue'
+        border: '3px solid purple'
       }}>
 
         {/* ========================================
@@ -230,42 +280,147 @@ function MasterLayout({
             ========================================
             Main content area - flex grow content area (dark green in layout diagram)
             Main content area for prompts, instructions, media preview
+
+            Mobile: Single section
+            Tablet/Desktop: Split into B1 (100px top) and B2 (flex grow)
         */}
-        <div style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          flex: '1 1 auto',
-          minHeight: '270px',
-          overflow: 'hidden',
-          width: '100%',
-          maxWidth: (isTablet || isDesktop) ? '768px' : '100%',
-          margin: (isTablet || isDesktop) ? '0 auto' : '0',
-          padding: tokens.spacing[4],
-          boxSizing: 'border-box',
-          // DEBUG: SECTION-B border
-          border: '3px solid green'
-        }}>
-          {content}
-          {overlay}
-        </div>
+        {isMobile ? (
+          // Mobile: Single unified section
+          <div style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1 1 auto',
+            minHeight: '270px',
+            overflow: 'hidden',
+            width: '100%',
+            padding: tokens.spacing[4],
+            boxSizing: 'border-box',
+            // DEBUG: SECTION-B border
+            border: '3px solid green'
+          }}>
+            {content}
+            {overlay}
+          </div>
+        ) : (
+          // Tablet/Desktop: Split into B1 and B2
+          <div style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1 1 auto',
+            minHeight: '270px',
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: '550px',
+            margin: '0 auto',
+            boxSizing: 'border-box',
+            // DEBUG: SECTION-B border
+            border: '5px solid green'
+          }}>
+            {/* B1 - Top Section (70px fixed) with A1/A2/A3 layout */}
+            <div style={{
+              flex: '0 0 70px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxSizing: 'border-box',
+              // DEBUG: SECTION-B1 border
+              border: '5px solid yellow',
+              backgroundColor: 'rgba(255, 255, 0, 0.1)'
+            }}>
+              {/* B1A - Left slot (45px) - Back button on tablet/desktop */}
+              <div style={{
+                flex: '0 0 45px',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                // DEBUG: SECTION-B1A border
+                // border: '2px solid orange'
+              }}>
+                {showBackButton && onBack && (
+                  <MdChevronLeft
+                    size={38}
+                    color={tokens.colors.primary.DEFAULT}
+                    onClick={onBack}
+                    style={{ cursor: 'pointer' }}
+                  />
+                )}
+              </div>
+
+              {/* B1B - Center flexible content */}
+              <div style={{
+                flex: 1,
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                boxSizing: 'border-box',
+                color: tokens.colors.primary.DEFAULT,
+                fontWeight: tokens.fontWeight.normal,
+                fontSize: tokens.fontSize['2xl'], // 24px - matches mobile Section A2
+                // DEBUG: SECTION-B1B border
+                // border: '2px solid yellow'
+              }}>
+                {renderB1BContent()}
+              </div>
+
+              {/* B1C - Right slot (45px) - Icon on tablet/desktop */}
+              <div style={{
+                flex: '0 0 45px',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                // DEBUG: SECTION-B1C border
+                // border: '2px solid magenta'
+              }}>
+                <div style={{ transform: 'scale(1.2)' }}>
+                  {iconA3}
+                </div>
+              </div>
+            </div>
+
+            {/* B2 - Main Content (flex grow) */}
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: '1 1 auto',
+              width: '100%',
+              padding: tokens.spacing[4],
+              boxSizing: 'border-box',
+              // DEBUG: SECTION-B2 border
+              border: '5px solid cyan',
+              backgroundColor: 'rgba(0, 255, 255, 0.1)'
+            }}>
+              {content}
+              {overlay}
+            </div>
+          </div>
+        )}
 
         {/* ========================================
             # SECTION C (ACTIONS)
             ========================================
-            Actions section - 100px fixed height (purple in layout diagram)
+            Actions section - 100px mobile, 150px tablet/desktop (purple in layout diagram)
             Buttons and controls
         */}
         <div style={{
-          flex: '0 0 100px',
+          flex: `0 0 ${isMobile ? '100px' : '150px'}`,
           width: '100%',
-          maxWidth: (isTablet || isDesktop) ? '768px' : '100%',
+          maxWidth: (isTablet || isDesktop) ? '550px' : '100%',
           margin: (isTablet || isDesktop) ? '0 auto' : '0',
           padding: `0 ${tokens.spacing[4]} ${tokens.spacing[5]} ${tokens.spacing[4]}`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: isMobile ? 'flex-end' : 'flex-start',
           boxSizing: 'border-box',
           // DEBUG: SECTION-C border
           border: '3px solid purple'

@@ -36,7 +36,8 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
     return (
       <div style={{
         width: '100%',
-        margin: 0,
+        maxWidth: isMobile ? '100%' : '500px',
+        margin: '0 auto',
         boxSizing: 'border-box',
         backgroundColor: tokens.colors.background.light,
         maxHeight: '100%',
@@ -48,13 +49,17 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        // DEBUG: PromptCard outer container (error state)
+        border: '3px solid red'
       }}>
         <div style={{
-          padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`
+          padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`,
+          // DEBUG: PromptCard inner content (error state)
+          border: '3px solid orange'
         }}>
           <div style={{
-            fontSize: isMobile ? tokens.fontSize.xl : tokens.fontSize.xl,
+            fontSize: isMobile ? tokens.fontSize['2xl'] : tokens.fontSize['2xl'],
             fontWeight: isMobile ? tokens.fontWeight.normal : tokens.fontWeight.normal,
             lineHeight: isMobile ? 1.4 : 1.4,
             margin: 0,
@@ -65,7 +70,7 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
             Unable to load prompt details
           </div>
           <div style={{
-            fontSize: isMobile ? tokens.fontSize.base : tokens.fontSize.base,
+            fontSize: isMobile ? tokens.fontSize.lg : tokens.fontSize.lg,
             fontWeight: isMobile ? tokens.fontWeight.normal : tokens.fontWeight.normal,
             lineHeight: isMobile ? 1.2 : 1.2,
             marginBottom: tokens.spacing[5],
@@ -82,7 +87,8 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
   return (
     <div style={{
       width: '100%',
-      margin: 0,
+      maxWidth: isMobile ? '100%' : '500px',
+      margin: '0 auto',
       boxSizing: 'border-box',
       backgroundColor: customBackgroundColor || tokens.colors.background.light,
       maxHeight: '100%',
@@ -94,14 +100,18 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
       justifyContent: 'center',
       alignItems: 'center',
       textAlign: 'center',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      // DEBUG: PromptCard outer container
+      border: '3px solid red'
     }}>
       <div style={{
-        padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`
+        padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`,
+        // DEBUG: PromptCard inner content
+        border: '3px solid orange'
       }}>
         {/* Subheading => "{Name} asked" */}
         <div style={{
-          fontSize: isMobile ? tokens.fontSize.base : tokens.fontSize.base,
+          fontSize: isMobile ? tokens.fontSize.lg : tokens.fontSize.lg,
           fontWeight: isMobile ? tokens.fontWeight.medium : tokens.fontWeight.normal,
           lineHeight: isMobile ? 1.2 : 1.2,
           marginBottom: tokens.spacing[5],
@@ -112,7 +122,7 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
 
         {/* Main question => heading */}
         <div style={{
-          fontSize: isMobile ? tokens.fontSize.lg : tokens.fontSize.xl,
+          fontSize: isMobile ? tokens.fontSize.xl : tokens.fontSize['2xl'],
           fontWeight: isMobile ? tokens.fontWeight.normal : tokens.fontWeight.normal,
           lineHeight: isMobile ? 1.4 : 1.4,
           margin: 0,

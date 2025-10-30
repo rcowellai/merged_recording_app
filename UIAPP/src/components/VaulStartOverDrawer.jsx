@@ -64,26 +64,34 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
           }}
         />
 
-        {/* Drawer Content */}
-        <Drawer.Content
+        {/* Centering Wrapper - Handles horizontal centering without transform conflicts */}
+        <div
           style={{
             position: 'fixed',
             bottom: 0,
-            left: 0,
-            right: 0,
-            maxHeight: '85vh',
-            backgroundColor: tokens.colors.neutral.DEFAULT,
-            borderRadius: '16px 16px 0 0',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            maxWidth: '768px',
+            width: '100%',
             zIndex: 10001,
-            fontFamily: tokens.fonts.primary,
-            outline: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
           }}
-          aria-labelledby="drawer-title"
-          aria-describedby="drawer-description"
         >
+          {/* Drawer Content - Vaul animates this independently */}
+          <Drawer.Content
+            style={{
+              position: 'relative',
+              maxHeight: '85vh',
+              backgroundColor: tokens.colors.neutral.DEFAULT,
+              borderRadius: '16px 16px 0 0',
+              fontFamily: tokens.fonts.primary,
+              outline: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+            aria-labelledby="drawer-title"
+            aria-describedby="drawer-description"
+          >
           {/* Header with Title and Close Button */}
           <div
             style={{
@@ -231,6 +239,7 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
             </button>
           </div>
         </Drawer.Content>
+        </div>
       </Drawer.Portal>
     </Drawer.Root>
   );

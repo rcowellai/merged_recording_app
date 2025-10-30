@@ -1,17 +1,17 @@
 /**
- * SessionValidationErrorDemo.jsx
- * -------------------------------
- * Demo: Session Validation Error (full-screen error page)
- * Shows SessionErrorScreen with 'invalid' error type
+ * SessionValidationErrorExpiredDemo.jsx
+ * --------------------------------------
+ * Demo: Session Validation Error - Expired Link
+ * Shows SessionErrorScreen with 'expired' error type
  */
 
 import React from 'react';
 import SessionErrorScreen from '../components/SessionErrorScreen';
 
-const SessionValidationErrorDemo = () => {
+const SessionValidationErrorExpiredDemo = () => {
   return (
     <SessionErrorScreen
-      errorType="invalid"
+      errorType="expired"
       onRetry={() => {
         console.log('Demo: Try Again clicked');
         alert('In production, this would reload the page');
@@ -24,4 +24,4 @@ const SessionValidationErrorDemo = () => {
   );
 };
 
-export default SessionValidationErrorDemo;
+export default SessionValidationErrorExpiredDemo;

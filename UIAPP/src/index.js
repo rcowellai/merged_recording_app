@@ -26,6 +26,8 @@ import { TokenProvider } from './theme/TokenProvider';
 import { GlobalStyles } from './theme/GlobalStyles';
 import ErrorScreenDemo from './pages/ErrorScreenDemo';
 import SessionValidationErrorDemo from './pages/SessionValidationErrorDemo';
+import SessionValidationErrorExpiredDemo from './pages/SessionValidationErrorExpiredDemo';
+import SessionValidationErrorNetworkDemo from './pages/SessionValidationErrorNetworkDemo';
 import CameraPermissionErrorDemo from './pages/CameraPermissionErrorDemo';
 import MicrophonePermissionErrorDemo from './pages/MicrophonePermissionErrorDemo';
 import AppErrorBoundaryDemo from './pages/AppErrorBoundaryDemo';
@@ -109,6 +111,8 @@ root.render(
           {/* Error Screen Demos */}
           <Route path="/demo/error/upload" element={<ErrorScreenDemo />} />
           <Route path="/demo/error/session" element={<SessionValidationErrorDemo />} />
+          <Route path="/demo/error/session-expired" element={<SessionValidationErrorExpiredDemo />} />
+          <Route path="/demo/error/session-network" element={<SessionValidationErrorNetworkDemo />} />
           <Route path="/demo/error/camera" element={<CameraPermissionErrorDemo />} />
           <Route path="/demo/error/microphone" element={<MicrophonePermissionErrorDemo />} />
           <Route path="/demo/error/app-crash" element={<AppErrorBoundaryDemo />} />

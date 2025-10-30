@@ -72,6 +72,13 @@ export const GlobalStyles = () => {
           transform: translateY(-8px);
         }
       }
+
+      /* Welcome Screen Button Gradient - Desktop/Tablet Only */
+      @media (min-width: 768px) {
+        .welcome-button {
+          background: linear-gradient(to top, #2C2F48, #403852, #4A4C6B) !important;
+        }
+      }
     `;
 
     document.head.appendChild(style);
