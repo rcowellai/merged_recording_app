@@ -62,7 +62,10 @@
       "WebFetch(domain:www.npmjs.com)",
       "Bash(for:*)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(npm run lint:*)",
+      "Bash(exit 0)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": [],

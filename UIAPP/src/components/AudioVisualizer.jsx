@@ -174,6 +174,7 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
     };
     // PERFORMANCE FIX: height/width are constants from RecordingBar, don't need to trigger re-initialization
     // Only mediaStream or customGradientColor changes should recreate AudioContext/AudioMotionAnalyzer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaStream, customGradientColor]);
 
   // Normalize width to string with units if it's a number

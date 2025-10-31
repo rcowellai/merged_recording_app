@@ -18,6 +18,7 @@ import { MdChevronLeft } from 'react-icons/md';
 import { useTokens } from '../theme/TokenProvider';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import Logo from '../Assets/Logo.png';
+import DarkLogo from '../Assets/dark_logo.png';
 import AuthImage from '../Assets/Auth_Image.png';
 
 function MasterLayout({
@@ -237,7 +238,7 @@ function MasterLayout({
               boxSizing: 'border-box',
             }}>
               <img
-                src={Logo}
+                src={isWelcomeScreen ? Logo : DarkLogo}
                 alt="Love Retold"
                 style={{
                   height: '30px',

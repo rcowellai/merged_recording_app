@@ -17,12 +17,17 @@ import React, { useState, useEffect } from 'react';
 import { Drawer } from 'vaul';
 import PropTypes from 'prop-types';
 import { useTokens } from '../theme/TokenProvider';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
   const { tokens } = useTokens();
+  const { isMobile: isSmallMobile, isTablet } = useBreakpoint();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection for responsive button layout
+  // Determine if we need centering wrapper (desktop only)
+  const needsCentering = !isSmallMobile && !isTablet;
+
+  // Mobile detection for responsive button layout (480px threshold)
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 480);
@@ -64,34 +69,35 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
           }}
         />
 
-        {/* Centering Wrapper - Handles horizontal centering without transform conflicts */}
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            maxWidth: '768px',
-            width: '100%',
-            zIndex: 10001,
-          }}
-        >
-          {/* Drawer Content - Vaul animates this independently */}
-          <Drawer.Content
+        {needsCentering ? (
+          /* Desktop: Centering Wrapper - Handles horizontal centering with transform */
+          <div
             style={{
-              position: 'relative',
-              maxHeight: '85vh',
-              backgroundColor: tokens.colors.neutral.DEFAULT,
-              borderRadius: '16px 16px 0 0',
-              fontFamily: tokens.fonts.primary,
-              outline: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
+              position: 'fixed',
+              bottom: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              maxWidth: '768px',
+              width: '100%',
+              zIndex: 10001,
             }}
-            aria-labelledby="drawer-title"
-            aria-describedby="drawer-description"
           >
+            {/* Drawer Content - Vaul animates this independently */}
+            <Drawer.Content
+              style={{
+                position: 'relative',
+                maxHeight: '85vh',
+                backgroundColor: tokens.colors.neutral.DEFAULT,
+                borderRadius: '16px 16px 0 0',
+                fontFamily: tokens.fonts.primary,
+                outline: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+              aria-labelledby="drawer-title"
+              aria-describedby="drawer-description"
+            >
           {/* Header with Title and Close Button */}
           <div
             style={{
@@ -239,7 +245,179 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
             </button>
           </div>
         </Drawer.Content>
-        </div>
+          </div>
+        ) : (
+          /* Mobile/Tablet: Direct positioning - No wrapper to avoid transform conflicts */
+          <Drawer.Content
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxWidth: '768px',
+              margin: '0 auto',
+              maxHeight: '85vh',
+              backgroundColor: tokens.colors.neutral.DEFAULT,
+              borderRadius: '16px 16px 0 0',
+              fontFamily: tokens.fonts.primary,
+              outline: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              zIndex: 10001,
+            }}
+            aria-labelledby="drawer-title"
+            aria-describedby="drawer-description"
+          >
+          {/* Header with Title and Close Button */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '24px 24px 4px 24px',
+            }}
+          >
+            {/* Left-aligned title */}
+            <Drawer.Title
+              id="drawer-title"
+              style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: tokens.colors.primary.DEFAULT,
+                margin: 0,
+                lineHeight: 1,
+                textAlign: 'left',
+              }}
+            >
+              Heads up!
+            </Drawer.Title>
+
+            {/* Right side with close button - borderless X */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleCancel}
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  padding: '4px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '32px',
+                  color: tokens.colors.primary.DEFAULT,
+                  lineHeight: 1,
+                  transition: 'opacity 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.opacity = '0.6';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.opacity = '1';
+                }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* Description Text */}
+          <div
+            style={{
+              padding: '4px 24px 16px',
+            }}
+          >
+            <Drawer.Description
+              id="drawer-description"
+              style={{
+                fontSize: 'clamp(15px, 4vw, 17px)',
+                fontWeight: '400',
+                lineHeight: '1.5',
+                color: tokens.colors.primary.DEFAULT,
+                margin: '0',
+                textAlign: 'left',
+              }}
+            >
+              If you start over, your current recording will be deleted. This action cannot be undone.
+            </Drawer.Description>
+          </div>
+
+          {/* Action Buttons */}
+          <div
+            style={{
+              flex: '1',
+              padding: '0 24px 24px',
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: tokens.spacing[3],
+              justifyContent: 'center',
+              alignItems: 'stretch',
+            }}
+          >
+            {/* Confirm Button (Red) - Full width on mobile, left on desktop */}
+            <button
+              type="button"
+              onClick={handleConfirm}
+              style={{
+                flex: isMobile ? '0 0 auto' : '1',
+                padding: '16px 32px',
+                backgroundColor: '#ef4444',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: tokens.borderRadius.lg,
+                fontSize: tokens.fontSize.base,
+                fontWeight: tokens.fontWeight.semibold,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit',
+                order: isMobile ? 1 : 2,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.opacity = '1';
+              }}
+            >
+              Yes, start over
+            </button>
+
+            {/* Cancel Button (Beige) - Full width on mobile, right on desktop */}
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={{
+                flex: isMobile ? '0 0 auto' : '1',
+                padding: '16px 32px',
+                backgroundColor: tokens.colors.button.leftHandButton,
+                color: tokens.colors.primary.DEFAULT,
+                border: `0.5px solid ${tokens.colors.onboarding.fontColor}`,
+                borderRadius: tokens.borderRadius.lg,
+                fontSize: tokens.fontSize.base,
+                fontWeight: tokens.fontWeight.semibold,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit',
+                order: isMobile ? 2 : 1,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.opacity = '1';
+              }}
+              autoFocus
+            >
+              Cancel
+            </button>
+          </div>
+        </Drawer.Content>
+        )}
       </Drawer.Portal>
     </Drawer.Root>
   );

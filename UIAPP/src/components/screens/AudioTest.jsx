@@ -65,7 +65,7 @@ function AudioTestContent({ mediaStream, permissionState }) {
         maxWidth: tokens.layout.maxWidth.md,
         flex: isMobile ? 'none' : '1 1 auto',
         maxHeight: isMobile ? 'none' : '350px',
-        minHeight: isMobile ? '55vh' : undefined,
+        minHeight: isMobile ? '45vh' : undefined,
         // border: '5px solid red',
         borderRadius: tokens.borderRadius.lg,
         boxSizing: 'border-box',

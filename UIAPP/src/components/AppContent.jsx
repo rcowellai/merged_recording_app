@@ -224,7 +224,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       // Old stream is preserved by switchAudioDevice - audio continues
       throw error; // Re-throw so drawer knows about the error
     }
-  }, [dispatch, recordingFlowStateSnapshot.mediaStream]);
+  }, [dispatch]);
 
   // Video device switching handler - delegates to useRecordingFlow
   const handleSwitchVideoDevice = useCallback(async (deviceId) => {
@@ -250,7 +250,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
       // Old stream is preserved by switchVideoDevice - video/audio continues
       throw error; // Re-throw so drawer knows about the error
     }
-  }, [dispatch, recordingFlowStateSnapshot.mediaStream]);
+  }, [dispatch]);
 
   // Device settings drawer handler - stores props and opens drawer
   const handleOpenDeviceSettings = useCallback((props) => {
@@ -335,7 +335,6 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           setCaptureMode,
           actualMimeType,
           resetRecordingState,
-          stopMediaStream,
           // Progressive upload removed - using simple upload flow
         } = recordingFlowState;
 

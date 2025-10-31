@@ -46,15 +46,12 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaMicrophoneAlt } from 'react-icons/fa';
-import { CANVAS, AUDIO_ANALYSIS } from '../config';
+import { CANVAS } from '../config';
 import { useTokens } from '../theme/TokenProvider';
 
 function AudioRecorder({ stream, isRecording }) {
   const { tokens } = useTokens();
   const canvasRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const dataArrayRef = useRef(null);
 
   useEffect(() => {
     if (!stream || !isRecording) return undefined;
@@ -163,7 +160,7 @@ function AudioRecorder({ stream, isRecording }) {
     ctx.moveTo(CANVAS.OFFSET_X, CANVAS.OFFSET_X);
     ctx.lineTo(CANVAS.WIDTH - CANVAS.OFFSET_X, CANVAS.HEIGHT - CANVAS.OFFSET_X);
     ctx.stroke();
-  }, [isRecording]);
+  }, [isRecording, tokens.colors.background.light, tokens.colors.neutral.gray]);
 
   // Container styling
   const containerStyle = {

@@ -32,7 +32,7 @@ function PromptReadScreenContent({ sessionData }) {
       justifyContent: isMobile ? 'flex-start' : 'center',
       flex: isMobile ? 'none' : 1,
       // DEBUG: PromptReadScreenContent wrapper
-      border: '3px solid blue'
+      // border: '3px solid blue'
     }}>
       <PromptCard sessionData={sessionData} />
     </div>

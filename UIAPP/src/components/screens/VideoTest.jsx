@@ -55,7 +55,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: isMobile ? 'center' : 'flex-start',
-      gap: isMobile ? 0 : tokens.spacing[12],
+      gap: tokens.spacing[12],
       boxSizing: 'border-box',
       overflow: 'hidden',
       // DEBUG: VideoTestContent wrapper
@@ -95,13 +95,13 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
         {/* Video preview element */}
         <div style={{
           // aspectRatio controls sizing - width will match constrained height
-          maxWidth: '460px',
-          maxHeight: '460px',
+          maxWidth: '500px',
+          maxHeight: '500px',
           aspectRatio: '1 / 1',
-          marginBottom: isMobile ? tokens.spacing[12] : 0,
+          marginBottom: isMobile ? tokens.spacing[0] : 0,
           overflow: 'hidden',
           borderRadius: '20px',
-          backgroundColor: '#000',
+          backgroundColor: 'transparent',
           // DEBUG: Video wrapper
           // border: '3px solid purple'
         }}>

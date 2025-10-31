@@ -3,7 +3,7 @@
  * Minimal global CSS resets and base styles.
  * Applied once at app root level.
  */
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTokens } from './TokenProvider';
 
 export const GlobalStyles = () => {

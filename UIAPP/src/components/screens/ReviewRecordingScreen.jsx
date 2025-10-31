@@ -124,7 +124,8 @@ function ReviewRecordingScreen({
         </Button>
       </ButtonRow>
     ),
-    onBack
+    onBack,
+    showBackButton: false
   };
 }
 

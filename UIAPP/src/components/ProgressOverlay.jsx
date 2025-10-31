@@ -75,7 +75,7 @@ function ProgressOverlay({ fraction }) {
       });
     }
     circleRef.current.animate(fraction);
-  }, [fraction]);
+  }, [fraction, tokens.colors.background.light, tokens.colors.primary.DEFAULT]);
 
   return (
     <div

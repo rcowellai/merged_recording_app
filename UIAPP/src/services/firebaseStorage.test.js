@@ -11,7 +11,6 @@ import firebaseStorageService, {
   listRecordings,
   getRecording,
   cleanupFailedUploads,
-  getQuotaInfo,
   fetchAllRecordings,
   fetchRecording
 } from './firebaseStorage.js';
@@ -301,7 +300,6 @@ describe('FirebaseStorageService (C07)', () => {
 
   describe('compatibility functions', () => {
     it('fetchAllRecordings calls listRecordings', async () => {
-      const mockRecordings = [{ id: 'test' }];
       getUserRecordingSessions.mockResolvedValue([{
         id: 'test',
         sessionId: 'test',

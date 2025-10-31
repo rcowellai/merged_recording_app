@@ -108,7 +108,8 @@ function ActiveRecordingScreen({ captureMode, mediaStream, onPause, sessionData,
         </Button>
       </div>
     ),
-    onBack
+    onBack,
+    showBackButton: false
   };
 }
 

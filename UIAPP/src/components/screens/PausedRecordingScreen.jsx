@@ -80,7 +80,8 @@ function PausedRecordingScreen({ onResume, onDone, sessionData, onBack, countdow
         </Button>
       </ButtonRow>
     ),
-    onBack
+    onBack,
+    showBackButton: false
   };
 }
 

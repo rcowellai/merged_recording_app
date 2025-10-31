@@ -115,7 +115,7 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
           fontWeight: isMobile ? tokens.fontWeight.medium : tokens.fontWeight.normal,
           lineHeight: isMobile ? 1.2 : 1.2,
           marginBottom: tokens.spacing[5],
-          color: tokens.colors.onboarding.fontColor
+          color: customQuestionColor || tokens.colors.onboarding.fontColor
         }}>
           {askerName} asked
         </div>

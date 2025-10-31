@@ -42,11 +42,8 @@ function RecordingFlow({
       onStateChange(recordingFlowState);
     }
   }, [
-    recordingFlowState?.captureMode,
-    recordingFlowState?.mediaStream,
-    recordingFlowState?.handleAudioClick,
-    recordingFlowState?.handleVideoClick,
-    onStateChange
+    onStateChange,
+    recordingFlowState
   ]);
 
   debugLogger.log('info', 'RecordingFlow', 'useRecordingFlow hook returned', {

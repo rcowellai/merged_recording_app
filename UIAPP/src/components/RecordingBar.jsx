@@ -78,7 +78,6 @@ function RecordingBar({
   const containerHeight = 30; // Fixed height for both visualizer and red container
   const visualizerWidth = 100;
   const visualizerHeight = containerHeight; // Match container height
-  const redContainerWidth = 150; // Fixed width for red container
 
   // Memoize AudioVisualizer to prevent re-render on timer updates
   // IMPORTANT: Must be called before early return (React Hooks rules)
@@ -131,13 +130,13 @@ function RecordingBar({
         justifyContent: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          <FaPause style={{ fontSize: '0.75rem', flexShrink: 0 }} />
-          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: '0.65rem' }}>PAUSED</span>
+          <FaPause style={{ fontSize: tokens.fontSize.xs, flexShrink: 0 }} />
+          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>PAUSED</span>
         </div>
         <TimerDisplay
           totalSeconds={totalSeconds}
           formatTime={formatTimeWithLeadingZeros}
-          style={{ fontWeight: tokens.fontWeight.normal, fontSize: '0.6rem' }}
+          style={{ fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
         />
       </div>
     );
@@ -153,12 +152,12 @@ function RecordingBar({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           <RecordIcon size={iconSize} color={iconColor} />
-          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: '0.65rem' }}>REC</span>
+          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>REC</span>
         </div>
         <TimerDisplay
           totalSeconds={totalSeconds}
           formatTime={formatTimeWithLeadingZeros}
-          style={{ fontWeight: tokens.fontWeight.normal, fontSize: '0.6rem' }}
+          style={{ fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
         />
       </div>
     );
@@ -199,7 +198,7 @@ function RecordingBar({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '6px',
+          padding: '6px 12px',
           color: textColor,
           boxSizing: 'border-box'
         }}>
