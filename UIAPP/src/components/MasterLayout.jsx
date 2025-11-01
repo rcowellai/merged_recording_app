@@ -238,7 +238,7 @@ function MasterLayout({
               boxSizing: 'border-box',
             }}>
               <img
-                src={isWelcomeScreen ? Logo : DarkLogo}
+                src={isWelcomeScreen || isActiveRecordingScreen || isPausedRecordingScreen ? Logo : DarkLogo}
                 alt="Love Retold"
                 style={{
                   height: '30px',
@@ -293,7 +293,7 @@ function MasterLayout({
             flexDirection: 'column',
             flex: '1 1 auto',
             minHeight: '270px',
-            overflow: 'hidden',
+            overflow: 'visible',
             width: '100%',
             padding: tokens.spacing[4],
             boxSizing: 'border-box',
@@ -311,7 +311,7 @@ function MasterLayout({
             flexDirection: 'column',
             flex: '1 1 auto',
             minHeight: '270px',
-            overflow: 'hidden',
+            overflow: 'visible',
             width: '100%',
             maxWidth: '550px',
             margin: '0 auto',

@@ -27,7 +27,7 @@ function CountdownOverlay({ countdownValue }) {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 9999 // Above all content including header
+    zIndex: tokens.zIndex.countdownOverlay // Full-screen countdown overlay (Layer 7)
   };
 
   // Large centered countdown text

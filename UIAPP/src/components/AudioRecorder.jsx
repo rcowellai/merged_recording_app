@@ -190,7 +190,7 @@ function AudioRecorder({ stream, isRecording }) {
   const iconStyle = {
     fontSize: '1.8rem',
     color: isRecording ? tokens.colors.status.recording_red : tokens.colors.neutral.gray['01'],
-    zIndex: 2,
+    zIndex: tokens.zIndex.audioRecorder, // Audio recorder component (Layer 0)
   };
 
   return (

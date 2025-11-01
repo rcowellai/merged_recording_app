@@ -65,7 +65,7 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            zIndex: 10000,
+            zIndex: tokens.zIndex.drawerBackdrop, // Vaul drawer backdrop (Layer 8)
           }}
         />
 
@@ -79,7 +79,7 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
               transform: 'translateX(-50%)',
               maxWidth: '768px',
               width: '100%',
-              zIndex: 10001,
+              zIndex: tokens.zIndex.drawerContent, // Vaul drawer content (Layer 8)
             }}
           >
             {/* Drawer Content - Vaul animates this independently */}
@@ -264,7 +264,7 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              zIndex: 10001,
+              zIndex: tokens.zIndex.drawerContent, // Vaul drawer content (Layer 8)
             }}
             aria-labelledby="drawer-title"
             aria-describedby="drawer-description"
@@ -366,7 +366,7 @@ function VaulStartOverDrawer({ open, onOpenChange, onConfirm, onCancel }) {
               style={{
                 flex: isMobile ? '0 0 auto' : '1',
                 padding: '16px 32px',
-                backgroundColor: '#ef4444',
+                backgroundColor: tokens.colors.status.error,
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: tokens.borderRadius.lg,

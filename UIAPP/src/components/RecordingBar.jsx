@@ -167,8 +167,8 @@ function RecordingBar({
     <>
       <style>{`
         .audio-visualizer-container canvas {
-          z-index: 999 !important;
-          position: relative !important;
+          position: relative;
+          /* z-index removed - inherits stacking from parent (MasterLayout header) */
         }
       `}</style>
       <div style={{

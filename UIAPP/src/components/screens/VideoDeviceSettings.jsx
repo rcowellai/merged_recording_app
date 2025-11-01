@@ -1,13 +1,13 @@
 /**
  * VideoDeviceSettings.jsx
  * ------------------------
- * Settings icon component for video device management.
- * Parallel to AudioDeviceSettings for camera selection.
+ * Settings icon component for video and audio device management.
+ * Manages both camera and microphone selection for video recordings.
  *
  * Props:
  * - mediaStream: Current MediaStream for device enumeration
- * - onSwitchDevice: Callback when user selects a different device
- * - onOpenSettings: Callback to trigger parent drawer
+ * - onSwitchDevice: Callback when user selects a different device (deviceId, deviceType)
+ * - onOpenSettings: Callback to trigger parent drawer with both audio and video devices
  */
 
 import React from 'react';
@@ -16,18 +16,24 @@ import useMediaDevices from '../../hooks/useMediaDevices';
 
 function VideoDeviceSettings({ mediaStream, onSwitchDevice, onOpenSettings }) {
 
-  // Use generic hook for video devices
-  const { devices, selectedDeviceId, selectDevice } = useMediaDevices('videoinput', mediaStream);
+  // Use generic hooks for both audio and video devices
+  const { devices: audioDevices, selectedDeviceId: selectedAudioId, selectDevice: selectAudioDevice } = useMediaDevices('audioinput', mediaStream);
+  const { devices: videoDevices, selectedDeviceId: selectedVideoId, selectDevice: selectVideoDevice } = useMediaDevices('videoinput', mediaStream);
 
   const handleCogClick = () => {
-    // Trigger parent drawer with device data and callbacks
+    // Trigger parent drawer with both audio and video device data
     onOpenSettings?.({
-      devices: devices,
-      selectedDeviceId: selectedDeviceId,
-      deviceType: 'videoinput',
-      onSelectDevice: (deviceId) => {
-        selectDevice(deviceId); // Update hook state + localStorage
-        onSwitchDevice?.(deviceId); // Trigger parent stream switch (optional chaining for safety)
+      audioDevices: audioDevices,
+      videoDevices: videoDevices,
+      selectedAudioId: selectedAudioId,
+      selectedVideoId: selectedVideoId,
+      onSelectAudioDevice: (deviceId) => {
+        selectAudioDevice(deviceId); // Update hook state + localStorage
+        onSwitchDevice?.(deviceId, 'audioinput'); // Trigger parent stream switch with device type
+      },
+      onSelectVideoDevice: (deviceId) => {
+        selectVideoDevice(deviceId); // Update hook state + localStorage
+        onSwitchDevice?.(deviceId, 'videoinput'); // Trigger parent stream switch with device type
       }
     });
   };

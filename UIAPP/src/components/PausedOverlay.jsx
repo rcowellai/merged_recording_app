@@ -26,7 +26,7 @@ function PausedOverlay() {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10 // Above content, below modals
+    zIndex: tokens.zIndex.pausedOverlay // Paused recording overlay (Layer 5)
   };
 
   // Large centered "PAUSED" text - reduced size to fit on screen

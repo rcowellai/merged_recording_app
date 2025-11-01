@@ -65,7 +65,10 @@
       "Bash(done)",
       "Bash(npm run lint:*)",
       "Bash(exit 0)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(taskkill:*)",
+      "mcp__ide__executeCode",
+      "WebFetch(domain:plyr.io)"
     ],
     "deny": [],
     "ask": [],

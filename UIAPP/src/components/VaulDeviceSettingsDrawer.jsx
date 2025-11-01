@@ -2,7 +2,7 @@
  * VaulDeviceSettingsDrawer.jsx
  * -----------------------------
  * Device settings drawer using Vaul (bottom sheet).
- * Supports both audio and video device selection.
+ * Supports both single-device and dual-device (audio + video) selection modes.
  *
  * Design Specifications:
  * - Slides up from bottom (no drag-to-dismiss)
@@ -11,6 +11,7 @@
  * - Auto-closes after device selection (with error handling)
  * - Scrollable device list if needed
  * - Mobile responsive height adjustment
+ * - Dual-device mode: Shows "Select Microphone" and "Select Camera" sections
  */
 
 import React from 'react';
@@ -23,10 +24,18 @@ import { useBreakpoint } from '../hooks/useBreakpoint';
 function VaulDeviceSettingsDrawer({
   open,
   onOpenChange,
+  // Single-device mode props (backward compatibility)
   devices = [],
   selectedDeviceId,
   onSelectDevice,
-  deviceType = 'audioinput'
+  deviceType = 'audioinput',
+  // Dual-device mode props (audio + video)
+  audioDevices,
+  videoDevices,
+  selectedAudioId,
+  selectedVideoId,
+  onSelectAudioDevice,
+  onSelectVideoDevice,
 }) {
   const { tokens } = useTokens();
   const { isMobile, isTablet } = useBreakpoint();
@@ -36,10 +45,13 @@ function VaulDeviceSettingsDrawer({
   // Desktop: Centered with transform for proper positioning
   const needsCentering = !isMobile && !isTablet;
 
-  // Determine icon based on device type
+  // Detect dual-device mode
+  const isDualMode = audioDevices !== undefined && videoDevices !== undefined;
+
+  // Single-device mode: Determine icon based on device type
   const DeviceIcon = deviceType === 'audioinput' ? FaMicrophone : FaVideo;
 
-  // Copy text based on device type
+  // Single-device mode: Copy text based on device type
   const copyText = deviceType === 'audioinput'
     ? "Let's make sure you can be heard properly."
     : "Let's make sure your camera is working properly.";
@@ -48,6 +60,7 @@ function VaulDeviceSettingsDrawer({
     onOpenChange(false);
   };
 
+  // Single-device mode handler
   const handleDeviceSelect = async (deviceId) => {
     // Optimization: Don't switch if same device
     if (deviceId === selectedDeviceId) {
@@ -63,6 +76,140 @@ function VaulDeviceSettingsDrawer({
       // Keep drawer open on error - user can try another device
     }
   };
+
+  // Dual-device mode: Audio device handler
+  const handleAudioDeviceSelect = async (deviceId) => {
+    if (deviceId === selectedAudioId) {
+      handleClose();
+      return;
+    }
+
+    try {
+      await onSelectAudioDevice(deviceId);
+      handleClose();
+    } catch (error) {
+      console.error('Audio device switch failed:', error);
+    }
+  };
+
+  // Dual-device mode: Video device handler
+  const handleVideoDeviceSelect = async (deviceId) => {
+    if (deviceId === selectedVideoId) {
+      handleClose();
+      return;
+    }
+
+    try {
+      await onSelectVideoDevice(deviceId);
+      handleClose();
+    } catch (error) {
+      console.error('Video device switch failed:', error);
+    }
+  };
+
+  // Helper function to render device section (used in both desktop and mobile)
+  const renderDeviceSection = (title, devices, selectedId, onSelect, IconComponent) => (
+    <div key={title || 'single-device'} style={{ marginBottom: title ? tokens.spacing[4] : 0 }}>
+      {/* Section Header - Only shown when title provided (dual-device mode) */}
+      {title && (
+        <div style={{
+          fontSize: tokens.fontSize.base,
+          fontWeight: tokens.fontWeight.semibold,
+          color: tokens.colors.primary.DEFAULT,
+          marginBottom: tokens.spacing[3],
+          paddingLeft: tokens.spacing[1],
+        }}>
+          {title}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {devices.length === 0 ? (
+        <div style={{
+          padding: tokens.spacing[4],
+          textAlign: 'center',
+          color: tokens.colors.neutral.gray['01'],
+          fontSize: tokens.fontSize.sm,
+        }}>
+          No devices found. Please check your connections.
+        </div>
+      ) : (
+        /* Device List */
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacing[2]
+        }}>
+          {devices.map((device) => {
+            const isSelected = device.deviceId === selectedId;
+            const displayLabel = device.label || `Device ${devices.indexOf(device) + 1}`;
+
+            return (
+              <button
+                key={device.deviceId}
+                onClick={() => onSelect(device.deviceId)}
+                type="button"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: tokens.spacing[3],
+                  padding: tokens.spacing[3],
+                  borderRadius: tokens.borderRadius.md,
+                  backgroundColor: isSelected
+                    ? tokens.colors.button.leftHandButton
+                    : 'transparent',
+                  border: isSelected
+                    ? `1px solid ${tokens.colors.onboarding.fontColor}`
+                    : '1px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  width: '100%',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.backgroundColor = tokens.colors.button.leftHandButton;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                {/* Icon */}
+                <IconComponent
+                  size={20}
+                  color={isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.gray['01']}
+                />
+
+                {/* Label */}
+                <div style={{
+                  flex: 1,
+                  fontSize: tokens.fontSize.base,
+                  color: isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.black,
+                  fontWeight: isSelected ? tokens.fontWeight.medium : tokens.fontWeight.normal,
+                }}>
+                  {displayLabel}
+                </div>
+
+                {/* Checkmark */}
+                {isSelected && (
+                  <div style={{
+                    fontSize: tokens.fontSize.xl,
+                    color: tokens.colors.primary.DEFAULT,
+                  }}>
+                    ✓
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Drawer.Root
@@ -81,7 +228,7 @@ function VaulDeviceSettingsDrawer({
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            zIndex: 10000,
+            zIndex: tokens.zIndex.drawerBackdrop, // Vaul drawer backdrop (Layer 8)
           }}
         />
 
@@ -95,7 +242,7 @@ function VaulDeviceSettingsDrawer({
               transform: 'translateX(-50%)',
               maxWidth: '768px',
               width: '100%',
-              zIndex: 10001,
+              zIndex: tokens.zIndex.drawerContent, // Vaul drawer content (Layer 8)
             }}
           >
             {/* Drawer Content - Vaul animates this independently */}
@@ -171,26 +318,28 @@ function VaulDeviceSettingsDrawer({
             </div>
           </div>
 
-          {/* Copy Text */}
-          <div
-            style={{
-              padding: '4px 24px 16px',
-            }}
-          >
-            <Drawer.Description
-              id="drawer-description"
+          {/* Copy Text - Only shown in single-device mode */}
+          {!isDualMode && (
+            <div
               style={{
-                fontSize: 'clamp(15px, 4vw, 17px)',
-                fontWeight: '400',
-                lineHeight: '1.5',
-                color: tokens.colors.primary.DEFAULT,
-                margin: '0',
-                textAlign: 'left',
+                padding: '4px 24px 16px',
               }}
             >
-              {copyText}
-            </Drawer.Description>
-          </div>
+              <Drawer.Description
+                id="drawer-description"
+                style={{
+                  fontSize: 'clamp(15px, 4vw, 17px)',
+                  fontWeight: '400',
+                  lineHeight: '1.5',
+                  color: tokens.colors.primary.DEFAULT,
+                  margin: '0',
+                  textAlign: 'left',
+                }}
+              >
+                {copyText}
+              </Drawer.Description>
+            </div>
+          )}
 
           {/* Device List Container */}
           <div
@@ -200,90 +349,33 @@ function VaulDeviceSettingsDrawer({
               padding: '0 24px 24px',
             }}
           >
-            {/* Empty State */}
-            {devices.length === 0 ? (
-              <div style={{
-                padding: tokens.spacing[4],
-                textAlign: 'center',
-                color: tokens.colors.neutral.gray['01'],
-                fontSize: tokens.fontSize.base,
-              }}>
-                No devices found. Please check your connections.
-              </div>
+            {isDualMode ? (
+              /* Dual-device mode: Audio and Video sections */
+              <>
+                {renderDeviceSection(
+                  'Select Microphone',
+                  audioDevices,
+                  selectedAudioId,
+                  handleAudioDeviceSelect,
+                  FaMicrophone
+                )}
+                {renderDeviceSection(
+                  'Select Camera',
+                  videoDevices,
+                  selectedVideoId,
+                  handleVideoDeviceSelect,
+                  FaVideo
+                )}
+              </>
             ) : (
-              /* Device List */
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: tokens.spacing[2]
-              }}>
-                {devices.map((device) => {
-                  const isSelected = device.deviceId === selectedDeviceId;
-                  const displayLabel = device.label || `Device ${devices.indexOf(device) + 1}`;
-
-                  return (
-                    <button
-                      key={device.deviceId}
-                      onClick={() => handleDeviceSelect(device.deviceId)}
-                      type="button"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: tokens.spacing[3],
-                        padding: tokens.spacing[3],
-                        borderRadius: tokens.borderRadius.md,
-                        backgroundColor: isSelected
-                          ? tokens.colors.button.leftHandButton
-                          : 'transparent',
-                        border: isSelected
-                          ? `1px solid ${tokens.colors.onboarding.fontColor}`
-                          : '1px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        textAlign: 'left',
-                        width: '100%',
-                        fontFamily: 'inherit',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = tokens.colors.button.leftHandButton;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                    >
-                      {/* Icon */}
-                      <DeviceIcon
-                        size={20}
-                        color={isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.gray['01']}
-                      />
-
-                      {/* Label */}
-                      <div style={{
-                        flex: 1,
-                        fontSize: tokens.fontSize.base,
-                        color: isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.black,
-                        fontWeight: isSelected ? tokens.fontWeight.medium : tokens.fontWeight.normal,
-                      }}>
-                        {displayLabel}
-                      </div>
-
-                      {/* Checkmark */}
-                      {isSelected && (
-                        <div style={{
-                          fontSize: tokens.fontSize.xl,
-                          color: tokens.colors.primary.DEFAULT,
-                        }}>
-                          ✓
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              /* Single-device mode: Original device list */
+              renderDeviceSection(
+                null, // No header in single mode
+                devices,
+                selectedDeviceId,
+                handleDeviceSelect,
+                DeviceIcon
+              )
             )}
           </div>
         </Drawer.Content>
@@ -306,7 +398,7 @@ function VaulDeviceSettingsDrawer({
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              zIndex: 10001,
+              zIndex: tokens.zIndex.drawerContent, // Vaul drawer content (Layer 8)
             }}
             aria-labelledby="drawer-title"
             aria-describedby="drawer-description"
@@ -368,26 +460,28 @@ function VaulDeviceSettingsDrawer({
             </div>
           </div>
 
-          {/* Copy Text */}
-          <div
-            style={{
-              padding: '4px 24px 16px',
-            }}
-          >
-            <Drawer.Description
-              id="drawer-description"
+          {/* Copy Text - Only shown in single-device mode */}
+          {!isDualMode && (
+            <div
               style={{
-                fontSize: 'clamp(15px, 4vw, 17px)',
-                fontWeight: '400',
-                lineHeight: '1.5',
-                color: tokens.colors.primary.DEFAULT,
-                margin: '0',
-                textAlign: 'left',
+                padding: '4px 24px 16px',
               }}
             >
-              {copyText}
-            </Drawer.Description>
-          </div>
+              <Drawer.Description
+                id="drawer-description"
+                style={{
+                  fontSize: 'clamp(15px, 4vw, 17px)',
+                  fontWeight: '400',
+                  lineHeight: '1.5',
+                  color: tokens.colors.primary.DEFAULT,
+                  margin: '0',
+                  textAlign: 'left',
+                }}
+              >
+                {copyText}
+              </Drawer.Description>
+            </div>
+          )}
 
           {/* Device List Container */}
           <div
@@ -397,90 +491,33 @@ function VaulDeviceSettingsDrawer({
               padding: '0 24px 24px',
             }}
           >
-            {/* Empty State */}
-            {devices.length === 0 ? (
-              <div style={{
-                padding: tokens.spacing[4],
-                textAlign: 'center',
-                color: tokens.colors.neutral.gray['01'],
-                fontSize: tokens.fontSize.base,
-              }}>
-                No devices found. Please check your connections.
-              </div>
+            {isDualMode ? (
+              /* Dual-device mode: Audio and Video sections */
+              <>
+                {renderDeviceSection(
+                  'Select Microphone',
+                  audioDevices,
+                  selectedAudioId,
+                  handleAudioDeviceSelect,
+                  FaMicrophone
+                )}
+                {renderDeviceSection(
+                  'Select Camera',
+                  videoDevices,
+                  selectedVideoId,
+                  handleVideoDeviceSelect,
+                  FaVideo
+                )}
+              </>
             ) : (
-              /* Device List */
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: tokens.spacing[2]
-              }}>
-                {devices.map((device) => {
-                  const isSelected = device.deviceId === selectedDeviceId;
-                  const displayLabel = device.label || `Device ${devices.indexOf(device) + 1}`;
-
-                  return (
-                    <button
-                      key={device.deviceId}
-                      onClick={() => handleDeviceSelect(device.deviceId)}
-                      type="button"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: tokens.spacing[3],
-                        padding: tokens.spacing[3],
-                        borderRadius: tokens.borderRadius.md,
-                        backgroundColor: isSelected
-                          ? tokens.colors.button.leftHandButton
-                          : 'transparent',
-                        border: isSelected
-                          ? `1px solid ${tokens.colors.onboarding.fontColor}`
-                          : '1px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        textAlign: 'left',
-                        width: '100%',
-                        fontFamily: 'inherit',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = tokens.colors.button.leftHandButton;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                    >
-                      {/* Icon */}
-                      <DeviceIcon
-                        size={20}
-                        color={isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.gray['01']}
-                      />
-
-                      {/* Label */}
-                      <div style={{
-                        flex: 1,
-                        fontSize: tokens.fontSize.base,
-                        color: isSelected ? tokens.colors.primary.DEFAULT : tokens.colors.neutral.black,
-                        fontWeight: isSelected ? tokens.fontWeight.medium : tokens.fontWeight.normal,
-                      }}>
-                        {displayLabel}
-                      </div>
-
-                      {/* Checkmark */}
-                      {isSelected && (
-                        <div style={{
-                          fontSize: tokens.fontSize.xl,
-                          color: tokens.colors.primary.DEFAULT,
-                        }}>
-                          ✓
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              /* Single-device mode: Original device list */
+              renderDeviceSection(
+                null, // No header in single mode
+                devices,
+                selectedDeviceId,
+                handleDeviceSelect,
+                DeviceIcon
+              )
             )}
           </div>
         </Drawer.Content>
@@ -493,10 +530,18 @@ function VaulDeviceSettingsDrawer({
 VaulDeviceSettingsDrawer.propTypes = {
   open: PropTypes.bool.isRequired,
   onOpenChange: PropTypes.func.isRequired,
-  devices: PropTypes.array.isRequired,
+  // Single-device mode props
+  devices: PropTypes.array,
   selectedDeviceId: PropTypes.string,
-  onSelectDevice: PropTypes.func.isRequired,
-  deviceType: PropTypes.oneOf(['audioinput', 'videoinput']).isRequired,
+  onSelectDevice: PropTypes.func,
+  deviceType: PropTypes.oneOf(['audioinput', 'videoinput']),
+  // Dual-device mode props
+  audioDevices: PropTypes.array,
+  videoDevices: PropTypes.array,
+  selectedAudioId: PropTypes.string,
+  selectedVideoId: PropTypes.string,
+  onSelectAudioDevice: PropTypes.func,
+  onSelectVideoDevice: PropTypes.func,
 };
 
 export default VaulDeviceSettingsDrawer;

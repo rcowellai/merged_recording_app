@@ -6,6 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Z_INDEX_LAYERS } from './zIndexRegistry';
 
 // ============================================================
 // ==================== NEW TOKENS BEGIN ======================
@@ -159,16 +160,8 @@ const DEFAULT_TOKENS = {
     inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)'  // Inner shadow
   },
 
-  // Z-Index Scale (Stacking Layers)
-  zIndex: {
-    base: 0,       // Base layer
-    dropdown: 10,  // Dropdowns, popovers
-    sticky: 20,    // Sticky elements
-    overlay: 30,   // Overlays, backdrops
-    modal: 40,     // Modals, dialogs
-    popover: 50,   // Popovers above modals
-    toast: 60      // Toast notifications (top layer)
-  },
+  // Z-Index Scale (Stacking Layers) - Using centralized registry
+  zIndex: Z_INDEX_LAYERS,
 
   // Layout Constraints
   layout: {

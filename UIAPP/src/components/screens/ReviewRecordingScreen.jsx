@@ -17,20 +17,16 @@ import { FaUndo, FaCloudUploadAlt } from 'react-icons/fa';
 import PlyrMediaPlayer from '../PlyrMediaPlayer';
 import { Button, ButtonRow } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
-function ReviewRecordingScreen({
-  recordedBlobUrl,
-  captureMode,
-  actualMimeType,
-  isPlayerReady,
-  onPlayerReady,
-  onStartOver,
-  onUpload,
-  onBack
-}) {
+/**
+ * ReviewRecordingContent - Inner component that safely uses hooks
+ */
+function ReviewRecordingContent({ recordedBlobUrl, captureMode, actualMimeType, onPlayerReady }) {
   const { tokens } = useTokens();
+  const { isMobile } = useBreakpoint();
 
-  const content = !recordedBlobUrl ? (
+  return !recordedBlobUrl ? (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
@@ -49,55 +45,65 @@ function ReviewRecordingScreen({
   ) : (
     <div style={{
       width: '100%',
-      height: '100%',
+      flex: isMobile ? 'none' : 1,
+      height: isMobile ? '100%' : undefined,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: tokens.spacing[5],
+      justifyContent: isMobile ? 'center' : 'flex-start',
+      gap: tokens.spacing[12],
       boxSizing: 'border-box',
       overflow: 'hidden'
     }}>
-      {/* Container for audio mode - matches AudioTest styling */}
-      {captureMode === 'audio' ? (
-        <div style={{
-          width: '100%',
-          maxWidth: tokens.layout.maxWidth.md,
-          minHeight: '55vh',
-          border: `0.5px solid rgba(113, 128, 150, 0.5)`,
-          borderRadius: tokens.borderRadius.lg,
-          boxSizing: 'border-box',
-          padding: tokens.spacing[4],
-          backgroundColor: tokens.colors.button.leftHandButton,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <PlyrMediaPlayer
-            src={recordedBlobUrl}
-            type={captureMode}
-            actualMimeType={actualMimeType}
-            onReady={onPlayerReady}
-            style={{ width: '100%' }}
-          />
-        </div>
-      ) : (
+      {/* Centering container matching VideoTest.jsx pattern */}
+      <div style={{
+        width: '100%',
+        maxWidth: tokens.layout.maxWidth.md,
+        flex: '1 1 auto',
+        minHeight: 0,
+        maxHeight: captureMode === 'video'
+          ? 'calc(100dvh - var(--headerH) - var(--actionsH) - var(--contentPad) * 2 - 140px)'
+          : undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        boxSizing: 'border-box'
+      }}>
         <PlyrMediaPlayer
           src={recordedBlobUrl}
           type={captureMode}
           actualMimeType={actualMimeType}
           onReady={onPlayerReady}
-          style={{ width: '100%', maxHeight: '60vh' }}
         />
-      )}
+      </div>
     </div>
   );
+}
+
+function ReviewRecordingScreen({
+  recordedBlobUrl,
+  captureMode,
+  actualMimeType,
+  isPlayerReady,
+  onPlayerReady,
+  onStartOver,
+  onUpload,
+  onBack
+}) {
+  const { tokens } = useTokens();
 
   return {
     bannerContent: 'Review & submit',
     timer: null,
-    content,
+    content: (
+      <ReviewRecordingContent
+        recordedBlobUrl={recordedBlobUrl}
+        captureMode={captureMode}
+        actualMimeType={actualMimeType}
+        onPlayerReady={onPlayerReady}
+      />
+    ),
     actions: (
       <ButtonRow>
         <Button

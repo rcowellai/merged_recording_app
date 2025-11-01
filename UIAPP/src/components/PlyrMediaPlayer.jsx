@@ -9,6 +9,8 @@ import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
+import { useBreakpoint } from '../hooks/useBreakpoint';
+import { useTokens } from '../theme/TokenProvider';
 
 function PlyrMediaPlayer({
   src,
@@ -26,6 +28,13 @@ function PlyrMediaPlayer({
 }) {
   const playerRef = useRef(null);
   const plyrInstanceRef = useRef(null);
+  const { isMobile } = useBreakpoint();
+  const { tokens } = useTokens();
+
+  // Determine control color based on player type
+  const controlColor = type === 'audio'
+    ? tokens.colors.primary.DEFAULT      // #2C2F48 for audio
+    : tokens.colors.primary.foreground;  // #FFFFFF for video
 
   // Helper function to determine correct MIME type for blob URLs
   const getSourceType = (src, type, actualMimeType) => {
@@ -43,7 +52,9 @@ function PlyrMediaPlayer({
   };
 
   useEffect(() => {
-    if (!playerRef.current || !src) return;
+    if (!playerRef.current || !src) {
+      return;
+    }
 
     // Clean up existing instance
     if (plyrInstanceRef.current) {
@@ -52,16 +63,15 @@ function PlyrMediaPlayer({
     }
 
     // Initialize Plyr on the media element
-    const player = new Plyr(playerRef.current, {
-      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
-      settings: ['speed'],
-      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    const config = {
+      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+      settings: [],  // Explicitly disable Plyr settings menu
       keyboard: { focused: true, global: false },
       tooltips: { controls: true, seek: true },
-      hideControls: false,
       resetOnEnd: false
-    });
+    };
 
+    const player = new Plyr(playerRef.current, config);
     plyrInstanceRef.current = player;
 
     // Event listeners
@@ -96,43 +106,58 @@ function PlyrMediaPlayer({
         plyrInstanceRef.current = null;
       }
     };
-  }, [src, type, actualMimeType, onReady, onPlay, onPause, onTimeUpdate, onEnded, onError]);
+  }, [src, type, actualMimeType]); // Removed callbacks - they don't need to trigger re-initialization
 
   return (
     <div className={`plyr-media-player ${className}`} style={{
       width: '100%',
-      borderRadius: '8px',
-      // Plyr theming via CSS custom properties
-      '--plyr-color-main': 'transparent',
-      '--plyr-video-control-color': '#ffffff',
-      '--plyr-video-control-color-hover': '#ffffff',
+      overflow: 'visible',  // Ensure controls aren't clipped
+      // Plyr theming via CSS custom properties - differentiated by player type
+      '--plyr-color-main': controlColor,
+      '--plyr-video-control-color': controlColor,
+      '--plyr-video-control-color-hover': controlColor,
       '--plyr-video-control-background-hover': 'transparent',
-      '--plyr-audio-control-color': '#ffffff',
-      '--plyr-audio-control-color-hover': '#ffffff',
+      '--plyr-audio-control-color': controlColor,
+      '--plyr-audio-control-color-hover': controlColor,
       '--plyr-audio-control-background-hover': 'transparent',
-      '--plyr-range-thumb-background': '#ffffff',
-      '--plyr-range-track-background': 'rgba(255, 255, 255, 0.2)',
-      '--plyr-range-fill-background': '#ffffff',
+      '--plyr-range-thumb-background': controlColor,
+      '--plyr-range-track-background': type === 'audio'
+        ? 'rgba(44, 47, 72, 0.2)'   // Primary color with opacity for audio
+        : 'rgba(255, 255, 255, 0.2)', // White with opacity for video
+      '--plyr-range-fill-background': controlColor,
       '--plyr-range-thumb-active-shadow-width': '0',
       '--plyr-control-icon-size': '18px',
       '--plyr-control-spacing': '10px',
+      '--plyr-control-z-index': '5100', // Plyr controls z-index (Layer 5)
       ...style
     }}>
       {type === 'video' ? (
-        <video
-          ref={playerRef}
-          controls
-          playsInline
-          preload="metadata"
-          style={{ width: '100%', maxHeight: '400px' }}
-        >
-          <source src={src} type={getSourceType(src, type, actualMimeType)} />
-          Your browser does not support the video element.
-        </video>
+        /* Square video container wrapper matching VideoTest.jsx */
+        <div style={{
+          maxWidth: '500px',
+          maxHeight: '500px',
+          aspectRatio: '1 / 1',
+          overflow: 'hidden',
+          borderRadius: '20px',
+          margin: '0 auto'
+        }}>
+          <video
+            ref={playerRef}
+            playsInline
+            preload="metadata"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+          >
+            <source src={src} type={getSourceType(src, type, actualMimeType)} />
+            Your browser does not support the video element.
+          </video>
+        </div>
       ) : (
         <audio
           ref={playerRef}
-          controls
           preload="metadata"
           style={{ width: '100%' }}
         >
@@ -159,6 +184,12 @@ function PlyrMediaPlayer({
           background: none !important;
           outline: none !important;
           box-shadow: none !important;
+        }
+
+        /* FORCE HIDE SETTINGS MENU - Override Plyr CSS */
+        .plyr-media-player .plyr__menu,
+        .plyr-media-player [data-plyr="settings"] {
+          display: none !important;
         }
       `}</style>
     </div>

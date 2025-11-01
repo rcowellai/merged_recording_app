@@ -89,7 +89,7 @@ function ProgressOverlay({ fraction }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
+        zIndex: tokens.zIndex.progressOverlay, // Upload progress overlay (Layer 7)
       }}
     >
       <div

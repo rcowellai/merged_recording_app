@@ -148,7 +148,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     captureMode: null,
     mediaStream: null,
     handleAudioClick: null,
-    handleVideoClick: null
+    handleVideoClick: null,
+    recordedBlobUrl: null,
+    actualMimeType: null
   });
 
   // Ref to store current recording flow state for timer callbacks
@@ -199,6 +201,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
     }
     handleAutoTransition();
   }, [handleAutoTransition]);
+
 
   // Device switching handler - delegates to useRecordingFlow
   const handleSwitchAudioDevice = useCallback(async (deviceId) => {
@@ -263,7 +266,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
   // RecordingFlow state change handler
   // FIXED: Moved state synchronization from render to callback to prevent setState-during-render warning
   const handleRecordingFlowStateChange = useCallback((newState) => {
-    const { captureMode, mediaStream, handleAudioClick, handleVideoClick } = newState;
+    const { captureMode, mediaStream, handleAudioClick, handleVideoClick, recordedBlobUrl, actualMimeType } = newState;
 
     // Only update if values actually changed (prevents unnecessary re-renders)
     setRecordingFlowStateSnapshot(prev => {
@@ -271,7 +274,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         prev.captureMode !== captureMode ||
         prev.mediaStream !== mediaStream ||
         prev.handleAudioClick !== handleAudioClick ||
-        prev.handleVideoClick !== handleVideoClick;
+        prev.handleVideoClick !== handleVideoClick ||
+        prev.recordedBlobUrl !== recordedBlobUrl ||
+        prev.actualMimeType !== actualMimeType;
 
       if (!hasChanged) {
         return prev; // No change, prevent re-render
@@ -281,7 +286,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         captureMode,
         mediaStream,
         handleAudioClick,
-        handleVideoClick
+        handleVideoClick,
+        recordedBlobUrl,
+        actualMimeType
       };
     });
   }, []);
@@ -771,18 +778,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               <VaulDeviceSettingsDrawer
                 open={showDeviceSettingsDrawer}
                 onOpenChange={setShowDeviceSettingsDrawer}
-                devices={deviceSettingsProps?.devices || []}
-                selectedDeviceId={deviceSettingsProps?.selectedDeviceId}
-                onSelectDevice={async (deviceId) => {
-                  try {
-                    await deviceSettingsProps?.onSelectDevice?.(deviceId);
-                    setShowDeviceSettingsDrawer(false); // Auto-close on success
-                  } catch (error) {
-                    console.error('Device switch failed:', error);
-                    // Keep drawer open on error
-                  }
-                }}
-                deviceType={deviceSettingsProps?.deviceType || 'audioinput'}
+                {...deviceSettingsProps}
               />
 
               {appState.uploadInProgress && (

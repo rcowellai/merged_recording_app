@@ -38,7 +38,7 @@ function ConfettiScreen({ docId }) {
 
       <div style={{
         textAlign: 'center',
-        zIndex: 1,
+        zIndex: tokens.zIndex.confetti, // Confetti background layer (Layer 0)
         padding: tokens.spacing[6]
       }}>
         <div style={{
