@@ -95,8 +95,8 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
         {/* Video preview element */}
         <div style={{
           // aspectRatio controls sizing - width will match constrained height
-          maxWidth: '500px',
-          maxHeight: '500px',
+          maxWidth: 'min(500px, 100%)',
+          maxHeight: 'min(500px, 100%)',
           aspectRatio: '1 / 1',
           marginBottom: isMobile ? tokens.spacing[0] : 0,
           overflow: 'hidden',

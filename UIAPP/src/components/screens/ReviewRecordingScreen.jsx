@@ -12,9 +12,10 @@
  * - actions: Start Over and Upload buttons
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FaUndo, FaCloudUploadAlt } from 'react-icons/fa';
 import PlyrMediaPlayer from '../PlyrMediaPlayer';
+import VideoControls from '../VideoControls';
 import { Button, ButtonRow } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
@@ -26,6 +27,15 @@ function ReviewRecordingContent({ recordedBlobUrl, captureMode, actualMimeType, 
   const { tokens } = useTokens();
   const { isMobile } = useBreakpoint();
 
+  // Store Plyr instance for external controls
+  const [playerInstance, setPlayerInstance] = useState(null);
+
+  // Handle player ready - store instance and call parent callback
+  const handlePlayerReady = (player) => {
+    setPlayerInstance(player);
+    onPlayerReady?.(player);
+  };
+
   return !recordedBlobUrl ? (
     <div style={{
       display: 'flex',
@@ -33,11 +43,13 @@ function ReviewRecordingContent({ recordedBlobUrl, captureMode, actualMimeType, 
       alignItems: 'center',
       justifyContent: 'center',
       padding: tokens.spacing[6],
-      flex: 1
+      flex: 1,
+      border: '2px solid red'
     }}>
       <div style={{
         fontSize: tokens.fontSize.lg,
-        color: tokens.colors.neutral.gray['01']
+        color: tokens.colors.neutral.gray['01'],
+        border: '2px solid orange'
       }}>
         Preparing your recording...
       </div>
@@ -51,32 +63,23 @@ function ReviewRecordingContent({ recordedBlobUrl, captureMode, actualMimeType, 
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: isMobile ? 'center' : 'flex-start',
-      gap: tokens.spacing[12],
+      gap: tokens.spacing[0],  // 24px spacing (half of spacing[12])
       boxSizing: 'border-box',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: '2px solid blue'
     }}>
-      {/* Centering container matching VideoTest.jsx pattern */}
-      <div style={{
-        width: '100%',
-        maxWidth: tokens.layout.maxWidth.md,
-        flex: '1 1 auto',
-        minHeight: 0,
-        maxHeight: captureMode === 'video'
-          ? 'calc(100dvh - var(--headerH) - var(--actionsH) - var(--contentPad) * 2 - 140px)'
-          : undefined,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        boxSizing: 'border-box'
-      }}>
-        <PlyrMediaPlayer
-          src={recordedBlobUrl}
-          type={captureMode}
-          actualMimeType={actualMimeType}
-          onReady={onPlayerReady}
-        />
-      </div>
+      <PlyrMediaPlayer
+        src={recordedBlobUrl}
+        type={captureMode}
+        actualMimeType={actualMimeType}
+        onReady={handlePlayerReady}
+        hideControls={captureMode === 'video'}
+      />
+
+      {/* External controls for video player (Phase 1) */}
+      {playerInstance && captureMode === 'video' && (
+        <VideoControls player={playerInstance} />
+      )}
     </div>
   );
 }

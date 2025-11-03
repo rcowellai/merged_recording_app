@@ -131,7 +131,7 @@ function MasterLayout({
         boxSizing: 'border-box',
         position: 'relative',
         // DEBUG: PAGE-CONTAINER border
-        // border: '3px solid red'
+        border: '3px solid red'
       }}>
 
       {/* ========================================
@@ -167,7 +167,7 @@ function MasterLayout({
           fontWeight: tokens.fontWeight.medium,
           fontSize: tokens.fontSize.base,
           // DEBUG: SECTION-A border
-          // border: '3px solid cyan',
+          border: '3px solid cyan',
           ...(bannerStyle || {})
         }}>
           {isMobile ? (
@@ -182,7 +182,7 @@ function MasterLayout({
                 justifyContent: 'center',
                 boxSizing: 'border-box',
                 // DEBUG: SECTION-A1 border
-                // border: '2px solid orange'
+                border: '2px solid orange'
               }}>
                 {showBackButton && onBack && (
                   <MdChevronLeft
@@ -207,7 +207,7 @@ function MasterLayout({
                 fontWeight: tokens.fontWeight.normal,
                 fontSize: tokens.fontSize['2xl'], // Mobile: 24px (maintains current size)
                 // DEBUG: SECTION-A2 border
-                // border: '2px solid yellow'
+                border: '2px solid yellow'
               }}>
                 {renderA2Content()}
               </div>
@@ -221,7 +221,7 @@ function MasterLayout({
                 justifyContent: 'center',
                 boxSizing: 'border-box',
                 // DEBUG: SECTION-A3 border
-                // border: '2px solid magenta'
+                border: '2px solid magenta'
               }}>
                 {iconA3}
               </div>
@@ -273,7 +273,7 @@ function MasterLayout({
         '--actionsH': isMobile ? '100px' : '150px',
         '--contentPad': tokens.spacing[4],
         // DEBUG: APP-LAYOUT border
-        // border: '3px solid purple'
+        border: '3px solid purple'
       }}>
 
         {/* ========================================
@@ -298,7 +298,7 @@ function MasterLayout({
             padding: tokens.spacing[4],
             boxSizing: 'border-box',
             // DEBUG: SECTION-B border
-            // border: '3px solid green'
+            border: '3px solid green'
           }}>
             {content}
             {overlay}
@@ -317,7 +317,7 @@ function MasterLayout({
             margin: '0 auto',
             boxSizing: 'border-box',
             // DEBUG: SECTION-B border
-            // border: '5px solid green'
+            border: '5px solid green'
           }}>
             {/* B1 - Top Section (70px fixed) with A1/A2/A3 layout */}
             <div style={{
@@ -328,8 +328,8 @@ function MasterLayout({
               justifyContent: 'space-between',
               boxSizing: 'border-box',
               // DEBUG: SECTION-B1 border
-              // border: '5px solid yellow',
-              // backgroundColor: 'rgba(255, 255, 0, 0.1)'
+              border: '5px solid yellow',
+              backgroundColor: 'rgba(255, 255, 0, 0.1)'
             }}>
               {/* B1A - Left slot (45px) - Back button on tablet/desktop */}
               <div style={{
@@ -340,7 +340,7 @@ function MasterLayout({
                 justifyContent: 'center',
                 boxSizing: 'border-box',
                 // DEBUG: SECTION-B1A border
-                // border: '2px solid orange'
+                border: '2px solid orange'
               }}>
                 {showBackButton && onBack && (
                   <MdChevronLeft
@@ -365,7 +365,7 @@ function MasterLayout({
                 fontWeight: tokens.fontWeight.normal,
                 fontSize: tokens.fontSize['2xl'], // 24px - matches mobile Section A2
                 // DEBUG: SECTION-B1B border
-                // border: '2px solid yellow'
+                border: '2px solid yellow'
               }}>
                 {renderB1BContent()}
               </div>
@@ -379,7 +379,7 @@ function MasterLayout({
                 justifyContent: 'center',
                 boxSizing: 'border-box',
                 // DEBUG: SECTION-B1C border
-                // border: '2px solid magenta'
+                border: '2px solid magenta'
               }}>
                 <div style={{ transform: 'scale(1.2)' }}>
                   {iconA3}
@@ -397,8 +397,8 @@ function MasterLayout({
               padding: tokens.spacing[4],
               boxSizing: 'border-box',
               // DEBUG: SECTION-B2 border
-              // border: '5px solid cyan',
-              // backgroundColor: 'rgba(0, 255, 255, 0.1)'
+              border: '5px solid cyan',
+              backgroundColor: 'rgba(0, 255, 255, 0.1)'
             }}>
               {content}
               {overlay}
@@ -424,7 +424,7 @@ function MasterLayout({
           justifyContent: isMobile ? 'flex-end' : 'flex-start',
           boxSizing: 'border-box',
           // DEBUG: SECTION-C border
-          // border: '3px solid purple'
+          border: '3px solid purple'
         }}>
           {actions}
         </div>

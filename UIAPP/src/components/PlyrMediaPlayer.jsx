@@ -17,6 +17,7 @@ function PlyrMediaPlayer({
   type = 'video',
   title = 'Recording Review',
   actualMimeType,
+  hideControls = false,
   onReady,
   onPlay,
   onPause,
@@ -64,7 +65,7 @@ function PlyrMediaPlayer({
 
     // Initialize Plyr on the media element
     const config = {
-      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+      controls: hideControls ? [] : ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
       settings: [],  // Explicitly disable Plyr settings menu
       keyboard: { focused: true, global: false },
       tooltips: { controls: true, seek: true },
@@ -112,6 +113,7 @@ function PlyrMediaPlayer({
     <div className={`plyr-media-player ${className}`} style={{
       width: '100%',
       overflow: 'visible',  // Ensure controls aren't clipped
+      border: '2px solid purple',
       // Plyr theming via CSS custom properties - differentiated by player type
       '--plyr-color-main': controlColor,
       '--plyr-video-control-color': controlColor,
@@ -139,7 +141,8 @@ function PlyrMediaPlayer({
           aspectRatio: '1 / 1',
           overflow: 'hidden',
           borderRadius: '20px',
-          margin: '0 auto'
+          margin: '0 auto',
+          border: '2px solid pink'
         }}>
           <video
             ref={playerRef}
@@ -168,6 +171,13 @@ function PlyrMediaPlayer({
 
       {/* Component-specific styles for enhanced focus removal */}
       <style>{`
+        /* Apply rounded corners to Plyr wrapper elements */
+        .plyr-media-player .plyr,
+        .plyr-media-player .plyr__video-wrapper {
+          border-radius: 20px;
+          overflow: hidden;
+        }
+
         /* Hide overlay during playback with component-specific targeting */
         .plyr-media-player.plyr--playing .plyr__control--overlaid,
         .plyr-media-player .plyr.plyr--playing .plyr__control--overlaid {
@@ -201,6 +211,7 @@ PlyrMediaPlayer.propTypes = {
   type: PropTypes.oneOf(['video', 'audio']).isRequired,
   title: PropTypes.string,
   actualMimeType: PropTypes.string,
+  hideControls: PropTypes.bool,
   onReady: PropTypes.func,
   onPlay: PropTypes.func,
   onPause: PropTypes.func,
