@@ -5,3 +5,5 @@
 
 export { Button } from './Button';
 export { ButtonRow } from './ButtonRow';
+export { default as AspectRatioContainer } from './AspectRatioContainer';
+export { default as ScrollContainer } from './ScrollContainer';

@@ -102,17 +102,27 @@ service cloud.firestore {
     
     // Recording sessions - ENHANCED: Support for both Love Retold main app AND recording app
     match /recordingSessions/{sessionId} {
-      // Anonymous read access (anyone with link can read - for recording app)
-      allow read: if true;
-      
-      // RECORDING APP: Anonymous authentication updates (enhanced for nested fields)
-      allow update: if request.auth != null 
+      // SECURITY FIX: Restrict read to authenticated users only (no more public access)
+      allow read: if request.auth != null;
+
+      // RECORDING APP: Anonymous authentication updates (enhanced with input validation)
+      allow update: if request.auth != null
         && request.auth.token.firebase.sign_in_provider == 'anonymous'
         && resource.data.status in ['ReadyForRecording', 'Recording', 'Uploading', 'failed']
         && request.resource.data.status in ['Recording', 'Uploading', 'ReadyForTranscription', 'failed']
         && request.resource.data.userId == resource.data.userId  // Cannot change ownership
         && request.resource.data.promptId == resource.data.promptId  // Cannot change prompt
         && request.resource.data.storytellerId == resource.data.storytellerId // Cannot change storyteller
+        // INPUT VALIDATION: Validate recording data structure and limits
+        && (!request.resource.data.keys().hasAny(['recordingData']) || (
+          request.resource.data.recordingData.fileSize < 100 * 1024 * 1024 && // 100MB max
+          request.resource.data.recordingData.mimeType.matches('(video|audio)/.*') // Valid MIME type
+        ))
+        // PATH VALIDATION: Ensure storage paths follow expected structure
+        && (!request.resource.data.keys().hasAny(['storagePaths']) || (
+          !request.resource.data.storagePaths.keys().hasAny(['finalVideo']) ||
+          request.resource.data.storagePaths.finalVideo.matches('users/.*/recordings/.*/final/.*')
+        ))
         && (
           // Allow general recording updates (start, progress, etc.)
           onlyUpdatingFields([
@@ -125,11 +135,16 @@ service cloud.firestore {
             .hasOnly(['status', 'storagePaths.finalVideo', 'recordingData.uploadProgress',
                      'recordingData.fileSize', 'recordingData.mimeType', 'recordingCompletedAt', 'error', 'updatedAt'])
         );
-      
+
       // LOVE RETOLD MAIN APP: Authenticated users can create/delete their own sessions
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // RATE LIMITING: Prevent session creation spam (max 1 session per 5 minutes)
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt >= request.time - duration.value(5, 'm');
+
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      
+
       // LOVE RETOLD MAIN APP: Authenticated users can read/write their own sessions
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }

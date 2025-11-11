@@ -16,6 +16,7 @@ import PromptCard from '../PromptCard';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import useResponsiveLayout from '../../hooks/useResponsiveLayout';
 
 // Record icon from RecordingBar - open ring with filled dot in center
 function RecordIcon({ size = 16, color }) {
@@ -56,14 +57,18 @@ function ReadyToRecordScreenContent({ sessionData }) {
   const { tokens } = useTokens();
   const { isMobile } = useBreakpoint();
 
-  return (
-    <div style={{
+  const layout = useResponsiveLayout({
+    section: 'content',
+    customStyles: {
       paddingTop: isMobile ? tokens.spacing[12] : 0,
       display: isMobile ? 'block' : 'flex',
       alignItems: isMobile ? 'flex-start' : 'center',
-      justifyContent: isMobile ? 'flex-start' : 'center',
-      flex: isMobile ? 'none' : 1
-    }}>
+      justifyContent: isMobile ? 'flex-start' : 'center'
+    }
+  });
+
+  return (
+    <div style={layout}>
       <PromptCard sessionData={sessionData} />
       {/* Bouncing arrow indicator - positioned flush at bottom of SECTION B */}
       <div style={{

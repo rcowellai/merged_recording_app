@@ -49,14 +49,10 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
-        overflow: 'hidden',
-        // DEBUG: PromptCard outer container (error state)
-        // border: '3px solid red'
+        overflow: 'hidden'
       }}>
         <div style={{
-          padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`,
-          // DEBUG: PromptCard inner content (error state)
-          // border: '3px solid orange'
+          padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`
         }}>
           <div style={{
             fontSize: isMobile ? tokens.fontSize['2xl'] : tokens.fontSize['2xl'],
@@ -100,14 +96,10 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
       justifyContent: 'center',
       alignItems: 'center',
       textAlign: 'center',
-      overflow: 'hidden',
-      // DEBUG: PromptCard outer container
-      // border: '3px solid red'
+      overflow: 'hidden'
     }}>
       <div style={{
-        padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`,
-        // DEBUG: PromptCard inner content
-        // border: '3px solid orange'
+        padding: `${tokens.spacing[4]} ${tokens.spacing[4]}`
       }}>
         {/* Subheading => "{Name} asked" */}
         <div style={{

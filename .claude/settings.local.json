@@ -68,7 +68,8 @@
       "Bash(test:*)",
       "Bash(taskkill:*)",
       "mcp__ide__executeCode",
-      "WebFetch(domain:plyr.io)"
+      "WebFetch(domain:plyr.io)",
+      "Bash(firebase hosting:sites:list:*)"
     ],
     "deny": [],
     "ask": [],

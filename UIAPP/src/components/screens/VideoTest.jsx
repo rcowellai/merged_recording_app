@@ -35,6 +35,7 @@ import VideoDeviceSettings from './VideoDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import useResponsiveLayout from '../../hooks/useResponsiveLayout';
 
 /**
  * VideoTestContent - Inner component that safely uses hooks
@@ -46,21 +47,18 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
   const showPreview = mediaStream && permissionState === 'granted';
   const showError = permissionState === 'denied';
 
-  return (
-    <div style={{
+  const layout = useResponsiveLayout({
+    section: 'content',
+    customStyles: {
       width: '100%',
-      flex: isMobile ? 'none' : 1,
-      height: isMobile ? '100%' : undefined,
-      display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: isMobile ? 'center' : 'flex-start',
-      gap: tokens.spacing[12],
-      boxSizing: 'border-box',
-      overflow: 'hidden',
-      // DEBUG: VideoTestContent wrapper
-      // border: '3px solid blue'
-    }}>
+      gap: tokens.spacing[12]
+    }
+  });
+
+  return (
+    <div style={layout}>
       {/* Centering container for video content */}
       <div style={{
         width: '100%',
@@ -74,15 +72,11 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        boxSizing: 'border-box',
-        // DEBUG: Centering container
-        // border: '5px solid red'
+        boxSizing: 'border-box'
       }}>
         {/* Audio visualizer with key-based remounting for clean device switching */}
         <div style={{
-          marginBottom: '10px',
-          // DEBUG: AudioVisualizer wrapper
-          // border: '3px solid orange'
+          marginBottom: '10px'
         }}>
           <AudioVisualizer
             key={mediaStream?.id || 'no-stream'}
@@ -101,9 +95,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
           marginBottom: isMobile ? tokens.spacing[0] : 0,
           overflow: 'hidden',
           borderRadius: '20px',
-          backgroundColor: 'transparent',
-          // DEBUG: Video wrapper
-          // border: '3px solid purple'
+          backgroundColor: 'transparent'
         }}>
           <video
             ref={videoRef}
@@ -123,9 +115,7 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
 
       {/* Bottom container - pushed to bottom on desktop/tablet */}
       <div style={{
-        width: '100%',
-        // DEBUG: Bottom container
-        // border: '3px solid green'
+        width: '100%'
       }}>
         {showPreview && (
           <p style={{

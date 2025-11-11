@@ -11,6 +11,7 @@ import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useTokens } from '../theme/TokenProvider';
+import { AspectRatioContainer } from './ui';
 
 function PlyrMediaPlayer({
   src,
@@ -113,7 +114,6 @@ function PlyrMediaPlayer({
     <div className={`plyr-media-player ${className}`} style={{
       width: '100%',
       overflow: 'visible',  // Ensure controls aren't clipped
-      border: '2px solid purple',
       // Plyr theming via CSS custom properties - differentiated by player type
       '--plyr-color-main': controlColor,
       '--plyr-video-control-color': controlColor,
@@ -134,16 +134,18 @@ function PlyrMediaPlayer({
       ...style
     }}>
       {type === 'video' ? (
-        /* Square video container wrapper matching VideoTest.jsx */
-        <div style={{
-          maxWidth: '500px',
-          maxHeight: '500px',
-          aspectRatio: '1 / 1',
-          overflow: 'hidden',
-          borderRadius: '20px',
-          margin: '0 auto',
-          border: '2px solid pink'
-        }}>
+        /* Square video container using AspectRatioContainer for responsive sizing */
+        <AspectRatioContainer
+          ratio="1/1"
+          maxWidth="500px"
+          maxHeight="500px"
+          responsive={true}
+          style={{
+            borderRadius: '20px',
+            margin: '0 auto',
+            overflow: 'hidden'
+          }}
+        >
           <video
             ref={playerRef}
             playsInline
@@ -157,7 +159,7 @@ function PlyrMediaPlayer({
             <source src={src} type={getSourceType(src, type, actualMimeType)} />
             Your browser does not support the video element.
           </video>
-        </div>
+        </AspectRatioContainer>
       ) : (
         <audio
           ref={playerRef}

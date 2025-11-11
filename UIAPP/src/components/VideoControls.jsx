@@ -127,8 +127,7 @@ export function VideoControls({ player }) {
         gap: tokens.spacing[3],
         marginTop: tokens.spacing[4],
         width: '100%',
-        maxWidth: '500px',
-        border: '2px solid cyan'
+        maxWidth: 'min(500px, 100%)'
       }}
       role="region"
       aria-label="Video controls"
@@ -149,8 +148,7 @@ export function VideoControls({ player }) {
           padding: tokens.spacing[1],
           color: tokens.colors.primary.DEFAULT,
           transition: 'opacity 0.2s ease',
-          flexShrink: 0,
-          border: '2px solid magenta'
+          flexShrink: 0
         }}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -193,8 +191,7 @@ export function VideoControls({ player }) {
           whiteSpace: 'nowrap',
           minWidth: '80px',
           textAlign: 'right',
-          flexShrink: 0,
-          border: '2px solid lime'
+          flexShrink: 0
         }}
         aria-live="off"
         aria-atomic="true"

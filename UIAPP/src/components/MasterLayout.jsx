@@ -5,21 +5,33 @@
  * Provides consistent 3-section layout with unified header.
  *
  * Structure:
- * - SECTION A: Flexible header with A1 (back) | A2 (content) | A3 (icon)
+ * - SECTION A: LayoutHeader component (70-75px fixed)
  * - SECTION B: Main content area (flex grows)
- * - SECTION C: Bottom button area (100px fixed)
+ *   - Mobile: Single section
+ *   - Tablet/Desktop: TabletDesktopSubheader (B1) + Content (B2)
+ * - SECTION C: Bottom actions area (100-150px fixed)
  *
- * Section A2 renders: Text or any React component (e.g., RecordingBar)
+ * Components Used:
+ * - LayoutHeader: Top navigation with back button, content, and icon
+ * - TabletDesktopSubheader: Secondary header on tablet/desktop
+ * - ContentRouter: Utility to route content to correct location
+ *
+ * Special Handling:
+ * - Welcome screen: Transparent background on mobile with background image
+ * - Recording screens: Dark background color for active/paused states
+ *
+ * Phase 2 Refactor: Extracted from 423-line monolithic component
+ * See: LayoutHeader.jsx, TabletDesktopSubheader.jsx, ContentRouter.jsx
  */
 
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { MdChevronLeft } from 'react-icons/md';
 import { useTokens } from '../theme/TokenProvider';
 import { useBreakpoint } from '../hooks/useBreakpoint';
-import Logo from '../Assets/Logo.png';
-import DarkLogo from '../Assets/dark_logo.png';
 import AuthImage from '../Assets/Auth_Image.png';
+import LayoutHeader from './layout/LayoutHeader';
+import { useContentRouter } from './layout/ContentRouter';
+import TabletDesktopSubheader from './layout/TabletDesktopSubheader';
 
 function MasterLayout({
   content = null,
@@ -43,6 +55,15 @@ function MasterLayout({
   // Determine if this is the active recording screen for dark background
   const isActiveRecordingScreen = className.includes('active-recording-state');
   const isPausedRecordingScreen = className.includes('paused-recording-state');
+
+  // Route banner content to appropriate location (mobile A2 vs desktop B1B)
+  const { mobileContent, desktopContent } = useContentRouter({
+    bannerContent,
+    isWelcomeScreen,
+    isMobile,
+    isTablet,
+    isDesktop
+  });
 
   // Inject mobile-only CSS for welcome screen background
   useEffect(() => {
@@ -75,39 +96,6 @@ function MasterLayout({
     };
   }, [isWelcomeScreen]);
 
-  // Determine content for SECTION A2
-  // Mobile: Show logo (welcome screen) or bannerContent (other screens)
-  // Tablet/Desktop: Empty (content moves to B1B)
-  const renderA2Content = () => {
-    if (isMobile && isWelcomeScreen) {
-      return (
-        <img
-          src={Logo}
-          alt="Love Retold"
-          style={{
-            height: '30px',
-            width: 'auto',
-            objectFit: 'contain'
-          }}
-        />
-      );
-    }
-    // Mobile: Show bannerContent in A2
-    // Tablet/Desktop: A2 is empty (content in B1B instead)
-    return isMobile ? bannerContent : null;
-  };
-
-  // Determine content for SECTION B1B (tablet/desktop only)
-  // Shows bannerContent on tablet/desktop, empty on mobile
-  const renderB1BContent = () => {
-    // Welcome screen on tablet/desktop: Don't show banner in B1B
-    if ((isTablet || isDesktop) && isWelcomeScreen) {
-      return null;
-    }
-    // Tablet/Desktop: Show bannerContent in B1B
-    return (isTablet || isDesktop) ? bannerContent : null;
-  };
-
   return (
     // ========================================
     // # MASTER CONTAINER (PAGE-CONTAINER)
@@ -129,127 +117,25 @@ function MasterLayout({
         minHeight: '100dvh',
         width: '100%',
         boxSizing: 'border-box',
-        position: 'relative',
-        // DEBUG: PAGE-CONTAINER border
-        border: '3px solid red'
+        position: 'relative'
       }}>
 
       {/* ========================================
           # SECTION A (HEADER)
           ========================================
           Single banner with flexible A2 content
-          All sections render props directly (no defaults)
-
-          A1: Back button (45px) | A2: Flexible content | A3: Icon slot (45px)
       */}
       {showBanner && (
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          width: '100%',
-          // Responsive height: 70px mobile, 75px tablet/desktop
-          height: isMobile ? '70px' : '75px',
-          minHeight: isMobile ? '70px' : '75px',
-          maxHeight: isMobile ? '70px' : '75px',
-          // Mobile welcome screen: transparent header to show background image
-          // Other screens: standard header backgrounds
-          backgroundColor: (isMobile && isWelcomeScreen)
-            ? 'transparent'
-            : (bannerContent ? tokens.colors.neutral.default : tokens.colors.background.light),
-          color: tokens.colors.primary.DEFAULT,
-          zIndex: tokens.zIndex.header,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: isMobile ? 'space-between' : 'center',
-          boxSizing: 'border-box',
-          padding: 0,
-          fontWeight: tokens.fontWeight.medium,
-          fontSize: tokens.fontSize.base,
-          // DEBUG: SECTION-A border
-          border: '3px solid cyan',
-          ...(bannerStyle || {})
-        }}>
-          {isMobile ? (
-            // Mobile: A1, A2, A3 subdivided structure
-            <>
-              {/* A1 - Back Button (45px) */}
-              <div style={{
-                flex: '0 0 45px',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                // DEBUG: SECTION-A1 border
-                border: '2px solid orange'
-              }}>
-                {showBackButton && onBack && (
-                  <MdChevronLeft
-                    size={32}
-                    color={tokens.colors.primary.DEFAULT}
-                    onClick={onBack}
-                    style={{ cursor: 'pointer' }}
-                  />
-                )}
-              </div>
-
-              {/* A2 - Flexible Content (flex-grow) */}
-              <div style={{
-                flex: 1,
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                boxSizing: 'border-box',
-                color: tokens.colors.primary.DEFAULT,
-                fontWeight: tokens.fontWeight.normal,
-                fontSize: tokens.fontSize['2xl'], // Mobile: 24px (maintains current size)
-                // DEBUG: SECTION-A2 border
-                border: '2px solid yellow'
-              }}>
-                {renderA2Content()}
-              </div>
-
-              {/* A3 - Icon Slot (45px) */}
-              <div style={{
-                flex: '0 0 45px',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                // DEBUG: SECTION-A3 border
-                border: '2px solid magenta'
-              }}>
-                {iconA3}
-              </div>
-            </>
-          ) : (
-            // Tablet/Desktop: Unified Section A with logo (left-aligned)
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              paddingLeft: tokens.spacing[4],
-              boxSizing: 'border-box',
-            }}>
-              <img
-                src={isWelcomeScreen || isActiveRecordingScreen || isPausedRecordingScreen ? Logo : DarkLogo}
-                alt="Love Retold"
-                style={{
-                  height: '30px',
-                  width: 'auto',
-                  objectFit: 'contain',
-                  paddingLeft: tokens.spacing[6]
-                }}
-              />
-            </div>
-          )}
-        </div>
+        <LayoutHeader
+          showBackButton={showBackButton}
+          onBack={onBack}
+          bannerContent={mobileContent}
+          iconA3={iconA3}
+          isWelcomeScreen={isWelcomeScreen}
+          isActiveRecordingScreen={isActiveRecordingScreen}
+          isPausedRecordingScreen={isPausedRecordingScreen}
+          bannerStyle={bannerStyle}
+        />
       )}
 
       {/* ========================================
@@ -271,9 +157,7 @@ function MasterLayout({
         // Expose layout metrics as CSS variables for inner components
         '--headerH': isMobile ? '70px' : '75px',
         '--actionsH': isMobile ? '100px' : '150px',
-        '--contentPad': tokens.spacing[4],
-        // DEBUG: APP-LAYOUT border
-        border: '3px solid purple'
+        '--contentPad': tokens.spacing[4]
       }}>
 
         {/* ========================================
@@ -296,9 +180,7 @@ function MasterLayout({
             overflow: 'visible',
             width: '100%',
             padding: tokens.spacing[4],
-            boxSizing: 'border-box',
-            // DEBUG: SECTION-B border
-            border: '3px solid green'
+            boxSizing: 'border-box'
           }}>
             {content}
             {overlay}
@@ -315,77 +197,15 @@ function MasterLayout({
             width: '100%',
             maxWidth: '550px',
             margin: '0 auto',
-            boxSizing: 'border-box',
-            // DEBUG: SECTION-B border
-            border: '5px solid green'
+            boxSizing: 'border-box'
           }}>
-            {/* B1 - Top Section (70px fixed) with A1/A2/A3 layout */}
-            <div style={{
-              flex: '0 0 70px',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxSizing: 'border-box',
-              // DEBUG: SECTION-B1 border
-              border: '5px solid yellow',
-              backgroundColor: 'rgba(255, 255, 0, 0.1)'
-            }}>
-              {/* B1A - Left slot (45px) - Back button on tablet/desktop */}
-              <div style={{
-                flex: '0 0 45px',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                // DEBUG: SECTION-B1A border
-                border: '2px solid orange'
-              }}>
-                {showBackButton && onBack && (
-                  <MdChevronLeft
-                    size={38}
-                    color={tokens.colors.primary.DEFAULT}
-                    onClick={onBack}
-                    style={{ cursor: 'pointer' }}
-                  />
-                )}
-              </div>
-
-              {/* B1B - Center flexible content */}
-              <div style={{
-                flex: 1,
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                boxSizing: 'border-box',
-                color: tokens.colors.primary.DEFAULT,
-                fontWeight: tokens.fontWeight.normal,
-                fontSize: tokens.fontSize['2xl'], // 24px - matches mobile Section A2
-                // DEBUG: SECTION-B1B border
-                border: '2px solid yellow'
-              }}>
-                {renderB1BContent()}
-              </div>
-
-              {/* B1C - Right slot (45px) - Icon on tablet/desktop */}
-              <div style={{
-                flex: '0 0 45px',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                // DEBUG: SECTION-B1C border
-                border: '2px solid magenta'
-              }}>
-                <div style={{ transform: 'scale(1.2)' }}>
-                  {iconA3}
-                </div>
-              </div>
-            </div>
+            {/* B1 - Top Section (70px fixed) */}
+            <TabletDesktopSubheader
+              showBackButton={showBackButton}
+              onBack={onBack}
+              content={desktopContent}
+              iconA3={iconA3}
+            />
 
             {/* B2 - Main Content (flex grow) */}
             <div style={{
@@ -395,10 +215,7 @@ function MasterLayout({
               flex: '1 1 auto',
               width: '100%',
               padding: tokens.spacing[4],
-              boxSizing: 'border-box',
-              // DEBUG: SECTION-B2 border
-              border: '5px solid cyan',
-              backgroundColor: 'rgba(0, 255, 255, 0.1)'
+              boxSizing: 'border-box'
             }}>
               {content}
               {overlay}
@@ -422,9 +239,7 @@ function MasterLayout({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: isMobile ? 'flex-end' : 'flex-start',
-          boxSizing: 'border-box',
-          // DEBUG: SECTION-C border
-          border: '3px solid purple'
+          boxSizing: 'border-box'
         }}>
           {actions}
         </div>
