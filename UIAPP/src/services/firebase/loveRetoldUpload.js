@@ -169,8 +169,10 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
         storytellerId: sessionComponents.storytellerId,
         recordingType: mediaType,
         timestamp: Date.now().toString(),
-        recordingVersion: '2.1-love-retold-status-fixed' // SLICE-B FIX: Updated for Love Retold status system
+        recordingVersion: '2.1-love-retold-status-fixed', // SLICE-B FIX: Updated for Love Retold status system
         // SLICE-B FIX: Removed askerName - Love Retold handles this field
+        // DURATION-FIELD: Add duration to metadata for Love Retold Cloud Function to read
+        duration: (options.duration !== undefined ? options.duration : 0).toString()
       }
     };
     
@@ -274,7 +276,7 @@ export const uploadLoveRetoldRecording = async (recordingBlob, sessionId, sessio
           const completionData = {
             fileSize: recordingBlob.size,
             mimeType: actualMimeType,
-            duration: options.duration // Optional duration from options
+            duration: options.duration !== undefined ? options.duration : undefined // DURATION-FIELD: Optional duration from options
           };
           
           // Customer support: Track atomic completion attempt

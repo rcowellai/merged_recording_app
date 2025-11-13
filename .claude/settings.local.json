@@ -74,7 +74,9 @@
       "Bash(git rev-list:*)",
       "Bash(git ls-tree:*)",
       "WebFetch(domain:firebase.google.com)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(firebase firestore:rules:*)",
+      "Bash(firebase firestore:rules:get:*)"
     ],
     "deny": [],
     "ask": [],

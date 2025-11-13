@@ -49,7 +49,7 @@ import RecordingFlow from './RecordingFlow';
 import FirebaseErrorBoundary from './FirebaseErrorBoundary';
 
 // Timer context
-import { TimerProvider } from '../contexts/TimerContext';
+import { TimerProvider, useTimer } from '../contexts/TimerContext';
 
 // Utility functions
 import { createSubmissionHandler } from '../utils/submissionHandlers';
@@ -82,6 +82,36 @@ import ReviewRecordingScreen from './screens/ReviewRecordingScreen';
 
 // Token provider for inline styling
 import { useTokens } from '../theme/TokenProvider';
+
+/**
+ * DurationCapture
+ * ---------------
+ * Helper component that provides a callback to capture timer value synchronously.
+ * Must be rendered inside TimerProvider context.
+ * DURATION-FIX: Changed from useEffect to callback pattern to avoid timing issues.
+ */
+function DurationCapture({ durationRef, onProvideCaptureCallback, children }) {
+  const { elapsedSeconds } = useTimer();
+
+  // Provide capture callback to parent via ref/callback
+  React.useEffect(() => {
+    if (onProvideCaptureCallback) {
+      onProvideCaptureCallback(() => {
+        console.log('🎯 DURATION-DEBUG [1]: Capture callback executing', {
+          elapsedSeconds,
+          timestamp: new Date().toISOString()
+        });
+        durationRef.current = elapsedSeconds;
+        console.log('🎯 DURATION-DEBUG [2]: Ref updated', {
+          refValue: durationRef.current,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+  }, [elapsedSeconds, durationRef, onProvideCaptureCallback]);
+
+  return children;
+}
 
 /**
  * formatBannerContent
@@ -142,6 +172,11 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
 
   // Video element ref for connecting mediaStream
   const videoRef = useRef(null);
+
+  // Duration tracking: Store recording duration when recording completes
+  const recordingDurationRef = useRef(null);
+  // DURATION-FIX: Store capture callback function from DurationCapture component
+  const captureDurationCallbackRef = useRef(null);
 
   // Track recording flow state values for hooks that need them
   const [recordingFlowStateSnapshot, setRecordingFlowStateSnapshot] = useState({
@@ -352,13 +387,20 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
         // Initialize extracted components and utility functions
         // Creating submission handler (logging disabled for upload analysis focus)
 
+        // DURATION-DEBUG: Log ref value before creating submission handler
+        console.log('🎯 DURATION-DEBUG [6]: Creating submission handler', {
+          refValue: recordingDurationRef.current,
+          timestamp: new Date().toISOString()
+        });
+
         const handleSubmit = createSubmissionHandler({
           recordedBlobUrl,
           captureMode,
           actualMimeType,
           sessionId,          // NEW: Pass Love Retold sessionId
           sessionComponents,  // NEW: Pass Love Retold sessionComponents
-          sessionData,        // UID-FIX-SLICE-A: Pass sessionData for full userId  
+          sessionData,        // UID-FIX-SLICE-A: Pass sessionData for full userId
+          duration: recordingDurationRef.current, // DURATION-FIELD: Pass captured recording duration
           // Progressive upload removed - simple upload after recording
           appState,
           dispatch,
@@ -378,7 +420,13 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           isRecording,
           isPaused,
           captureMode,
-          mediaStream
+          mediaStream,
+          // DURATION-FIX: Pass capture callback to be called before handleDone
+          onCaptureDuration: () => {
+            if (captureDurationCallbackRef.current) {
+              captureDurationCallbackRef.current();
+            }
+          }
         });
 
         // Format Time utility (using constants for maintainability)
@@ -740,14 +788,21 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
             onWarning={handleTimerWarning}
             onMaxDuration={handleTimerMaxDuration}
           >
-            <RecordingBar
-              totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
-              isRecording={isRecording}
-              isPaused={isPaused}
-              formatTime={formatTime}
-              mediaStream={mediaStream}
-              visualizerColor={visualizerColor}
-            />
+            <DurationCapture
+              durationRef={recordingDurationRef}
+              onProvideCaptureCallback={(callback) => {
+                captureDurationCallbackRef.current = callback;
+              }}
+            >
+              <RecordingBar
+                totalSeconds={RECORDING_LIMITS.MAX_DURATION_SECONDS}
+                isRecording={isRecording}
+                isPaused={isPaused}
+                formatTime={formatTime}
+                mediaStream={mediaStream}
+                visualizerColor={visualizerColor}
+              />
+            </DurationCapture>
           </TimerProvider>
         ) : null;
 

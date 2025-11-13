@@ -73,6 +73,9 @@ export async function completeRecordingAtomically(sessionId, completionData, upl
         'recordingData.uploadProgress': 100,
         'recordingData.fileSize': completionData.fileSize,
         'recordingData.mimeType': completionData.mimeType,
+        ...(completionData.duration !== undefined && {
+          'recordingData.duration': completionData.duration // DURATION-FIELD: Optional duration field
+        }),
         recordingCompletedAt: new Date(),
         // Clear any previous errors (Love Retold will automatically delete prompt)
         error: null,

@@ -27,11 +27,12 @@ import { uploadErrorTracker } from './uploadErrorTracker.js';
  */
 export function createSubmissionHandler({
   recordedBlobUrl,
-  captureMode, 
+  captureMode,
   actualMimeType,
-  sessionId,          // NEW: Add sessionId 
+  sessionId,          // NEW: Add sessionId
   sessionComponents,  // NEW: Add sessionComponents
   sessionData,        // UID-FIX-SLICE-A: Add sessionData for full userId
+  duration,           // DURATION-FIELD: Recording duration in seconds
   // progressiveUpload removed - using simple upload flow
   appState,
   dispatch,
@@ -41,16 +42,22 @@ export function createSubmissionHandler({
   // Handle submit (preserves exact logic from App.js:113-177)
   const handleSubmit = async () => {
     console.log('🚀 SUBMIT HANDLER STARTED');
-    
+    console.log('🎯 DURATION-DEBUG [7]: Submit handler - duration value received', {
+      duration,
+      durationType: typeof duration,
+      timestamp: new Date().toISOString()
+    });
+
     // Customer support: Track upload initiation for troubleshooting
     uploadErrorTracker.logInfo('Upload initiated', {
       sessionId,
       fullUserId: sessionData?.fullUserId,
       truncatedUserId: sessionComponents?.userId,
       step: 'recordingStart',
-      status: sessionData?.sessionDocument?.status
+      status: sessionData?.sessionDocument?.status,
+      duration // DURATION-DEBUG: Include duration in tracking
     });
-    
+
     const debugInfo = {
       hasRecordedBlobUrl: !!recordedBlobUrl,
       captureMode,
@@ -60,9 +67,10 @@ export function createSubmissionHandler({
       hasSessionData: !!sessionData, // UID-FIX-SLICE-A
       sessionId,
       sessionComponents,
-      sessionData // UID-FIX-SLICE-A
+      sessionData, // UID-FIX-SLICE-A
+      duration // DURATION-DEBUG: Include in debug info
     };
-    
+
     console.log('📊 Submit Handler Debug Info:', debugInfo);
 
     try {
@@ -185,6 +193,7 @@ export function createSubmissionHandler({
           {
             mediaType: captureMode,
             actualMimeType: actualMimeType,
+            duration: duration, // DURATION-FIELD: Pass recording duration
             onProgress: (progress) => {
               dispatch({ type: APP_ACTIONS.SET_UPLOAD_FRACTION, payload: progress / 100.0 });
             },

@@ -26,7 +26,9 @@ export function createNavigationHandlers({
   isRecording,
   isPaused,
   captureMode,
-  mediaStream
+  mediaStream,
+  // DURATION-FIX: Callback to capture duration before stopping recording
+  onCaptureDuration
 }) {
   
   // "Start Over" Flow - Now using Radix Dialog
@@ -80,6 +82,15 @@ export function createNavigationHandlers({
 
   // "Done" => Move to Submit Stage (inline review mode)
   const handleDoneAndSubmitStage = () => {
+    console.log('🎯 DURATION-DEBUG [3]: handleDoneAndSubmitStage called - about to capture duration');
+    // DURATION-FIX: Capture duration BEFORE stopping recording (before handleDone)
+    if (onCaptureDuration) {
+      onCaptureDuration();
+      console.log('🎯 DURATION-DEBUG [4]: onCaptureDuration() invoked');
+    } else {
+      console.warn('⚠️ DURATION-DEBUG: onCaptureDuration is null/undefined!');
+    }
+    console.log('🎯 DURATION-DEBUG [5]: About to call handleDone()');
     handleDone();
     dispatch({ type: APP_ACTIONS.SET_SUBMIT_STAGE, payload: true });
   };
