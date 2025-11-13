@@ -53,10 +53,6 @@ function RecordingFlow({
   });
 
   // Pass recording state to children via render prop pattern
-  debugLogger.log('info', 'RecordingFlow', 'Calling children render prop', {
-    hasRecordingFlowState: !!recordingFlowState
-  });
-
   return children(recordingFlowState);
 }
 

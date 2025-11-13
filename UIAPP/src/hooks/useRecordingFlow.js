@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { SUPPORTED_FORMATS, ENV_CONFIG } from '../config';
 import useCountdown from './useCountdown';
+import { serverTimestamp } from 'firebase/firestore';
 
 // Firebase services integration (optional)
 import { initializeAuth } from '../services/firebase';
@@ -53,34 +54,11 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // ===========================
   // NOTE: Recording timer moved to TimerContext (see TimerProvider in AppContent)
 
-  // Initialize Firebase authentication (optional)
-  useEffect(() => {
-    if (!isFirebaseEnabled || authState !== 'idle') return;
-
-    const initializeFirebaseAuth = async () => {
-      setAuthState('initializing');
-      setAuthError(null);
-
-      try {
-        await initializeAuth();
-        setAuthState('authenticated');
-        firebaseErrorHandler.log('info', 'Firebase authentication initialized', null, {
-          service: 'recording-flow',
-          operation: 'auth-init'
-        });
-      } catch (error) {
-        const mappedError = firebaseErrorHandler.mapError(error, 'auth-initialization');
-        setAuthError(mappedError);
-        setAuthState('error');
-        firebaseErrorHandler.log('error', 'Firebase authentication failed', mappedError, {
-          service: 'recording-flow', 
-          operation: 'auth-init-error'
-        });
-      }
-    };
-
-    initializeFirebaseAuth();
-  }, [isFirebaseEnabled, authState]);
+  // SESSION_VALIDATION_FIX: Auth initialization removed from critical path
+  // Per SESSION_VALIDATION_FIX.md lines 56, 477:
+  // - "Anonymous auth requirement adds unnecessary 200-500ms delay"
+  // - "No authentication wait required (rules allow unauthenticated document reads)"
+  // Auth now initialized only when needed for upload operations (see handleStartRecording)
 
   // ===========================
   // Media Stream Management
@@ -260,26 +238,62 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       recorder.start();
       setIsRecording(true);
       setIsPaused(false);
-      
-      // PHASE 2 FIX: Update Firebase status to 'Recording' when recording starts
-      if (isFirebaseEnabled && sessionId) {
+
+      // SESSION_VALIDATION_FIX: Initialize auth when recording starts (deferred from mount)
+      // Auth only needed for Firebase write operations, not for session validation
+      if (isFirebaseEnabled && sessionId && authState === 'idle') {
+        setAuthState('initializing');
+        initializeAuth()
+          .then((user) => {
+            setAuthState('authenticated');
+
+            // Small delay to ensure auth propagates before write operation
+            return new Promise(resolve => setTimeout(resolve, 100));
+          })
+          .then(() => {
+            // Update Firebase status to 'Recording' after auth is fully ready
+            return updateRecordingSession(sessionId, {
+              status: 'Recording',
+              recordingStartedAt: serverTimestamp()
+            });
+          })
+          .catch(error => {
+            console.error('🔴 [HOOK] Auth initialization or status update failed (non-critical):', error);
+            console.error('🔴 [HOOK] Error type:', error.type);
+            console.error('🔴 [HOOK] Error message:', error.message);
+            console.error('🔴 [HOOK] Original error:', error.originalError);
+            console.error('🔴 [HOOK] Full error object:', error);
+            setAuthState('error');
+            setAuthError(error);
+            firebaseErrorHandler.log('warn', 'Auth or recording status update failed', error, {
+              service: 'recording-flow',
+              operation: 'auth-and-status-update',
+              sessionId: sessionId
+            });
+            // Continue recording even if auth/status update fails
+          });
+      } else if (isFirebaseEnabled && sessionId && authState === 'authenticated') {
+        // Auth already initialized, just update status
         updateRecordingSession(sessionId, {
           status: 'Recording',
-          recordingStartedAt: new Date()
+          recordingStartedAt: serverTimestamp()
         }).catch(error => {
-          console.warn('Recording status update failed (non-critical):', error);
+          console.error('🔴 [HOOK] Recording status update failed (non-critical):', error);
+          console.error('🔴 [HOOK] Error type:', error.type);
+          console.error('🔴 [HOOK] Error message:', error.message);
+          console.error('🔴 [HOOK] Original error:', error.originalError);
+          console.error('🔴 [HOOK] Full error object:', error);
           firebaseErrorHandler.log('warn', 'Recording status update failed', error, {
             service: 'recording-flow',
             operation: 'status-update-recording',
             sessionId: sessionId
           });
-          // Continue recording even if status update fails
         });
       }
-      
+
       // Simple recording - no progressive upload timer needed
     });
-  }, [mediaStream, captureMode, startCountdown, onDoneAndSubmitStage, isFirebaseEnabled, sessionId]);
+  }, [mediaStream, captureMode, startCountdown, onDoneAndSubmitStage, isFirebaseEnabled, sessionId, authState]);
 
   const handlePause = useCallback(() => {
     if (mediaRecorder && isRecording) {

@@ -224,17 +224,17 @@ const firebaseAuthService = new FirebaseAuthService();
 // Export service instance and individual functions for flexibility
 export default firebaseAuthService;
 
-export const {
-  initialize: initializeAuth,
-  signInAnonymously,
-  getCurrentUser,
-  isAuthenticated: checkAuthentication,
-  onAuthStateChange,
-  getAuthError,
-  clearAuthError,
-  signOut,
-  getStatus: getAuthStatus,
-  cleanup: cleanupAuth
-} = firebaseAuthService;
+// CRITICAL FIX: Bind methods to preserve 'this' context
+// Destructuring loses 'this' binding, causing "Cannot set properties of undefined"
+export const initializeAuth = firebaseAuthService.initialize.bind(firebaseAuthService);
+export const signInAnonymously = firebaseAuthService.signInAnonymously.bind(firebaseAuthService);
+export const getCurrentUser = firebaseAuthService.getCurrentUser.bind(firebaseAuthService);
+export const checkAuthentication = firebaseAuthService.isAuthenticated.bind(firebaseAuthService);
+export const onAuthStateChange = firebaseAuthService.onAuthStateChange.bind(firebaseAuthService);
+export const getAuthError = firebaseAuthService.getAuthError.bind(firebaseAuthService);
+export const clearAuthError = firebaseAuthService.clearAuthError.bind(firebaseAuthService);
+export const signOut = firebaseAuthService.signOut.bind(firebaseAuthService);
+export const getAuthStatus = firebaseAuthService.getStatus.bind(firebaseAuthService);
+export const cleanupAuth = firebaseAuthService.cleanup.bind(firebaseAuthService);
 
 AppLogger.service('FirebaseAuth', '🔒 Firebase Authentication Service: LOADED');

@@ -32,6 +32,7 @@ import CameraPermissionErrorDemo from './pages/CameraPermissionErrorDemo';
 import MicrophonePermissionErrorDemo from './pages/MicrophonePermissionErrorDemo';
 import AppErrorBoundaryDemo from './pages/AppErrorBoundaryDemo';
 import FirebaseErrorBoundaryDemo from './pages/FirebaseErrorBoundaryDemo';
+import LoadingSpinnerDemo from './pages/LoadingSpinnerDemo';
 
 // Initialize Sentry for error tracking (production only)
 if (process.env.REACT_APP_SENTRY_DSN && process.env.NODE_ENV === 'production') {
@@ -117,6 +118,7 @@ root.render(
           <Route path="/demo/error/microphone" element={<MicrophonePermissionErrorDemo />} />
           <Route path="/demo/error/app-crash" element={<AppErrorBoundaryDemo />} />
           <Route path="/demo/error/firebase" element={<FirebaseErrorBoundaryDemo />} />
+          <Route path="/demo/loading" element={<LoadingSpinnerDemo />} />
         </Routes>
         </BrowserRouter>
       </NiceModal.Provider>

@@ -28,34 +28,43 @@ import {
 class FirebaseFunctionsService {
   constructor() {
     this.validateSessionFunction = httpsCallable(functions, 'getRecordingSession');
-    this.defaultTimeout = 4000; // 4 seconds (same as MVPAPP)
+    this.defaultTimeout = 8000; // 8 seconds - handles cold starts
     this.lastError = null;
   }
 
   /**
    * Validate a recording session
    * Maintains exact same interface as MVPAPP session.js
-   * 
+   *
    * @param {string} sessionId - The session ID to validate
-   * @param {number} timeoutMs - Timeout in milliseconds (default: 4000)
+   * @param {number} timeoutMs - Timeout in milliseconds (default: 8000)
    * @returns {Promise<Object>} Session validation result
    */
   async validateSession(sessionId, timeoutMs = this.defaultTimeout) {
     console.log('🔍 validateSession called with sessionId:', sessionId);
-    
+
+    // IMPORTANT: Declare startTime BEFORE try block so it's accessible in catch
+    const startTime = performance.now();
+
     try {
       // Create timeout promise
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Firebase function timeout')), timeoutMs);
       });
-      
+
       console.log('🚀 Calling Firebase function getRecordingSession...');
-      
+
       const result = await Promise.race([
         this.validateSessionFunction({ sessionId }),
         timeoutPromise
       ]);
-      
+
+      const elapsed = performance.now() - startTime;
+      console.log(`⏱️ Cloud Function validation took ${elapsed}ms`);
+      if (elapsed > 6000) {
+        console.warn('⚠️ Validation slow (>6s)');
+      }
+
       // Log the complete response structure
       console.log('📥 Complete Firebase function response:', JSON.stringify(result, null, 2));
       console.log('📥 Response data field:', result?.data);
@@ -90,7 +99,8 @@ class FirebaseFunctionsService {
         message: 'No data received from server'
       };
     } catch (error) {
-      console.error('Error validating session:', error);
+      const elapsed = performance.now() - startTime;
+      console.error(`❌ Cloud Function validation failed after ${elapsed}ms:`, error);
       this.lastError = this.mapFunctionError(error);
       
       // Handle timeout specifically - client-side error

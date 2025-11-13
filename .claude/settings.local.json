@@ -69,7 +69,12 @@
       "Bash(taskkill:*)",
       "mcp__ide__executeCode",
       "WebFetch(domain:plyr.io)",
-      "Bash(firebase hosting:sites:list:*)"
+      "Bash(firebase hosting:sites:list:*)",
+      "Bash(xargs git branch -D)",
+      "Bash(git rev-list:*)",
+      "Bash(git ls-tree:*)",
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": [],

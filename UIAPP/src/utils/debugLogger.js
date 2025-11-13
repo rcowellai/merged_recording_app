@@ -5,12 +5,20 @@
 
 class DebugLogger {
   constructor() {
-    // Temporarily disable general debug logging to focus on upload analysis
-    this.enabled = false;
+    // Enable debug logging based on environment variable
+    const debugMode = process.env.REACT_APP_DEBUG_MODE === 'true' ||
+                     process.env.REACT_APP_DEBUG === 'true' ||
+                     localStorage.getItem('debug-mode') === 'true';
+    this.enabled = debugMode;
     this.context = 'UIAPP';
     this.startTime = Date.now();
-    // Initialization message moved to AppLogger for admin control
-    // console.log('🔇 General debug logging temporarily disabled - Upload analysis mode active');
+
+    // Log initialization status
+    if (this.enabled) {
+      console.log('🐛 Debug logging ENABLED (REACT_APP_DEBUG_MODE=true)');
+    } else {
+      console.log('🔇 Debug logging DISABLED (set REACT_APP_DEBUG_MODE=true to enable)');
+    }
   }
 
   enable() {
@@ -28,9 +36,14 @@ class DebugLogger {
   log(level, component, message, data = null, error = null) {
     if (!this.enabled) return;
 
+    // FILTER: Only log ERROR and WARN levels, skip INFO and DEBUG to reduce console noise
+    if (level === 'info' || level === 'debug') {
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     const elapsed = Date.now() - this.startTime;
-    
+
     const logData = {
       timestamp,
       elapsed: `${elapsed}ms`,
@@ -42,7 +55,7 @@ class DebugLogger {
     };
 
     const prefix = `🐛 [${level.toUpperCase()}] ${component}:`;
-    
+
     switch (level) {
       case 'error':
         console.error(prefix, message, logData);
@@ -51,13 +64,8 @@ class DebugLogger {
       case 'warn':
         console.warn(prefix, message, logData);
         break;
-      case 'info':
-        console.info(prefix, message, logData);
-        break;
-      case 'debug':
-        console.log(prefix, message, logData);
-        break;
       default:
+        // Fallback for any other level (shouldn't reach here due to filter above)
         console.log(prefix, message, logData);
     }
 

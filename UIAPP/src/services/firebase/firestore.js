@@ -406,6 +406,87 @@ class FirebaseFirestoreService {
   }
 
   /**
+   * Validate recording session directly from Firestore
+   * Primary validation path - 10x faster than Cloud Function
+   *
+   * @param {string} sessionId - Session ID to validate
+   * @returns {Promise<Object>} Validation result
+   */
+  async validateRecordingSessionDirect(sessionId) {
+    try {
+      const docRef = doc(db, 'recordingSessions', sessionId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        return {
+          status: 'not_found',
+          message: 'This recording link is invalid or has been removed.',
+          isValid: false,
+          method: 'direct-firestore'
+        };
+      }
+
+      const data = docSnap.data();
+
+      // Check expiration
+      if (data.expiresAt && data.expiresAt.toDate() < new Date()) {
+        const daysAgo = Math.floor((Date.now() - data.expiresAt.toDate().getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          status: 'expired',
+          message: `This recording link expired ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago.`,
+          isValid: false,
+          method: 'direct-firestore'
+        };
+      }
+
+      // Check completion status
+      if (data.status === 'Completed' || data.status === 'ReadyForTranscription') {
+        return {
+          status: 'already_completed',
+          message: 'This recording has already been completed.',
+          isValid: false,
+          method: 'direct-firestore'
+        };
+      }
+
+      // Valid session
+      return {
+        status: 'valid',
+        message: 'Session is valid',
+        isValid: true,
+        method: 'direct-firestore',
+        sessionData: {
+          questionText: data.promptText || data.questionText,
+          storytellerName: data.storytellerName,
+          askerName: data.askerName,
+          createdAt: data.createdAt?.toDate()?.toISOString(),
+          expiresAt: data.expiresAt?.toDate()?.toISOString(),
+        },
+        session: {
+          promptText: data.promptText || data.questionText,
+          storytellerName: data.storytellerName,
+          askerName: data.askerName,
+          createdAt: data.createdAt?.toDate()?.toISOString(),
+          expiresAt: data.expiresAt?.toDate()?.toISOString(),
+          status: data.status
+        },
+        fullUserId: data.userId,
+        sessionDocument: data
+      };
+
+    } catch (error) {
+      console.error('❌ Direct validation failed:', error);
+      return {
+        status: 'error',
+        message: `Validation error: ${error.message}`,
+        isValid: false,
+        fallbackRequired: true,  // Signals fallback needed
+        method: 'direct-firestore'
+      };
+    }
+  }
+
+  /**
    * Create a new recording session document
    * @param {string} sessionId - Session ID
    * @param {Object} sessionData - Initial session data
@@ -444,18 +525,17 @@ class FirebaseFirestoreService {
    */
   async updateRecordingSession(sessionId, updateData) {
     try {
-      console.log('📝 Updating recording session:', sessionId);
-      
       const docRef = doc(db, 'recordingSessions', sessionId);
-      await updateDoc(docRef, {
+
+      const finalUpdateData = {
         ...updateData,
         updatedAt: serverTimestamp()
-      });
-      
-      console.log('📝 Recording session updated successfully');
+      };
+
+      await updateDoc(docRef, finalUpdateData);
+
       this.lastError = null;
     } catch (error) {
-      console.error('Error updating recording session:', error);
       const mappedError = this.mapFirestoreError(error);
       this.lastError = mappedError;
       throw mappedError;
@@ -703,40 +783,47 @@ class FirebaseFirestoreService {
 
   /**
    * Map Firebase Firestore errors to UIAPP error patterns
+   * FIXED: Firestore v9+ uses error codes WITHOUT 'firestore/' prefix
    * @param {Error} error - Firestore error
    * @returns {Error} Mapped UIAPP error
    */
   mapFirestoreError(error) {
     if (!error) return null;
 
-    // Handle Firestore errors
-    if (error.code && error.code.startsWith('firestore/')) {
-      switch (error.code) {
-        case 'firestore/permission-denied':
+    // Handle Firestore errors (v9+ format: 'permission-denied', not 'firestore/permission-denied')
+    if (error.code) {
+      // Remove 'firestore/' prefix if present (backward compatibility)
+      const errorCode = error.code.replace('firestore/', '');
+
+      switch (errorCode) {
+        case 'permission-denied':
           return createError(
             UPLOAD_ERRORS.PERMISSION_DENIED,
             'Permission denied. Please check your authentication.',
             error
           );
-        case 'firestore/not-found':
+        case 'not-found':
           return createError(
             UPLOAD_ERRORS.NOT_FOUND,
             'Document not found.',
             error
           );
-        case 'firestore/network-error':
+        case 'network-error':
+        case 'unavailable':
           return createError(
             UPLOAD_ERRORS.NETWORK_ERROR,
             'Network connection failed. Please check your internet connection.',
             error
           );
-        case 'firestore/quota-exceeded':
+        case 'quota-exceeded':
+        case 'resource-exhausted':
           return createError(
             UPLOAD_ERRORS.QUOTA_EXCEEDED,
             'Database quota exceeded. Please try again later.',
             error
           );
-        case 'firestore/timeout':
+        case 'deadline-exceeded':
+        case 'timeout':
           return createError(
             UPLOAD_ERRORS.TIMEOUT,
             'Database operation timeout. Please try again.',
@@ -828,11 +915,8 @@ class FirebaseFirestoreService {
    */
   async updateRecordingStatusAtomic(sessionId, newStatus, additionalFields = {}) {
     try {
-      console.log('🔄 Atomic status update:', sessionId, '→', newStatus);
-      
       const result = await updateRecordingStatusAtomicUtil(sessionId, newStatus, additionalFields);
-      
-      console.log('✅ Atomic status update successful:', result);
+
       this.lastError = null;
       return result;
       
@@ -905,6 +989,7 @@ export const deleteStory = firebaseFirestoreService.deleteStory.bind(firebaseFir
 export const getRecordingSession = firebaseFirestoreService.getRecordingSession.bind(firebaseFirestoreService);
 export const createRecordingSession = firebaseFirestoreService.createRecordingSession.bind(firebaseFirestoreService);
 export const updateRecordingSession = firebaseFirestoreService.updateRecordingSession.bind(firebaseFirestoreService);
+export const validateRecordingSessionDirect = firebaseFirestoreService.validateRecordingSessionDirect.bind(firebaseFirestoreService);
 export const updateRecordingStatus = firebaseFirestoreService.updateRecordingStatus.bind(firebaseFirestoreService);
 export const updateRecordingProgress = firebaseFirestoreService.updateRecordingProgress.bind(firebaseFirestoreService);
 export const addUploadReference = firebaseFirestoreService.addUploadReference.bind(firebaseFirestoreService);

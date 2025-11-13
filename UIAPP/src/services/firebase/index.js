@@ -56,6 +56,7 @@ export {
   getRecordingSession,
   createRecordingSession,
   updateRecordingSession,
+  validateRecordingSessionDirect,  // ⚠️ CRITICAL: Direct validation for performance fix
   formatDuration,
   formatDate
 } from './firestore';

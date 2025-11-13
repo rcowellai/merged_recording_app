@@ -101,9 +101,12 @@ function App() {
         </div>
 
         <div className="nav-section">
-          <h3>Error Screen Demos</h3>
-          <p>Preview all error screens for testing and design purposes.</p>
+          <h3>Screen Demos</h3>
+          <p>Preview loading and error screens for testing and design purposes.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a href="/demo/loading" className="btn btn-secondary">
+              Loading Spinner / Splash Screen
+            </a>
             <a href="/demo/error/upload" className="btn btn-secondary">
               1. Upload Failure Error
             </a>

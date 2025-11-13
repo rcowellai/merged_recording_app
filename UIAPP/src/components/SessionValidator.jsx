@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { parseSessionId, validateSessionId } from '../utils/sessionParser.js';
-import { validateSession } from '../services/firebase';
+import { validateSession, validateRecordingSessionDirect } from '../services/firebase';
 import { firebaseErrorHandler } from '../utils/firebaseErrorHandler';
 import debugLogger from '../utils/debugLogger.js';
-import { doc, getDoc } from 'firebase/firestore'; // UID-FIX-SLICE-A: Import Firestore
-import { db } from '../services/firebase'; // UID-FIX-SLICE-A: Import db
 import { ENV_CONFIG } from '../config'; // Import environment configuration
 
 // Import the existing App component to render when session is valid
 import AppContent from './AppContent.jsx';
 import SessionErrorScreen from './SessionErrorScreen.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSessionComponents }) => {
   const { sessionId: paramSessionId } = useParams();
@@ -101,7 +100,6 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
           setError(null);
           setLoading(false);
 
-          console.log('🎭 Development mode active - using mock session data');
           return;
         }
 
@@ -150,87 +148,73 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
           }
         }
 
-        // Validate session with Firebase
-        debugLogger.log('info', 'SessionValidator', 'Starting Firebase session validation', { sessionId });
-        firebaseErrorHandler.log('info', 'Validating session with Firebase', { sessionId }, {
-          service: 'session-validator',
-          operation: 'validate-session'
-        });
+        // PRIMARY: Direct Firestore query
+        debugLogger.log('info', 'SessionValidator', 'Starting session validation', { sessionId });
 
-        const data = await validateSession(sessionId);
-        debugLogger.log('info', 'SessionValidator', 'Firebase validation response received', {
+        let data = await validateRecordingSessionDirect(sessionId);
+        debugLogger.log('info', 'SessionValidator', 'Primary validation response', {
           sessionId,
           status: data.status,
-          message: data.message
+          isValid: data.isValid,
+          method: data.method
         });
 
-        // RACE-CONDITION-FIX: Check mount status before setState (after async operation)
-        if (!isMounted) return;
+        // FALLBACK: Cloud Function (if direct query failed)
+        if (data.fallbackRequired) {
+          debugLogger.log('warn', 'SessionValidator', 'Using Cloud Function fallback', {
+            sessionId,
+            primaryError: data.message
+          });
 
-        // Check if session validation returned an error status
+          try {
+            const fallbackData = await validateSession(sessionId);
+            data = { ...fallbackData, method: 'cloud-function-fallback' };
+
+            debugLogger.log('info', 'SessionValidator', 'Fallback successful', {
+              sessionId,
+              status: data.status
+            });
+          } catch (fallbackError) {
+            debugLogger.log('error', 'SessionValidator', 'Both validation methods failed', {
+              sessionId,
+              primaryError: data.message,
+              fallbackError: fallbackError.message
+            });
+            // Keep original error from direct validation
+          }
+        }
+
+        // Check mount status
+        if (!isMounted) {
+          return;
+        }
+
+        // Handle validation failure
         if (!data.isValid) {
-          // Handle business rule errors with exact messages from Love Retold
-          debugLogger.log('info', 'SessionValidator', 'Session validation failed', {
+          debugLogger.log('info', 'SessionValidator', 'Validation failed', {
             sessionId,
             status: data.status,
             message: data.message
           });
+
+          const errorType = data.status === 'not_found' ? 'invalid' :
+                           data.status === 'expired' ? 'expired' :
+                           'network';
+
           setError(data.message || 'Session validation failed');
-          setErrorType('expired');
+          setErrorType(errorType);
           setLoading(false);
           return;
         }
 
-        // Session is valid - proceed with setup
-        debugLogger.log('info', 'SessionValidator', 'Session validation successful', {
+        // Success - session data complete
+        debugLogger.log('info', 'SessionValidator', 'Validation successful', {
           sessionId,
-          sessionData: data
+          hasFullUserId: !!data.fullUserId,
+          method: data.method
         });
 
-        // UID-FIX-SLICE-A: Fetch session document from Firestore to get full userId
-        debugLogger.log('info', 'SessionValidator', 'Fetching session document for full userId', { sessionId });
-        try {
-          const sessionDoc = await getDoc(doc(db, 'recordingSessions', sessionId));
-
-          // RACE-CONDITION-FIX: Check mount status before setState (after async operation)
-          if (!isMounted) return;
-
-          if (sessionDoc.exists()) {
-            const sessionDocData = sessionDoc.data();
-            debugLogger.log('info', 'SessionValidator', 'Session document retrieved', {
-              sessionId,
-              hasUserId: !!sessionDocData.userId,
-              userIdLength: sessionDocData.userId?.length
-            });
-
-            // Add full userId to session data
-            const enhancedData = {
-              ...data,
-              fullUserId: sessionDocData.userId, // UID-FIX-SLICE-A: Full 28-character userId
-              sessionDocument: sessionDocData    // UID-FIX-SLICE-A: Complete session document
-            };
-
-            setSessionData(enhancedData);
-            debugLogger.log('info', 'SessionValidator', 'Enhanced session data with full userId', {
-              sessionId,
-              fullUserId: sessionDocData.userId,
-              truncatedUserId: sessionComponents?.userId
-            });
-          } else {
-            debugLogger.log('error', 'SessionValidator', 'Session document not found', { sessionId });
-            setSessionData(data); // Fallback to original data
-          }
-        } catch (firestoreError) {
-          debugLogger.log('error', 'SessionValidator', 'Failed to fetch session document', {
-            sessionId,
-            error: firestoreError.message
-          });
-          // RACE-CONDITION-FIX: Check mount status before setState
-          if (!isMounted) return;
-          setSessionData(data); // Fallback to original data
-        }
-
-        setError(null);
+        setSessionData(data);
         setLoading(false);
 
         firebaseErrorHandler.log('info', 'Session validation successful', {
@@ -278,12 +262,11 @@ const SessionValidator = ({ sessionId: propSessionId, sessionComponents: propSes
   if (loading) {
     debugLogger.log('info', 'SessionValidator', 'Rendering loading state');
     return (
-      <div className="app-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p className="loading-message">Validating recording session...</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        message="Validating recording session..."
+        size="large"
+        centered={true}
+      />
     );
   }
 

@@ -116,37 +116,35 @@ const SessionErrorScreen = ({
         )}
 
         {/* Actions - Section C tokens */}
-        {errorType !== 'expired' && (
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            justifyContent: 'center',
-            flexWrap: 'wrap'
-          }}>
-            <button
-              onClick={onRetry}
-              style={{
-                height: '40px',
-                padding: `0 ${tokens.spacing[6]}`,
-                backgroundColor: tokens.colors.primary.DEFAULT,
-                color: tokens.colors.primary.foreground,
-                border: 'none',
-                borderRadius: tokens.borderRadius.lg,
-                fontSize: tokens.fontSize.base,
-                fontWeight: tokens.fontWeight.medium,
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
-                fontFamily: tokens.fonts.primary,
-                width: '100%',
-                maxWidth: '300px'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = tokens.colors.primary.darker}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = tokens.colors.primary.DEFAULT}
-            >
-              Try Again
-            </button>
-          </div>
-        )}
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
+          <button
+            onClick={onRetry}
+            style={{
+              height: '40px',
+              padding: `0 ${tokens.spacing[6]}`,
+              backgroundColor: tokens.colors.primary.DEFAULT,
+              color: tokens.colors.primary.foreground,
+              border: 'none',
+              borderRadius: tokens.borderRadius.lg,
+              fontSize: tokens.fontSize.base,
+              fontWeight: tokens.fontWeight.medium,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease',
+              fontFamily: tokens.fonts.primary,
+              width: '100%',
+              maxWidth: '300px'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = tokens.colors.primary.darker}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = tokens.colors.primary.DEFAULT}
+          >
+            Try Again
+          </button>
+        </div>
 
         {/* Support link */}
         <div style={{

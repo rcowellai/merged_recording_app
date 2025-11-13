@@ -102,8 +102,12 @@ service cloud.firestore {
     
     // Recording sessions - ENHANCED: Support for both Love Retold main app AND recording app
     match /recordingSessions/{sessionId} {
-      // SECURITY FIX: Restrict read to authenticated users only (no more public access)
-      allow read: if request.auth != null;
+      // PERFORMANCE FIX: Allow direct document access with expiration check, block collection queries
+      // Handles: existing expiresAt field, null expiresAt, or missing expiresAt (backward compatibility)
+      allow get: if !resource.data.keys().hasAny(['expiresAt'])
+        || resource.data.expiresAt == null
+        || request.time < resource.data.expiresAt;
+      allow list: if false;  // Explicitly block collection enumeration
 
       // RECORDING APP: Anonymous authentication updates (enhanced with input validation)
       allow update: if request.auth != null

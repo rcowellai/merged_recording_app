@@ -103,6 +103,7 @@ export const createError = (type, message = null, originalError = null) => {
     originalError: originalError ? {
       name: originalError.name,
       message: originalError.message,
+      code: originalError.code,  // CRITICAL: Firestore error code
       stack: originalError.stack
     } : null
   };
