@@ -33,6 +33,7 @@ import React from 'react';
 import { FaVideo } from 'react-icons/fa';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { debugService } from '../../utils/DebugService';
 
 function VideoAccess({ onPermissionGranted, onPermissionDenied, onBack, errorMessage, isRequesting }) {
   const { tokens } = useTokens();
@@ -53,6 +54,11 @@ function VideoAccess({ onPermissionGranted, onPermissionDenied, onBack, errorMes
         }),
         timeoutPromise
       ]);
+
+      // TAG IT - Mark source for leak detection
+      stream._debugTag = 'VideoAccess_Permission';
+      debugService.trackStream(stream);
+      debugService.log('HARDWARE', 'VideoAccess: Permission stream created', stream);
 
       console.log('[VideoAccess] Camera permission GRANTED');
 

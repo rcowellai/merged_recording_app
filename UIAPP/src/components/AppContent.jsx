@@ -34,6 +34,7 @@
 
 import React, { useReducer, useState, useCallback, useEffect, useRef } from 'react';
 import debugLogger from '../utils/debugLogger.js';
+import { debugService } from '../utils/DebugService';
 
 // Configuration
 import { RECORDING_LIMITS, TIME_FORMAT } from '../config';
@@ -366,6 +367,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           countdownValue,
           isRecording,
           isPaused,
+          isStreamLoading,  // iOS HOT MIC FIX: Extract loading state
           recordedBlobUrl,
           mediaStream,
           handleVideoClick,
@@ -554,14 +556,20 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           // AudioTest screen - shown after audio mode selected AND permission granted
           // Shows device test UI with visualizer
           if (captureMode === 'audio' && appState.audioPermissionGranted && !appState.audioTestCompleted) {
-            // If no stream yet, request it now (for detected-but-not-requested case)
-            if (!mediaStream) {
+            // iOS HOT MIC FIX: Only auto-retry if NOT currently loading stream
+            // Prevents race condition where permission grant triggers re-render before stream is created
+            if (!mediaStream && !isStreamLoading) {
+              debugService.log('APP', 'Real Auto-Retry: mediaStream missing and NOT loading, calling handleAudioClick');
+              debugLogger.log('warn', 'AppContent', 'Auto-retry triggered for audio stream on AudioTest screen');
               // Call handleAudioClick to request stream
               handleAudioClick().catch((error) => {
                 debugLogger.log('error', 'AppContent', 'Failed to get audio stream on AudioTest', { error });
                 // Reset permission flag so user goes back to AudioAccess
                 dispatch({ type: APP_ACTIONS.SET_AUDIO_PERMISSION_GRANTED, payload: false });
               });
+            } else if (!mediaStream && isStreamLoading) {
+              // iOS HOT MIC FIX: Skip auto-retry because stream is already loading
+              debugService.log('APP', '✅ Auto-Retry SKIPPED: isStreamLoading=true (race condition prevented)');
             }
 
             return AudioTest({
@@ -628,14 +636,20 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
           // VideoTest screen - shown after video mode selected AND permission granted
           // Shows device test UI with video preview
           if (captureMode === 'video' && appState.videoPermissionGranted && !appState.videoTestCompleted) {
-            // If no stream yet, request it now (for detected-but-not-requested case)
-            if (!mediaStream) {
+            // iOS HOT MIC FIX: Only auto-retry if NOT currently loading stream
+            // Prevents race condition where permission grant triggers re-render before stream is created
+            if (!mediaStream && !isStreamLoading) {
+              debugService.log('APP', 'Real Auto-Retry: mediaStream missing and NOT loading, calling handleVideoClick');
+              debugLogger.log('warn', 'AppContent', 'Auto-retry triggered for video stream on VideoTest screen');
               // Call handleVideoClick to request stream
               handleVideoClick().catch((error) => {
                 debugLogger.log('error', 'AppContent', 'Failed to get video stream on VideoTest', { error });
                 // Reset permission flag so user goes back to VideoAccess
                 dispatch({ type: APP_ACTIONS.SET_VIDEO_PERMISSION_GRANTED, payload: false });
               });
+            } else if (!mediaStream && isStreamLoading) {
+              // iOS HOT MIC FIX: Skip auto-retry because stream is already loading
+              debugService.log('APP', '✅ Auto-Retry SKIPPED: isStreamLoading=true (race condition prevented)');
             }
 
             return VideoTest({

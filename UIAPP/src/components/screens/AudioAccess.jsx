@@ -35,6 +35,7 @@ import React from 'react';
 import { FaMicrophoneAlt } from 'react-icons/fa';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
+import { debugService } from '../../utils/DebugService';
 
 function AudioAccess({ onPermissionGranted, onPermissionDenied, onBack, errorMessage, isRequesting }) {
   const { tokens } = useTokens();
@@ -51,6 +52,11 @@ function AudioAccess({ onPermissionGranted, onPermissionDenied, onBack, errorMes
         navigator.mediaDevices.getUserMedia({ audio: true }),
         timeoutPromise
       ]);
+
+      // TAG IT - Mark source for leak detection
+      stream._debugTag = 'AudioAccess_Permission';
+      debugService.trackStream(stream);
+      debugService.log('HARDWARE', 'AudioAccess: Permission stream created', stream);
 
       console.log('[AudioAccess] Microphone permission GRANTED');
 

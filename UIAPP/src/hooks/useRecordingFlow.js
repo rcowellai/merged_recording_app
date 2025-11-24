@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { SUPPORTED_FORMATS, ENV_CONFIG } from '../config';
 import useCountdown from './useCountdown';
 import { serverTimestamp } from 'firebase/firestore';
+import { debugService } from '../utils/DebugService';
 
 // Firebase services integration (optional)
 import { initializeAuth } from '../services/firebase';
@@ -26,10 +27,18 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordedBlobUrl, setRecordedBlobUrl] = useState(null);
   const recordedChunksRef = useRef([]);
+  const isMountedRef = useRef(true);
+  const navigationTimeoutRef = useRef(null);
+  const cleanupTimeoutRef = useRef(null);        // Track 200ms cleanup timeout
+  const skipNavigationRef = useRef(false);        // Control navigation in onstop
 
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+
+  // iOS HOT MIC FIX: Track stream loading state to prevent race condition
+  // Prevents auto-retry logic from firing while stream is being created
+  const [isStreamLoading, setIsStreamLoading] = useState(false);
 
   // Countdown functionality using reusable hook
   const { countdownActive, countdownValue, startCountdown } = useCountdown();
@@ -79,9 +88,33 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
 
   useEffect(() => {
     return () => {
+      // Mark component as unmounted
+      isMountedRef.current = false;
+
+      // Clear any pending navigation timeout
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+
+      // Clear any pending early cleanup timeout
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+        cleanupTimeoutRef.current = null;
+      }
+
       // Use ref to get latest stream value at cleanup time
       if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current.getTracks().forEach(track => {
+          // Only stop if track is still active
+          if (track.readyState === 'live') {
+            try {
+              track.stop();
+            } catch (err) {
+              // Ignore - track might already be stopped by onstop handler
+            }
+          }
+        });
       }
     };
   }, []); // Empty deps - only cleanup on unmount
@@ -99,29 +132,59 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Recording Handlers
   // ===========================
   const handleVideoClick = useCallback(async () => {
+    debugService.log('FLOW', 'handleVideoClick: Requesting video stream...');
+
+    // iOS HOT MIC FIX: Set loading state BEFORE async operation
+    setIsStreamLoading(true);
+    debugService.log('FLOW', 'isStreamLoading: false → true');
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       });
+      // TAG IT - Mark source for leak detection
+      stream._debugTag = 'Flow_MainVideo';
+      debugService.trackStream(stream);
+      debugService.log('HARDWARE', 'Flow: Main video stream created', stream);
       setCaptureMode('video');
       setMediaStream(stream);
     } catch (error) {
+      debugService.log('FLOW', 'handleVideoClick failed', error);
       // RE-THROW error so AppContent can handle it and show drawer
       throw error;
+    } finally {
+      // iOS HOT MIC FIX: Always clear loading state (success or error)
+      setIsStreamLoading(false);
+      debugService.log('FLOW', 'isStreamLoading: true → false');
     }
   }, []);
 
   const handleAudioClick = useCallback(async () => {
+    debugService.log('FLOW', 'handleAudioClick: Requesting audio stream...');
+
+    // iOS HOT MIC FIX: Set loading state BEFORE async operation
+    setIsStreamLoading(true);
+    debugService.log('FLOW', 'isStreamLoading: false → true');
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true
       });
+      // TAG IT - Mark source for leak detection
+      stream._debugTag = 'Flow_MainAudio';
+      debugService.trackStream(stream);
+      debugService.log('HARDWARE', 'Flow: Main audio stream created', stream);
       setCaptureMode('audio');
       setMediaStream(stream);
     } catch (error) {
+      debugService.log('FLOW', 'handleAudioClick failed', error);
       // RE-THROW error so AppContent can handle it and show drawer
       throw error;
+    } finally {
+      // iOS HOT MIC FIX: Always clear loading state (success or error)
+      setIsStreamLoading(false);
+      debugService.log('FLOW', 'isStreamLoading: true → false');
     }
   }, []);
 
@@ -129,6 +192,10 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Properly updates mediaStream state and preserves old stream on failure
   const switchAudioDevice = useCallback(async (deviceId) => {
     const oldStream = mediaStream; // Preserve old stream reference
+
+    // iOS HOT MIC FIX: Set loading state during device switch
+    setIsStreamLoading(true);
+    debugService.log('FLOW', 'switchAudioDevice: isStreamLoading → true');
 
     try {
       // Get new stream with specific device
@@ -147,11 +214,17 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
 
       // Update state with new stream
       setMediaStream(newStream);
+      debugService.log('HARDWARE', 'Audio device switched successfully');
       return newStream;
     } catch (error) {
       // oldStream is untouched - audio continues working
       console.error('❌ [HOOK] Failed to switch audio device:', error);
+      debugService.log('FLOW', 'switchAudioDevice failed', error);
       throw error; // Propagate to AppContent for user feedback
+    } finally {
+      // iOS HOT MIC FIX: Always clear loading state
+      setIsStreamLoading(false);
+      debugService.log('FLOW', 'isStreamLoading: true → false');
     }
   }, [mediaStream]);
 
@@ -159,6 +232,10 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
   // Properly updates mediaStream state and preserves old stream on failure
   const switchVideoDevice = useCallback(async (deviceId) => {
     const oldStream = mediaStream; // Preserve old stream reference
+
+    // iOS HOT MIC FIX: Set loading state during device switch
+    setIsStreamLoading(true);
+    debugService.log('FLOW', 'switchVideoDevice: isStreamLoading → true');
 
     try {
       // Get new stream with specific video device
@@ -179,11 +256,17 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
 
       // Update state with new stream
       setMediaStream(newStream);
+      debugService.log('HARDWARE', 'Video device switched successfully');
       return newStream;
     } catch (error) {
       // oldStream is untouched - video/audio continues working
       console.error('❌ [HOOK] Failed to switch video device:', error);
+      debugService.log('FLOW', 'switchVideoDevice failed', error);
       throw error; // Propagate to AppContent for user feedback
+    } finally {
+      // iOS HOT MIC FIX: Always clear loading state
+      setIsStreamLoading(false);
+      debugService.log('FLOW', 'isStreamLoading: true → false');
     }
   }, [mediaStream]);
 
@@ -221,14 +304,76 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       }
     };
 
+    let onstopExecuted = false; // Idempotency flag
+
     recorder.onstop = () => {
-      const blob = new Blob(recordedChunksRef.current, { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      setRecordedBlobUrl(url);
-      
-      // Auto-transition to review mode
-      if (onDoneAndSubmitStage) {
-        onDoneAndSubmitStage();
+      // Prevent multiple executions (defensive programming)
+      if (onstopExecuted) {
+        console.warn('[useRecordingFlow] ⚠️ onstop fired multiple times, ignoring duplicate');
+        return;
+      }
+      onstopExecuted = true;
+
+      debugService.log('RECORDER', 'onstop handler executing');
+
+      try {
+        // 1. REDUNDANT HARDWARE CLEANUP (Safety Net)
+        // Tracks are likely already stopped by 200ms timeout in handleDone,
+        // but we ensure cleanup here as a safety measure. track.stop() is idempotent.
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => {
+            try {
+              track.stop();
+              console.log('[useRecordingFlow] 🛡️ Redundant cleanup: stopped track (onstop)');
+              debugService.log('HARDWARE', `Redundant cleanup: ${track.kind} track`, track);
+            } catch (err) {
+              // Ignore - track likely already stopped by early cleanup
+            }
+          });
+        }
+
+        // 2. CHECK MOUNT STATUS
+        if (!isMountedRef.current) return;
+
+        // 3. STATE CLEANUP
+        setMediaStream(null);
+        debugService.setRecorderState('inactive');
+
+        // 4. BLOB CREATION & NAVIGATION (skip if reset flow)
+        if (!skipNavigationRef.current) {
+          // Create blob for playback
+          const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          setRecordedBlobUrl(url);
+          debugService.log('RECORDER', `Recording complete: ${blob.size} bytes`);
+
+          // Navigate to review screen
+          // Privacy indicators are likely already off thanks to early cleanup
+          if (onDoneAndSubmitStage) {
+            navigationTimeoutRef.current = setTimeout(() => {
+              navigationTimeoutRef.current = null;
+              if (isMountedRef.current) {
+                onDoneAndSubmitStage();
+              }
+            }, 100); // Keep delay for safety
+          }
+        }
+
+        // Reset skip flag for next recording
+        skipNavigationRef.current = false;
+
+      } catch (error) {
+        console.error('[useRecordingFlow] ❌ Error in onstop handler:', error);
+        // Still attempt cleanup on error
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => {
+            try { track.stop(); } catch (err) { /* ignore */ }
+          });
+        }
+        if (isMountedRef.current) {
+          setMediaStream(null);
+          setIsRecording(false);
+        }
       }
     };
 
@@ -238,6 +383,8 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       recorder.start();
       setIsRecording(true);
       setIsPaused(false);
+      debugService.setRecorderState('recording');
+      debugService.log('RECORDER', 'Recording started');
 
       // SESSION_VALIDATION_FIX: Initialize auth when recording starts (deferred from mount)
       // Auth only needed for Firebase write operations, not for session validation
@@ -299,6 +446,8 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     if (mediaRecorder && isRecording) {
       mediaRecorder.pause();
       setIsPaused(true);
+      debugService.setRecorderState('paused');
+      debugService.log('RECORDER', 'Recording paused');
     }
   }, [mediaRecorder, isRecording]);
 
@@ -307,41 +456,89 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
       startCountdown(() => {
         mediaRecorder.resume();
         setIsPaused(false);
+        debugService.setRecorderState('recording');
+        debugService.log('RECORDER', 'Recording resumed');
       });
     }
   }, [mediaRecorder, isPaused, startCountdown]);
 
   const handleDone = useCallback(() => {
-    // Stop recording and prepare for upload
-    
-    if (mediaRecorder && (isRecording || isPaused)) {
+    // OPTIMIZATION: Stop tracks 200ms after recorder.stop() for fast UX
+    // Recorder gets time to register stop signal, but tracks stop before file encoding completes
+    // onstop handler provides redundant cleanup for safety
+
+    debugService.log('UI', 'User clicked Done');
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      // Capture current stream in closure scope (critical for correctness)
+      const streamToStop = mediaStream;
+
+      // 1. Signal the recorder to stop (starts async file encoding)
       mediaRecorder.stop();
+      debugService.setRecorderState('stopping');
+      debugService.log('RECORDER', 'Recording stop requested');
+
+      // 2. OPTIMIZATION: Schedule early hardware cleanup
+      // 200ms gives recorder time to process stop signal, but is much faster than
+      // waiting for file encoding (500ms-2s). Privacy indicators clear almost immediately.
+      cleanupTimeoutRef.current = setTimeout(() => {
+        cleanupTimeoutRef.current = null; // Clear ref when executing
+
+        debugService.log('HARDWARE', 'Early cleanup: stopping tracks (200ms buffer)');
+
+        // Stop tracks using closure variable (not React state)
+        // This ensures we stop the exact stream that was recording, bypassing React batching
+        if (streamToStop) {
+          streamToStop.getTracks().forEach(track => {
+            try {
+              track.stop();
+              console.log('[useRecordingFlow] ⚡ Early cleanup: stopped track (200ms buffer)');
+              debugService.log('HARDWARE', `Track stopped: ${track.kind}`, track);
+            } catch (e) {
+              // Ignore - track might already be stopped
+            }
+          });
+        }
+      }, 200);
+
+      // 3. Reset internal hook state
       setIsRecording(false);
       setIsPaused(false);
       setMediaRecorder(null);
-      // Recording stopped - ready for upload
+
+      // Note: We do NOT call setMediaStream(null) here
+      // onstop will handle state cleanup and navigation after file is ready
     }
-  }, [mediaRecorder, isRecording, isPaused]);
+  }, [mediaRecorder, isRecording, isPaused, mediaStream]);
 
   // Complete reset function for "Start Over" functionality
   const resetRecordingState = useCallback(() => {
     // Clean up recording state
-    
-    // Stop and clean up media stream and tracks
-    stopMediaStream();
-    
-    // Reset MediaRecorder state
-    if (mediaRecorder && (isRecording || isPaused)) {
-      mediaRecorder.stop();
+    // NOTE: If recorder is active, both early cleanup and onstop will handle tracks
+    // If recorder is already stopped OR doesn't exist, manual cleanup required
+
+    const recorderIsActive = mediaRecorder && (isRecording || isPaused);
+
+    // Reset MediaRecorder state (triggers onstop if active)
+    if (recorderIsActive) {
+      // Set flag to skip navigation in onstop handler
+      skipNavigationRef.current = true;
+
+      mediaRecorder.stop(); // Triggers both 200ms early cleanup AND onstop
     }
     setMediaRecorder(null);
-    // MediaRecorder cleared
-    
+
+    // Manual cleanup only if recorder wasn't active
+    // (if recorder was active, early cleanup + onstop handles it)
+    if (!recorderIsActive) {
+      stopMediaStream();
+    }
+
     // Reset recording state
     setIsRecording(false);
     setIsPaused(false);
     // Timer reset handled by TimerProvider
-    
+
     // Clear recorded data
     setRecordedBlobUrl(null);
     setActualMimeType(null);
@@ -361,6 +558,7 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     mediaStream,
     isRecording,
     isPaused,
+    isStreamLoading,  // iOS HOT MIC FIX: Expose loading state
     // elapsedSeconds moved to TimerContext
     recordedBlobUrl,
     actualMimeType,
@@ -368,14 +566,14 @@ export default function useRecordingFlow({ sessionId, sessionData, sessionCompon
     countdownValue,
     authState,
     authError,
-    
+
     // Progressive upload removed - using simple upload flow
-    
+
     // Session data (passed through)
     sessionId,
     sessionData,
     sessionComponents,
-    
+
     // Handlers
     handleVideoClick,
     handleAudioClick,
