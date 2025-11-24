@@ -162,11 +162,26 @@ function AudioVisualizer({ mediaStream, height = 200, width = '100%', customGrad
         }
       }
 
-      // Close AudioContext
+      // Close AudioContext (iOS Safari hardened pattern)
       if (audioContextRef.current) {
         try {
-          audioContextRef.current.close();
-          audioContextRef.current = null;
+          const context = audioContextRef.current;
+          audioContextRef.current = null;  // Clear ref immediately to prevent reuse
+
+          // iOS Safari best practice: suspend before close
+          // Ensures clean state transition and prevents ghost audio processes
+          if (context.state !== 'closed') {
+            context.suspend()
+              .then(() => context.close())
+              .catch(err => {
+                console.error('[AudioVisualizer] ❌ AudioContext suspend/close error:', err);
+              });
+          } else {
+            // Already closed, just clean up
+            context.close().catch(err => {
+              console.error('[AudioVisualizer] ❌ AudioContext close error:', err);
+            });
+          }
         } catch (error) {
           console.error('[AudioVisualizer] ❌ Error closing AudioContext:', error);
         }

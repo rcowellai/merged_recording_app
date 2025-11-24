@@ -76,7 +76,10 @@
       "WebFetch(domain:firebase.google.com)",
       "Bash(powershell:*)",
       "Bash(firebase firestore:rules:*)",
-      "Bash(firebase firestore:rules:get:*)"
+      "Bash(firebase firestore:rules:get:*)",
+      "Bash(git clean:*)",
+      "Bash(where:*)",
+      "mcp__sequential-thinking__think"
     ],
     "deny": [],
     "ask": [],

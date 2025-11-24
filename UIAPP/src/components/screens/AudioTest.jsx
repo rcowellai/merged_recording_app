@@ -33,7 +33,6 @@ import AudioVisualizer from '../AudioVisualizer';
 import AudioDeviceSettings from './AudioDeviceSettings';
 import { Button } from '../ui';
 import { useTokens } from '../../theme/TokenProvider';
-import { useBreakpoint } from '../../hooks/useBreakpoint';
 import useResponsiveLayout from '../../hooks/useResponsiveLayout';
 
 /**
@@ -41,7 +40,6 @@ import useResponsiveLayout from '../../hooks/useResponsiveLayout';
  */
 function AudioTestContent({ mediaStream, permissionState }) {
   const { tokens } = useTokens();
-  const { isMobile } = useBreakpoint();
 
   // Determine what to show based on permission state
   const showError = permissionState === 'denied';
@@ -56,59 +54,78 @@ function AudioTestContent({ mediaStream, permissionState }) {
     }
   });
 
+  // Outer container - matches VideoTest.jsx pattern for consistent container heights
   const innerLayout = useResponsiveLayout({
     section: 'custom',
-    flex: isMobile ? 'none' : '1 1 auto',
+    flex: '1 1 auto',
     customStyles: {
       width: '100%',
       maxWidth: tokens.layout.maxWidth.md,
-      maxHeight: isMobile ? 'none' : '350px',
-      minHeight: isMobile ? '45vh' : undefined,
-      borderRadius: tokens.borderRadius.lg,
-      padding: `0 ${tokens.spacing[4]}`,
-      backgroundColor: tokens.colors.button.leftHandButton,
+      minHeight: 0,
+      maxHeight: 'calc(100dvh - var(--headerH) - var(--actionsH) - var(--contentPad) * 2 - 140px)',
+      display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 0
+      justifyContent: 'flex-start',
+      boxSizing: 'border-box'
     }
   });
 
+  // Square container - matches VideoTest.jsx video wrapper pattern
+  const squareContainerStyle = {
+    maxWidth: 'min(500px, 100%)',
+    maxHeight: 'min(500px, 100%)',
+    aspectRatio: '1 / 1',
+    borderRadius: tokens.borderRadius.lg,
+    backgroundColor: tokens.colors.button.leftHandButton,
+    padding: `${tokens.spacing[8]} ${tokens.spacing[4]}`,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    overflow: 'hidden'
+  };
+
   return (
     <div style={outerLayout}>
-      {/* Container - always rendered so AudioVisualizer can mount */}
+      {/* Outer container - matches VideoTest structure */}
       <div style={innerLayout}>
-        {/* Wrapper for visualizer + text group */}
-        <div style={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0
-        }}>
-          {/* AudioVisualizer with key-based remounting for clean device switching */}
+        {/* Square container - replaces old innerLayout colored box */}
+        <div style={squareContainerStyle}>
+          {/* Wrapper for visualizer + text group */}
           <div style={{
             width: '100%',
-            margin: 0,
-            padding: 0
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 0
           }}>
-            <AudioVisualizer
-              key={mediaStream?.id || 'no-stream'}
-              mediaStream={mediaStream}
-              height={100}
-            />
+            {/* AudioVisualizer with key-based remounting for clean device switching */}
+            <div style={{
+              width: '100%',
+              margin: 0,
+              padding: 0
+            }}>
+              <AudioVisualizer
+                key={mediaStream?.id || 'no-stream'}
+                mediaStream={mediaStream}
+                height={100}
+              />
+            </div>
+            <p style={{
+              fontSize: tokens.fontSize.base,
+              fontWeight: tokens.fontWeight.normal,
+              color: tokens.colors.primary.DEFAULT,
+              margin: 0,
+              textAlign: 'center',
+              lineHeight: '1.5',
+              paddingLeft: tokens.spacing[2],
+              paddingRight: tokens.spacing[2]
+            }}>
+              Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
+            </p>
           </div>
-          <p style={{
-            fontSize: tokens.fontSize.base,
-            fontWeight: tokens.fontWeight.normal,
-            color: tokens.colors.primary.DEFAULT,
-            margin: 0,
-            textAlign: 'center',
-            lineHeight: '1.5',
-            paddingLeft: tokens.spacing[2],
-            paddingRight: tokens.spacing[2]
-          }}>
-            Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
-          </p>
         </div>
       </div>
 
