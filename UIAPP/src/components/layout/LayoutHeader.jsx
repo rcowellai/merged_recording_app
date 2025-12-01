@@ -81,7 +81,7 @@ function LayoutHeader({
             {showBackButton && onBack && (
               <MdChevronLeft
                 size={32}
-                color={tokens.colors.primary.DEFAULT}
+                color={tokens.colors.clay.DEFAULT}
                 onClick={onBack}
                 style={{ cursor: 'pointer' }}
               />
@@ -98,8 +98,9 @@ function LayoutHeader({
             textAlign: 'center',
             boxSizing: 'border-box',
             color: tokens.colors.primary.DEFAULT,
-            fontWeight: tokens.fontWeight.normal,
-            fontSize: tokens.fontSize['2xl'] // Mobile: 24px
+            fontFamily: tokens.fonts.secondary,
+            fontWeight: tokens.fontWeight.light,
+            fontSize: tokens.fontSize['3xl'] // Mobile: 30px (increased from 2xl/24px)
           }}>
             {bannerContent}
           </div>

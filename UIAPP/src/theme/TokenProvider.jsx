@@ -15,7 +15,8 @@ import { Z_INDEX_LAYERS } from './zIndexRegistry';
 const DEFAULT_TOKENS = {
   // Font Family
   fonts: {
-    primary: "'Open Sans', sans-serif"
+    primary: "'DM Sans', sans-serif",
+    secondary: "'EB Garamond', serif"
   },
 
   // Font Size Scale (Tailwind-inspired)
@@ -89,17 +90,17 @@ const DEFAULT_TOKENS = {
     // Status Colors
     status: {
       error: '#72181F',      /* ■ #72181F - Error states - Error messages, validation, destructive actions */
-      success: '#3A754B',    /* ■ #3A754B - Success states - Success messages, confirmations */
+      success: '#637063',    /* ■ #637063 - Success states - Success messages, confirmations */
       pending: '#E2B93B',    /* ■ #E2B93B - Pending states - Pending actions, warnings */
       warning: '#f59e0b',    /* ■ #f59e0b - Warning states - Warning messages */
       danger: '#ef4444',     /* ■ #ef4444 - Danger states - Critical warnings */
-      recording_red: '#B72A32',  /* ■ #B72A32 - Recording state - Recording bar background */
+      recording_red: '#72181F',  /* ■ #72181F - Recording state - Recording bar background (matches error color) */
       pause_background: '#6A6D6B'  /* ■ #6A6D6B - Paused state - Recording bar paused background */
     },
 
     // Neutral Colors
     neutral: {
-      DEFAULT: '#F5F4F0',    /* ■ #F5F4F0 - Default neutral - Neutral backgrounds */
+      DEFAULT: '#F4F4F0',    /* ■ #F4F4F0 - Default neutral - Neutral backgrounds */
       black: '#030303',      /* ■ #030303 - True black - Text, dark elements */
       gray: {
         '01': '#BDBDBD',     /* ■ #BDBDBD - Light gray - Subtle text, placeholders */
@@ -145,6 +146,10 @@ const DEFAULT_TOKENS = {
 
     button: {
       leftHandButton: '#F0EFEB'  /* ■ #F0EFEB - Left hand button - Secondary button background */
+    },
+
+    clay: {
+      DEFAULT: '#C5A096'         /* ■ #C5A096 - Clay color - Warm neutral accent */
     }
   },
 
@@ -255,6 +260,9 @@ export const TokenProvider = ({ children }) => {
     // === Font Family ===
     if (tokens.fonts?.primary) {
       root.style.setProperty('--font-primary', tokens.fonts.primary);
+    }
+    if (tokens.fonts?.secondary) {
+      root.style.setProperty('--font-secondary', tokens.fonts.secondary);
     }
 
     // === Font Sizes ===
@@ -369,6 +377,14 @@ export const TokenProvider = ({ children }) => {
     // Specialized colors - button
     if (tokens.colors?.button?.leftHandButton) {
       root.style.setProperty('--color-button-left-hand', tokens.colors.button.leftHandButton);
+    }
+
+    // Specialized colors - clay
+    if (tokens.colors?.clay) {
+      Object.entries(tokens.colors.clay).forEach(([key, value]) => {
+        const cssKey = key === 'DEFAULT' ? 'default' : key;
+        root.style.setProperty(`--color-clay-${cssKey}`, value);
+      });
     }
 
     // === Shadows ===

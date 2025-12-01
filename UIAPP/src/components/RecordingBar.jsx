@@ -131,12 +131,12 @@ function RecordingBar({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           <FaPause style={{ fontSize: tokens.fontSize.xs, flexShrink: 0 }} />
-          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>PAUSED</span>
+          <span style={{ fontFamily: tokens.fonts.primary, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>PAUSED</span>
         </div>
         <TimerDisplay
           totalSeconds={totalSeconds}
           formatTime={formatTimeWithLeadingZeros}
-          style={{ fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
+          style={{ fontFamily: tokens.fonts.primary, fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
         />
       </div>
     );
@@ -152,12 +152,12 @@ function RecordingBar({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           <RecordIcon size={iconSize} color={iconColor} />
-          <span style={{ fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>REC</span>
+          <span style={{ fontFamily: tokens.fonts.primary, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.xs }}>REC</span>
         </div>
         <TimerDisplay
           totalSeconds={totalSeconds}
           formatTime={formatTimeWithLeadingZeros}
-          style={{ fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
+          style={{ fontFamily: tokens.fonts.primary, fontWeight: tokens.fontWeight.normal, fontSize: tokens.fontSize.xs }}
         />
       </div>
     );

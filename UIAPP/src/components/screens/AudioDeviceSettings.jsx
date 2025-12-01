@@ -18,8 +18,10 @@
 import React from 'react';
 import { MdSettings } from 'react-icons/md';
 import useMediaDevices from '../../hooks/useMediaDevices';
+import { useTokens } from '../../theme/TokenProvider';
 
 function AudioDeviceSettings({ mediaStream, onSwitchDevice, onOpenSettings }) {
+  const { tokens } = useTokens();
 
   // Use generic hook for audio devices - SAFE because this is a React component
   const { devices, selectedDeviceId, selectDevice } = useMediaDevices('audioinput', mediaStream);
@@ -39,7 +41,7 @@ function AudioDeviceSettings({ mediaStream, onSwitchDevice, onOpenSettings }) {
 
   return (
     <MdSettings
-      size={32}
+      size={20}
       color="rgba(44, 47, 72, 0.85)"
       style={{ cursor: 'pointer' }}
       onClick={handleCogClick}

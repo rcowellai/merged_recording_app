@@ -89,13 +89,14 @@ function VideoTestContent({ mediaStream, permissionState, videoRef }) {
         {/* Video preview element */}
         <div style={{
           // aspectRatio controls sizing - width will match constrained height
-          maxWidth: 'min(500px, 100%)',
-          maxHeight: 'min(500px, 100%)',
+          maxWidth: isMobile ? 'min(500px, 100%)' : 'min(450px, 100%)',
+          maxHeight: isMobile ? 'min(500px, 100%)' : 'min(450px, 100%)',
           aspectRatio: '1 / 1',
           marginBottom: isMobile ? tokens.spacing[0] : 0,
           overflow: 'hidden',
-          borderRadius: '20px',
-          backgroundColor: 'transparent'
+          borderRadius: tokens.borderRadius.DEFAULT,
+          backgroundColor: '#ffffff',
+          boxShadow: '0 20px 40px -10px rgba(44, 47, 72, 0.1)'
         }}>
           <video
             ref={videoRef}

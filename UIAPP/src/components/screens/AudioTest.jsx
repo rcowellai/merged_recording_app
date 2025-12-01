@@ -50,7 +50,7 @@ function AudioTestContent({ mediaStream, permissionState }) {
       width: '100%',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      gap: tokens.spacing[12]
+      gap: '2.25rem' // 36px - reduced by 25% from tokens.spacing[12] (48px)
     }
   });
 
@@ -74,10 +74,11 @@ function AudioTestContent({ mediaStream, permissionState }) {
   // Square container - matches VideoTest.jsx video wrapper pattern
   const squareContainerStyle = {
     maxWidth: 'min(500px, 100%)',
-    maxHeight: 'min(500px, 100%)',
-    aspectRatio: '1 / 1',
-    borderRadius: tokens.borderRadius.lg,
-    backgroundColor: tokens.colors.button.leftHandButton,
+    maxHeight: 'min(425px, 100%)',
+    aspectRatio: '500 / 425',
+    borderRadius: tokens.borderRadius.DEFAULT,
+    backgroundColor: '#ffffff',
+    boxShadow: '0 20px 40px -10px rgba(44, 47, 72, 0.1)',
     padding: `${tokens.spacing[8]} ${tokens.spacing[4]}`,
     display: 'flex',
     flexDirection: 'column',
@@ -101,30 +102,30 @@ function AudioTestContent({ mediaStream, permissionState }) {
             alignItems: 'center',
             gap: 0
           }}>
-            {/* AudioVisualizer with key-based remounting for clean device switching */}
-            <div style={{
-              width: '100%',
-              margin: 0,
-              padding: 0
-            }}>
-              <AudioVisualizer
-                key={mediaStream?.id || 'no-stream'}
-                mediaStream={mediaStream}
-                height={100}
-              />
-            </div>
-            <p style={{
-              fontSize: tokens.fontSize.base,
-              fontWeight: tokens.fontWeight.normal,
-              color: tokens.colors.primary.DEFAULT,
-              margin: 0,
-              textAlign: 'center',
-              lineHeight: '1.5',
-              paddingLeft: tokens.spacing[2],
-              paddingRight: tokens.spacing[2]
-            }}>
-              Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
-            </p>
+          {/* AudioVisualizer with key-based remounting for clean device switching */}
+          <div style={{
+            width: '100%',
+            margin: 0,
+            padding: 0
+          }}>
+            <AudioVisualizer
+              key={mediaStream?.id || 'no-stream'}
+              mediaStream={mediaStream}
+              height={100}
+            />
+          </div>
+          <p style={{
+            fontSize: tokens.fontSize.base,
+            fontWeight: tokens.fontWeight.normal,
+            color: tokens.colors.primary.DEFAULT,
+            margin: 0,
+            textAlign: 'center',
+            lineHeight: '1.5',
+            paddingLeft: tokens.spacing[2],
+            paddingRight: tokens.spacing[2]
+          }}>
+            Line not moving when you speak? Tap the gear in the top right corner to troubleshoot.
+          </p>
           </div>
         </div>
       </div>
@@ -139,7 +140,7 @@ function AudioTestContent({ mediaStream, permissionState }) {
           fontWeight: tokens.fontWeight.normal,
           color: tokens.colors.primary.DEFAULT,
           margin: 0,
-          marginBottom: tokens.spacing[12],
+          marginBottom: '1.8rem', // 28.8px - reduced by 40% from tokens.spacing[12] (48px)
           textAlign: 'center',
           lineHeight: '1.5'
         }}>

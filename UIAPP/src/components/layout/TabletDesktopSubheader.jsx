@@ -43,8 +43,8 @@ function TabletDesktopSubheader({
       }}>
         {showBackButton && onBack && (
           <MdChevronLeft
-            size={38}
-            color={tokens.colors.primary.DEFAULT}
+            size={32}
+            color={tokens.colors.clay.DEFAULT}
             onClick={onBack}
             style={{ cursor: 'pointer' }}
           />
@@ -61,7 +61,8 @@ function TabletDesktopSubheader({
         textAlign: 'center',
         boxSizing: 'border-box',
         color: tokens.colors.primary.DEFAULT,
-        fontWeight: tokens.fontWeight.normal,
+        fontFamily: tokens.fonts.secondary,
+        fontWeight: tokens.fontWeight.light,
         fontSize: tokens.fontSize['2xl'] // 24px - matches mobile Section A2
       }}>
         {content}
