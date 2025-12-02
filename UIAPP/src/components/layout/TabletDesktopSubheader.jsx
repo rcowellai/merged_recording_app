@@ -62,8 +62,8 @@ function TabletDesktopSubheader({
         boxSizing: 'border-box',
         color: tokens.colors.primary.DEFAULT,
         fontFamily: tokens.fonts.secondary,
-        fontWeight: tokens.fontWeight.light,
-        fontSize: tokens.fontSize['2xl'] // 24px - matches mobile Section A2
+        fontWeight: tokens.fontWeight.medium,
+        fontSize: tokens.fontSize['3xl'] // 30px - one stop larger than mobile
       }}>
         {content}
       </div>

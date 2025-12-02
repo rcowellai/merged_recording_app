@@ -9,16 +9,16 @@
  * - timer: "Choose your recording mode" text
  * - content: Large icons for audio and video
  * - actions: Audio and Video buttons
+ *
+ * NOTE: This is a FACTORY FUNCTION, not a React component.
+ * It does NOT use hooks - all values must be passed as parameters.
  */
 
 import React from 'react';
 import { FaMicrophoneAlt, FaVideo } from 'react-icons/fa';
 import { Button, ButtonRow } from '../ui';
-import { useTokens } from '../../theme/TokenProvider';
 
-function ChooseModeScreen({ onAudioClick, onVideoClick, onBack }) {
-  const { tokens } = useTokens();
-
+function ChooseModeScreen({ onAudioClick, onVideoClick, onBack, tokens, isMobile }) {
   return {
     bannerContent: 'Choose recording mode',
     content: (

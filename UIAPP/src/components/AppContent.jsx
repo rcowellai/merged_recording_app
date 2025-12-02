@@ -83,6 +83,7 @@ import ReviewRecordingScreen from './screens/ReviewRecordingScreen';
 
 // Token provider for inline styling
 import { useTokens } from '../theme/TokenProvider';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 /**
  * DurationCapture
@@ -146,6 +147,7 @@ function formatBannerContent(content, tokens) {
 
 function AppContent({ sessionId, sessionData, sessionComponents }) {
   const { tokens } = useTokens();
+  const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   debugLogger.componentMounted('AppContent', {
     sessionId,
@@ -506,7 +508,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
                 // ALWAYS set captureMode to trigger flow
                 setCaptureMode('video');
               },
-              onBack: navigationHandlers.handleBack
+              onBack: navigationHandlers.handleBack,
+              tokens,
+              isMobile
             });
           }
 
@@ -720,7 +724,9 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
             onContinue: () => {
               debugLogger.log('info', 'AppContent', 'Welcome screen continue clicked');
               dispatch({ type: APP_ACTIONS.SET_SHOW_WELCOME, payload: false });
-            }
+            },
+            tokens,
+            isMobile
           });
 
           return (
@@ -729,7 +735,7 @@ function AppContent({ sessionId, sessionData, sessionComponents }) {
               bannerContent={welcomeScreen.bannerContent}
               content={welcomeScreen.content}
               actions={welcomeScreen.actions}
-              showBanner={true}
+              showBanner={welcomeScreen.showBanner !== undefined ? welcomeScreen.showBanner : true}
               bannerStyle={{ backgroundColor: 'transparent' }}
             />
           );

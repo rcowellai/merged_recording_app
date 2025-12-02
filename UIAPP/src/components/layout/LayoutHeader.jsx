@@ -19,8 +19,8 @@ import PropTypes from 'prop-types';
 import { MdChevronLeft } from 'react-icons/md';
 import { useTokens } from '../../theme/TokenProvider';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { ReactComponent as PremiumLogo } from '../../Assets/Name_only.svg';
 import Logo from '../../Assets/Logo.png';
-import DarkLogo from '../../Assets/dark_logo.png';
 
 function LayoutHeader({
   showBackButton = true,
@@ -46,15 +46,12 @@ function LayoutHeader({
       minHeight: isMobile ? '70px' : '75px',
       maxHeight: isMobile ? '70px' : '75px',
       // Background color logic matches MasterLayout.jsx exactly:
-      // 1. Mobile welcome screen: transparent (to show background image)
-      // 2. Desktop welcome screen: dark recording background
-      // 3. Active/Paused recording screens: dark recording background
-      // 4. All other screens: neutral default background
-      backgroundColor: isWelcomeScreen
-        ? (isMobile ? 'transparent' : tokens.colors.background.recording)
-        : (isActiveRecordingScreen || isPausedRecordingScreen)
-          ? tokens.colors.background.recording
-          : tokens.colors.neutral.default,
+      // 1. Welcome screen: neutral default background (no blue)
+      // 2. Active/Paused recording screens: dark recording background
+      // 3. All other screens: neutral default background
+      backgroundColor: (isActiveRecordingScreen || isPausedRecordingScreen)
+        ? tokens.colors.background.recording
+        : tokens.colors.neutral.default,
       color: tokens.colors.primary.DEFAULT,
       zIndex: tokens.zIndex.header,
       display: 'flex',
@@ -99,7 +96,7 @@ function LayoutHeader({
             boxSizing: 'border-box',
             color: tokens.colors.primary.DEFAULT,
             fontFamily: tokens.fonts.secondary,
-            fontWeight: tokens.fontWeight.light,
+            fontWeight: tokens.fontWeight.medium,
             fontSize: tokens.fontSize['3xl'] // Mobile: 30px (increased from 2xl/24px)
           }}>
             {bannerContent}
@@ -118,26 +115,39 @@ function LayoutHeader({
           </div>
         </>
       ) : (
-        // Tablet/Desktop: Unified Section A with logo (left-aligned)
+        // Tablet/Desktop: Unified Section A with logo (centered)
+        // Hide logo on welcome screen (logo is in content area instead)
         <div style={{
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-start',
-          paddingLeft: tokens.spacing[4],
+          justifyContent: 'center',
           boxSizing: 'border-box'
         }}>
-          <img
-            src={isWelcomeScreen || isActiveRecordingScreen || isPausedRecordingScreen ? Logo : DarkLogo}
-            alt="Love Retold"
-            style={{
-              height: '30px',
-              width: 'auto',
-              objectFit: 'contain',
-              paddingLeft: tokens.spacing[6]
-            }}
-          />
+          {!isWelcomeScreen && (
+            isActiveRecordingScreen || isPausedRecordingScreen ? (
+              <img
+                src={Logo}
+                alt="Love Retold"
+                style={{
+                  height: '30px',
+                  width: 'auto',
+                  objectFit: 'contain'
+                }}
+              />
+            ) : (
+              <PremiumLogo
+                style={{
+                  height: '50px',
+                  width: 'auto',
+                  paddingTop: tokens.spacing[3],
+                  paddingBottom: tokens.spacing[3]
+                }}
+                aria-label="Love Retold"
+              />
+            )
+          )}
         </div>
       )}
     </div>

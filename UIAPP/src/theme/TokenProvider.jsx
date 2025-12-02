@@ -16,7 +16,7 @@ const DEFAULT_TOKENS = {
   // Font Family
   fonts: {
     primary: "'DM Sans', sans-serif",
-    secondary: "'EB Garamond', serif"
+    secondary: "'Cormorant Garamond', serif"
   },
 
   // Font Size Scale (Tailwind-inspired)
@@ -100,12 +100,13 @@ const DEFAULT_TOKENS = {
 
     // Neutral Colors
     neutral: {
-      DEFAULT: '#F4F4F0',    /* ■ #F4F4F0 - Default neutral - Neutral backgrounds */
+      DEFAULT: '#F9F8F6',    /* ■ #F9F8F6 - Default neutral - Neutral backgrounds */
       black: '#030303',      /* ■ #030303 - True black - Text, dark elements */
       gray: {
         '01': '#BDBDBD',     /* ■ #BDBDBD - Light gray - Subtle text, placeholders */
         '02': '#F5F5F5',     /* ■ #F5F5F5 - Very light gray - Light backgrounds */
-        '03': '#4F4F4F'      /* ■ #4F4F4F - Dark gray - Dark text on light */
+        '03': '#4F4F4F',     /* ■ #4F4F4F - Dark gray - Dark text on light */
+        '04': '#6B6660'      /* ■ #6B6660 - Medium gray - Secondary text */
       }
     },
 
@@ -151,6 +152,13 @@ const DEFAULT_TOKENS = {
     clay: {
       DEFAULT: '#C5A096'         /* ■ #C5A096 - Clay color - Warm neutral accent */
     }
+  },
+
+  // Gradient Scale
+  gradients: {
+    primary: 'linear-gradient(180deg, #2C2F48 0%, #403852 50%, #4A4C6B 100%)', /* Primary blue gradient - Buttons, hero elements */
+    subtle: 'linear-gradient(180deg, #F4F4F0 0%, #E4E2D8 100%)',              /* Subtle neutral gradient - Backgrounds */
+    accent: 'linear-gradient(180deg, #C5A096 0%, #D7BFAE 100%)'               /* Clay accent gradient - Accent elements */
   },
 
   // Shadow Scale
@@ -384,6 +392,13 @@ export const TokenProvider = ({ children }) => {
       Object.entries(tokens.colors.clay).forEach(([key, value]) => {
         const cssKey = key === 'DEFAULT' ? 'default' : key;
         root.style.setProperty(`--color-clay-${cssKey}`, value);
+      });
+    }
+
+    // === Gradients ===
+    if (tokens.gradients) {
+      Object.entries(tokens.gradients).forEach(([key, value]) => {
+        root.style.setProperty(`--gradient-${key}`, value);
       });
     }
 

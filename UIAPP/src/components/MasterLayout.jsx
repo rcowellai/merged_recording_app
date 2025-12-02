@@ -17,18 +17,17 @@
  * - ContentRouter: Utility to route content to correct location
  *
  * Special Handling:
- * - Welcome screen: Transparent background on mobile with background image
  * - Recording screens: Dark background color for active/paused states
+ * - Welcome screen: Uses neutral default background (no special styling)
  *
  * Phase 2 Refactor: Extracted from 423-line monolithic component
  * See: LayoutHeader.jsx, TabletDesktopSubheader.jsx, ContentRouter.jsx
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { useTokens } from '../theme/TokenProvider';
 import { useBreakpoint } from '../hooks/useBreakpoint';
-import AuthImage from '../Assets/Auth_Image.png';
 import LayoutHeader from './layout/LayoutHeader';
 import { useContentRouter } from './layout/ContentRouter';
 import TabletDesktopSubheader from './layout/TabletDesktopSubheader';
@@ -65,36 +64,7 @@ function MasterLayout({
     isDesktop
   });
 
-  // Inject mobile-only CSS for welcome screen background
-  useEffect(() => {
-    if (!isWelcomeScreen) return;
-
-    const styleId = 'welcome-screen-mobile-bg';
-
-    // Check if style already exists
-    if (document.getElementById(styleId)) return;
-
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-      @media (max-width: 767px) {
-        .page-container-welcome {
-          background-image: url(${AuthImage}) !important;
-          background-size: cover !important;
-          background-position: center !important;
-          background-repeat: no-repeat !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      const existing = document.getElementById(styleId);
-      if (existing) {
-        document.head.removeChild(existing);
-      }
-    };
-  }, [isWelcomeScreen]);
+  // Background image injection removed - WelcomeScreen now uses neutral background
 
   return (
     // ========================================
@@ -106,14 +76,12 @@ function MasterLayout({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        // Mobile: transparent to show background image
-        // Desktop: dark recording background
+        // Welcome screen: neutral default background (no image, no blue)
         // Active/Paused recording: dark recording background
-        backgroundColor: isWelcomeScreen
-          ? (isMobile ? 'transparent' : tokens.colors.background.recording)
-          : (isActiveRecordingScreen || isPausedRecordingScreen)
-            ? tokens.colors.background.recording
-            : tokens.colors.neutral.default,
+        // All other screens: neutral default background
+        backgroundColor: (isActiveRecordingScreen || isPausedRecordingScreen)
+          ? tokens.colors.background.recording
+          : tokens.colors.neutral.default,
         minHeight: '100dvh',
         width: '100%',
         boxSizing: 'border-box',
@@ -152,8 +120,8 @@ function MasterLayout({
         maxWidth: tokens.layout.maxWidth.md,
         margin: '0 auto',
         boxSizing: 'border-box',
-        // Make transparent on mobile welcome screen to show background image
-        backgroundColor: (isMobile && isWelcomeScreen) ? 'transparent' : undefined,
+        // Content container uses default background (no special welcome screen handling)
+        backgroundColor: undefined,
         // Expose layout metrics as CSS variables for inner components
         '--headerH': isMobile ? '70px' : '75px',
         '--actionsH': isMobile ? '100px' : '150px',

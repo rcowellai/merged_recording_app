@@ -142,7 +142,7 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
               color: tokens.colors.onboarding.fontColor,
-              fontWeight: tokens.fontWeight.medium
+              fontWeight: tokens.fontWeight.semibold
             }}>
               Question from <span style={{
                 color: tokens.colors.primary.DEFAULT,
@@ -155,8 +155,8 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
           <div style={{
             fontFamily: tokens.fonts.secondary,
             fontSize: isMobile ? tokens.fontSize['2xl'] : tokens.fontSize['2xl'],
-            fontWeight: tokens.fontWeight.extralight,
-            lineHeight: 1.5,
+            fontWeight: tokens.fontWeight.medium,
+            lineHeight: 1.3,
             margin: 0,
             padding: 0,
             color: customQuestionColor || '#2A2A2A'
