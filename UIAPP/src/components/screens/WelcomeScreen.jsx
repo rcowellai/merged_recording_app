@@ -224,17 +224,21 @@ function EffectInjector() {
  * @param {boolean} params.isMobile - Mobile breakpoint flag
  */
 function WelcomeScreen({ sessionData, onContinue, tokens, isMobile }) {
-  // Extract askerName using same logic as original
-  const askerName = sessionData?.sessionData?.askerName ||
-                    sessionData?.session?.askerName ||
-                    sessionData?.askerName ||
-                    sessionData?.sessionData?.storytellerName ||
-                    sessionData?.session?.storytellerName ||
-                    sessionData?.storytellerName ||
-                    'Unknown';
+  // Extract storytellerName (person answering the question) for welcome screen
+  // Priority: storytellerName first (person recording), fallback to askerName
+  const storytellerName = sessionData?.sessionData?.storytellerName ||
+                          sessionData?.session?.storytellerName ||
+                          sessionData?.storytellerName ||
+                          sessionData?.sessionData?.askerName ||
+                          sessionData?.session?.askerName ||
+                          sessionData?.askerName ||
+                          'Unknown';
+
+  // Extract first name only for greeting
+  const firstName = storytellerName.split(/\s+/)[0] || storytellerName;
 
   // Extract initials for monogram
-  const initials = extractInitials(askerName);
+  const initials = extractInitials(storytellerName);
 
   return {
     timer: null,
@@ -279,7 +283,7 @@ function WelcomeScreen({ sessionData, onContinue, tokens, isMobile }) {
               textTransform: 'uppercase'
             }}
           >
-            Welcome, {askerName}
+            Welcome, {firstName}
           </AnimatedText>
 
           {/* Main Title */}

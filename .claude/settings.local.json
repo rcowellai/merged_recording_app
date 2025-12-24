@@ -79,7 +79,9 @@
       "Bash(firebase firestore:rules:get:*)",
       "Bash(git clean:*)",
       "Bash(where:*)",
-      "mcp__sequential-thinking__think"
+      "mcp__sequential-thinking__think",
+      "Bash(ngrok version:*)",
+      "Bash(npx ngrok:*)"
     ],
     "deny": [],
     "ask": [],
@@ -90,7 +92,9 @@
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "context7",
-    "sequential-thinking"
+    "sequential-thinking",
+    "magic",
+    "playwright"
   ],
   "disabledMcpjsonServers": []
 }

@@ -155,7 +155,7 @@ function PromptCard({ sessionData, customBackgroundColor, customQuestionColor })
           <div style={{
             fontFamily: tokens.fonts.secondary,
             fontSize: isMobile ? tokens.fontSize['2xl'] : tokens.fontSize['2xl'],
-            fontWeight: tokens.fontWeight.medium,
+            fontWeight: isMobile ? tokens.fontWeight.semibold : tokens.fontWeight.medium,
             lineHeight: 1.3,
             margin: 0,
             padding: 0,
